@@ -170,7 +170,7 @@ const RegistrationForm = () => {
                     />
                     {errors.govtId && <p className="text-red-500 text-sm">{errors.govtId}</p>}
                 </div>
-                <button type="submit" className="w-full bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600">
+                <button type="submit" className="w-full bg-black-500 text-white py-2 px-4 rounded-md hover:bg-blue-600">
                     Register
                 </button>
             </form>
