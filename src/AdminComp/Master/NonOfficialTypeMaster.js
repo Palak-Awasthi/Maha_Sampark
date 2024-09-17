@@ -5,14 +5,14 @@ import { FaSearch, FaSyncAlt, FaEdit, FaTrash, FaCheck, FaTimes } from "react-ic
 const NonOfficialTypeMaster = () => {
   const [types, setTypes] = useState([]);
   const [mainTypes, setMainTypes] = useState([]); // State for available main types
-  const [form, setForm] = useState({ mainType: null, subType: "", status: "Inactive" }); // Initialize mainType as null
+  const [form, setForm] = useState({ mainType: "", subType: "", status: "Inactive" }); // Initialize mainType as empty string
   const [editingId, setEditingId] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [showSearch, setShowSearch] = useState(false);
 
   useEffect(() => {
     fetchTypes();
-    fetchMainTypes(); // Fetch available main types when component loads
+    initializeMainTypes(); // Initialize the static main types
   }, []);
 
   // Fetch Non-Official Types from the API
@@ -25,19 +25,15 @@ const NonOfficialTypeMaster = () => {
     }
   };
 
-  // Fetch available Main Types from the API and add "AIS" option
-  const fetchMainTypes = async () => {
-    try {
-      const response = await axios.get("http://localhost:8080/api/nonOfficialMainTypes"); // Adjust this URL if necessary
-      const fetchedMainTypes = response.data;
-      
-      // Adding "AIS" as a static option
-      const aisOption = { id: "ais", name: "AIS" };
-      
-      setMainTypes([...fetchedMainTypes, aisOption]);
-    } catch (error) {
-      handleError(error);
-    }
+  // Initialize static main types (AIS, RIS, FIS, ITC)
+  const initializeMainTypes = () => {
+    const staticMainTypes = [
+      { id: "ais", name: "AIS" },
+      { id: "ris", name: "RIS" },
+      { id: "fis", name: "FIS" },
+      { id: "itc", name: "ITC" },
+    ];
+    setMainTypes(staticMainTypes);
   };
 
   // Handle form submission for adding/updating types
@@ -48,11 +44,8 @@ const NonOfficialTypeMaster = () => {
       return;
     }
 
-    // If "AIS" is selected, send "AIS" instead of id
-    const mainTypeId = form.mainType.id === "ais" ? "AIS" : form.mainType.id;
-
     try {
-      const newForm = { ...form, mainType: mainTypeId };
+      const newForm = { ...form };
       if (editingId) {
         await axios.put(`http://localhost:8080/api/nonOfficialTypes/${editingId}`, newForm);
         alert("Type updated successfully!");
@@ -108,12 +101,12 @@ const NonOfficialTypeMaster = () => {
 
   // Filter types based on the search term
   const filteredTypes = types.filter((type) =>
-    type.mainType.name.toLowerCase().includes(searchTerm.toLowerCase()) // Adjust for object structure
+    type.mainType.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   // Reset form fields
   const resetForm = () => {
-    setForm({ mainType: null, subType: "", status: "Inactive" }); // Set mainType back to null
+    setForm({ mainType: "", subType: "", status: "Inactive" });
     setEditingId(null);
   };
 
@@ -176,23 +169,18 @@ const NonOfficialTypeMaster = () => {
         <div className="p-6">
           <form onSubmit={handleSubmit}>
             <div className="grid grid-cols-1 gap-2">
-              {/* Update Main Type Input */}
+              {/* Main Type Dropdown */}
               <div className="flex flex-col">
                 <label className="mb-1 font-medium">Main Type</label>
                 <select
-                  value={form.mainType ? form.mainType.id : ""} // Check if mainType is defined
-                  onChange={(e) =>
-                    setForm({
-                      ...form,
-                      mainType: mainTypes.find((mainType) => mainType.id === e.target.value),
-                    })
-                  }
+                  value={form.mainType}
+                  onChange={(e) => setForm({ ...form, mainType: e.target.value })}
                   className="p-2 border rounded hover:scale-105 transition duration-300 w-1/2"
                   required
                 >
                   <option value="">Select Main Type</option>
                   {mainTypes.map((mainType) => (
-                    <option key={mainType.id} value={mainType.id}>
+                    <option key={mainType.id} value={mainType.name}>
                       {mainType.name}
                     </option>
                   ))}
@@ -232,40 +220,38 @@ const NonOfficialTypeMaster = () => {
                 <th className="px-4 py-2 hover:text-black cursor-pointer">Main Type</th>
                 <th className="px-4 py-2 hover:text-black cursor-pointer">Sub-Type</th>
                 <th className="px-4 py-2 hover:text-black cursor-pointer">Status</th>
-                <th className="px-4 py-2">Actions</th>
+                <th className="px-4 py-2 hover:text-black cursor-pointer">Actions</th>
               </tr>
             </thead>
             <tbody>
               {filteredTypes.map((type) => (
                 <tr key={type.id}>
                   <td className="border px-4 py-2">{type.id}</td>
-                  <td className="border px-4 py-2">{type.mainType.name}</td>
+                  <td className="border px-4 py-2">{type.mainType}</td>
                   <td className="border px-4 py-2">{type.subType}</td>
                   <td className="border px-4 py-2">
-                    <span
-                      className={`font-bold ${type.status === "Active" ? "text-green-500" : "text-red-500"}`}
-                    >
-                      {type.status}
-                    </span>
+                    <button onClick={() => handleToggleStatus(type.id, type.status)}>
+                      {type.status === "Active" ? (
+                        <FaCheck className="text-green-500" />
+                      ) : (
+                        <FaTimes className="text-red-500" />
+                      )}
+                    </button>
                   </td>
-                  <td className="border px-4 py-2">
+                  <td className="border px-4 py-2 flex justify-center space-x-4">
                     <button
                       onClick={() => handleEdit(type.id)}
-                      className="p-2 text-blue-500 hover:text-blue-600 transition"
+                      className="text-blue-500 hover:text-blue-700 transition-colors duration-200"
+                      title="Edit"
                     >
                       <FaEdit />
                     </button>
                     <button
                       onClick={() => handleDelete(type.id)}
-                      className="p-2 text-red-500 hover:text-red-600 transition ml-2"
+                      className="text-red-500 hover:text-red-700 transition-colors duration-200"
+                      title="Delete"
                     >
                       <FaTrash />
-                    </button>
-                    <button
-                      onClick={() => handleToggleStatus(type.id, type.status)}
-                      className={`p-2 ml-2 ${type.status === "Active" ? "text-green-500" : "text-red-500"} hover:scale-110`}
-                    >
-                      {type.status === "Active" ? <FaTimes /> : <FaCheck />}
                     </button>
                   </td>
                 </tr>
