@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
+import Swal from "sweetalert2";
 import { FaSearch, FaSyncAlt, FaEdit, FaTrash, FaCheck, FaTimes } from "react-icons/fa";
 
 const NonOfficialTypeMaster = () => {
@@ -18,7 +19,7 @@ const NonOfficialTypeMaster = () => {
   // Fetch Non-Official Types from the API
   const fetchTypes = async () => {
     try {
-      const response = await axios.get("http://localhost:8080/api/nonOfficialTypes");
+      const response = await axios.get("http://localhost:8080/api/nonOfficialTypes/all");
       setTypes(response.data);
     } catch (error) {
       handleError(error);
@@ -40,7 +41,11 @@ const NonOfficialTypeMaster = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!form.mainType || !form.subType) {
-      alert("Main Type and Sub-Type are required!");
+      Swal.fire({
+        icon: 'error',
+        title: 'Validation Error',
+        text: 'Main Type and Sub-Type are required!',
+      });
       return;
     }
 
@@ -48,10 +53,10 @@ const NonOfficialTypeMaster = () => {
       const newForm = { ...form };
       if (editingId) {
         await axios.put(`http://localhost:8080/api/nonOfficialTypes/${editingId}`, newForm);
-        alert("Type updated successfully!");
+        Swal.fire('Updated!', 'Type updated successfully!', 'success');
       } else {
-        await axios.post("http://localhost:8080/api/nonOfficialTypes", newForm);
-        alert("Type added successfully!");
+        await axios.post("http://localhost:8080/api/nonOfficialTypes/save", newForm);
+        Swal.fire('Added!', 'Type added successfully!', 'success');
       }
       fetchTypes();
       resetForm();
@@ -69,11 +74,20 @@ const NonOfficialTypeMaster = () => {
 
   // Handle deletion of a type
   const handleDelete = async (id) => {
-    if (window.confirm("Are you sure you want to delete this type?")) {
+    const result = await Swal.fire({
+      title: 'Are you sure?',
+      text: "You won't be able to revert this!",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#3085d6',
+      cancelButtonColor: '#d33',
+      confirmButtonText: 'Yes, delete it!',
+    });
+    if (result.isConfirmed) {
       try {
-        await axios.delete(`http://localhost:8080/api/nonOfficialTypes/${id}`);
+        await axios.delete(`http://localhost:8080/api/nonOfficialTypes/delete/${id}`);
         fetchTypes();
-        alert("Type deleted successfully!");
+        Swal.fire('Deleted!', 'Type deleted successfully!', 'success');
       } catch (error) {
         handleError(error);
       }
@@ -82,15 +96,23 @@ const NonOfficialTypeMaster = () => {
 
   // Toggle status of a type
   const handleToggleStatus = async (id, currentStatus) => {
-    const newStatus = currentStatus === "Active" ? "Inactive" : "Active";
-    try {
-      await axios.put(`http://localhost:8080/api/nonOfficialTypes/${id}/toggle-status`);
-      setTypes((prevTypes) =>
-        prevTypes.map((type) => (type.id === id ? { ...type, status: newStatus } : type))
-      );
-      alert(`Type status updated to ${newStatus} successfully!`);
-    } catch (error) {
-      handleError(error);
+    const result = await Swal.fire({
+      title: 'Are you sure?',
+      text: `Do you want to ${currentStatus === "Active" ? "deactivate" : "activate"} this type?`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#3085d6',
+      cancelButtonColor: '#d33',
+      confirmButtonText: currentStatus === "Active" ? 'Yes, deactivate it!' : 'Yes, activate it!',
+    });
+    if (result.isConfirmed) {
+      try {
+        await axios.put(`http://localhost:8080/api/nonOfficialTypes/toggle-status/${id}`);
+        fetchTypes(); // Re-fetch to update the status
+        Swal.fire('Updated!', `Type status updated successfully!`, 'success');
+      } catch (error) {
+        handleError(error);
+      }
     }
   };
 
@@ -101,7 +123,7 @@ const NonOfficialTypeMaster = () => {
 
   // Filter types based on the search term
   const filteredTypes = types.filter((type) =>
-    type.mainType.name.toLowerCase().includes(searchTerm.toLowerCase())
+    type.mainType.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   // Reset form fields
@@ -113,11 +135,23 @@ const NonOfficialTypeMaster = () => {
   const handleError = (error) => {
     console.error("Error:", error);
     if (error.response) {
-      alert(`Error: ${error.response.status} - ${error.response.data.message || "An error occurred."}`);
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: `Error: ${error.response.status} - ${error.response.data.message || "An error occurred."}`,
+      });
     } else if (error.request) {
-      alert("No response received from the server. Please try again.");
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'No response received from the server. Please try again.',
+      });
     } else {
-      alert("An unexpected error occurred. Please try again.");
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'An unexpected error occurred. Please try again.',
+      });
     }
   };
 
@@ -188,70 +222,94 @@ const NonOfficialTypeMaster = () => {
               </div>
 
               <div className="flex flex-col">
-                <label className="mb-1 font-medium">Sub-Type</label>
+                <label className="mb-1 font-medium">Sub Type</label>
                 <input
                   type="text"
                   value={form.subType}
                   onChange={(e) => setForm({ ...form, subType: e.target.value })}
-                  className="p-2 border rounded hover:scale-105 transition duration-300 w-1/2"
+                  className="p-2 border rounded hover:scale-105 transition duration-300"
                   required
                 />
               </div>
-            </div>
-            <div className="flex justify-end mt-4">
-              <button
-                type="submit"
-                className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition duration-300"
-              >
-                {editingId ? "Update" : "Submit"}
-              </button>
+
+              <div className="flex flex-col">
+                <label className="mb-1 font-medium">Status</label>
+                <select
+                  value={form.status}
+                  onChange={(e) => setForm({ ...form, status: e.target.value })}
+                  className="p-2 border rounded hover:scale-105 transition duration-300"
+                >
+                  <option value="Active">Active</option>
+                  <option value="Inactive">Inactive</option>
+                </select>
+              </div>
+
+              <div className="mt-4">
+                <button
+                  type="submit"
+                  className="p-2 bg-blue-500 text-white rounded-md transition-transform transform hover:scale-110"
+                >
+                  {editingId ? "Update" : "Add"}
+                </button>
+                {editingId && (
+                  <button
+                    type="button"
+                    onClick={resetForm}
+                    className="ml-2 p-2 bg-gray-500 text-white rounded-md transition-transform transform hover:scale-110"
+                  >
+                    Cancel
+                  </button>
+                )}
+              </div>
             </div>
           </form>
         </div>
       </div>
 
-      {/* Type List Table */}
-      <div className="bg-white rounded-lg shadow-md mb-6">
-        <div className="px-6 py-4">
-          <table className="w-full bg-white rounded-lg shadow-md mb-6">
+      {/* Non-Official Types Table */}
+      <div className="bg-white rounded-lg shadow-md">
+        <div className="bg-blue-500 text-white px-6 py-3 rounded-t-lg">
+          <h3 className="text-lg sm:text-xl font-semibold">Non-Official Types List</h3>
+        </div>
+        <div className="p-6">
+          <table className="w-full border-collapse border border-gray-200">
             <thead>
-              <tr className="bg-blue-500 text-white">
-                <th className="px-4 py-2 hover:text-black cursor-pointer">ID</th>
-                <th className="px-4 py-2 hover:text-black cursor-pointer">Main Type</th>
-                <th className="px-4 py-2 hover:text-black cursor-pointer">Sub-Type</th>
-                <th className="px-4 py-2 hover:text-black cursor-pointer">Status</th>
-                <th className="px-4 py-2 hover:text-black cursor-pointer">Actions</th>
+              <tr>
+                <th className="border border-gray-300 px-4 py-2">Main Type</th>
+                <th className="border border-gray-300 px-4 py-2">Sub Type</th>
+                <th className="border border-gray-300 px-4 py-2">Status</th>
+                <th className="border border-gray-300 px-4 py-2">Actions</th>
               </tr>
             </thead>
             <tbody>
               {filteredTypes.map((type) => (
                 <tr key={type.id}>
-                  <td className="border px-4 py-2">{type.id}</td>
-                  <td className="border px-4 py-2">{type.mainType}</td>
-                  <td className="border px-4 py-2">{type.subType}</td>
-                  <td className="border px-4 py-2">
-                    <button onClick={() => handleToggleStatus(type.id, type.status)}>
-                      {type.status === "Active" ? (
-                        <FaCheck className="text-green-500" />
-                      ) : (
-                        <FaTimes className="text-red-500" />
-                      )}
-                    </button>
-                  </td>
-                  <td className="border px-4 py-2 flex justify-center space-x-4">
+                  <td className="border border-gray-300 px-4 py-2">{type.mainType}</td>
+                  <td className="border border-gray-300 px-4 py-2">{type.subType}</td>
+                  <td className="border border-gray-300 px-4 py-2">{type.status}</td>
+                  <td className="border border-gray-300 px-4 py-2 flex gap-2">
                     <button
                       onClick={() => handleEdit(type.id)}
-                      className="text-blue-500 hover:text-blue-700 transition-colors duration-200"
+                      className="p-2 bg-yellow-500 text-white rounded-md transition-transform transform hover:scale-110"
                       title="Edit"
                     >
                       <FaEdit />
                     </button>
                     <button
                       onClick={() => handleDelete(type.id)}
-                      className="text-red-500 hover:text-red-700 transition-colors duration-200"
+                      className="p-2 bg-red-500 text-white rounded-md transition-transform transform hover:scale-110"
                       title="Delete"
                     >
                       <FaTrash />
+                    </button>
+                    <button
+                      onClick={() => handleToggleStatus(type.id, type.status)}
+                      className={`p-2 rounded-md transition-transform transform hover:scale-110 ${
+                        type.status === "Active" ? "bg-red-500 text-white" : "bg-green-500 text-white"
+                      }`}
+                      title={type.status === "Active" ? "Deactivate" : "Activate"}
+                    >
+                      {type.status === "Active" ? <FaTimes /> : <FaCheck />}
                     </button>
                   </td>
                 </tr>

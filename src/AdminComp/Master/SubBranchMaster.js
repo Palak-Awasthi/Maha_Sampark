@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { FaSearch, FaSyncAlt, FaEdit, FaTrash, FaCheck, FaTimes } from "react-icons/fa";
+import Swal from 'sweetalert2';
 
 const SubBranchMaster = () => {
   const [subBranches, setSubBranches] = useState([]);
@@ -16,7 +17,7 @@ const SubBranchMaster = () => {
   // Fetch all sub-branches from the backend
   const fetchSubBranches = async () => {
     try {
-      const response = await axios.get("http://localhost:8080/api/subbranches");
+      const response = await axios.get("http://localhost:8080/api/sub-branch/all");
       setSubBranches(response.data);
     } catch (error) {
       handleError(error);
@@ -25,18 +26,30 @@ const SubBranchMaster = () => {
 
   const handleAddOrUpdateSubBranch = async () => {
     if (!formState.mainDept || !formState.subBranch) {
-      alert("Both Main Department and Sub-Branch fields are required!");
+      Swal.fire({
+        icon: 'error',
+        title: 'Oops...',
+        text: 'Both Main Department and Sub-Branch fields are required!',
+      });
       return;
     }
 
     try {
       let response;
       if (isEditing) {
-        response = await axios.put(`http://localhost:8080/api/subbranches/${isEditing}`, formState);
-        alert("Sub-Branch updated successfully!");
+        response = await axios.post("http://localhost:8080/api/sub-branch/save", { ...formState, id: isEditing });
+        Swal.fire({
+          icon: 'success',
+          title: 'Updated',
+          text: 'Sub-Branch updated successfully!',
+        });
       } else {
-        response = await axios.post("http://localhost:8080/api/subbranches", { ...formState, status: "Inactive" });
-        alert("Sub-Branch added with Inactive status!");
+        response = await axios.post("http://localhost:8080/api/sub-branch/save", formState);
+        Swal.fire({
+          icon: 'success',
+          title: 'Added',
+          text: 'Sub-Branch added with Inactive status!',
+        });
       }
 
       if (response.status === 200 || response.status === 201) {
@@ -56,19 +69,33 @@ const SubBranchMaster = () => {
   const handleEditSubBranch = (id) => {
     const subBranch = subBranches.find((b) => b.id === id);
     setFormState({
-      mainDept: subBranch.mainDept,
-      subBranch: subBranch.subBranch,
+      mainDept: subBranch.mainDepartmentMaster,
+      subBranch: subBranch.subBranchName,
       status: subBranch.status || "Inactive",
     });
     setIsEditing(id);
   };
 
   const handleDeleteSubBranch = async (id) => {
-    if (window.confirm("Are you sure you want to delete this sub-branch?")) {
+    const result = await Swal.fire({
+      title: 'Are you sure?',
+      text: "You won't be able to revert this!",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#3085d6',
+      cancelButtonColor: '#d33',
+      confirmButtonText: 'Yes, delete it!'
+    });
+
+    if (result.isConfirmed) {
       try {
-        await axios.delete(`http://localhost:8080/api/subbranches/${id}`);
+        await axios.delete(`http://localhost:8080/api/sub-branch/delete/${id}`);
         setSubBranches(subBranches.filter((b) => b.id !== id));
-        alert("Sub-Branch deleted successfully!");
+        Swal.fire(
+          'Deleted!',
+          'Sub-Branch deleted successfully!',
+          'success'
+        );
       } catch (error) {
         handleError(error);
       }
@@ -76,11 +103,14 @@ const SubBranchMaster = () => {
   };
 
   const handleToggleStatus = async (id, currentStatus) => {
-    const newStatus = currentStatus === "Active" ? "Inactive" : "Active";
     try {
-      await axios.put(`http://localhost:8080/api/subbranches/${id}/status`, { status: newStatus });
+      await axios.put(`http://localhost:8080/api/sub-branch/toggle-status/${id}`);
       fetchSubBranches();
-      alert(`Sub-Branch status updated to ${newStatus} successfully!`);
+      Swal.fire({
+        icon: 'success',
+        title: 'Status Updated',
+        text: 'Sub-Branch status updated successfully!',
+      });
     } catch (error) {
       handleError(error);
     }
@@ -91,7 +121,7 @@ const SubBranchMaster = () => {
   };
 
   const filteredSubBranches = subBranches.filter((b) =>
-    b.subBranch?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false
+    b.subBranchName?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false
   );
 
   const resetForm = () => {
@@ -101,20 +131,20 @@ const SubBranchMaster = () => {
 
   const handleError = (error) => {
     console.error("Error:", error);
-    if (error.response) {
-      alert(`Error: ${error.response.status} - ${error.response.data.message || "An error occurred."}`);
-    } else if (error.request) {
-      alert("No response received from the server. Please try again.");
-    } else {
-      alert("An unexpected error occurred. Please try again.");
-    }
+    Swal.fire({
+      icon: 'error',
+      title: 'Error',
+      text: error.response ? 
+        `Error: ${error.response.status} - ${error.response.data.message || "An error occurred."}` : 
+        "An unexpected error occurred. Please try again."
+    });
   };
 
   return (
     <div className="container mx-auto p-4">
       {/* Header Section */}
       <div className="flex flex-col md:flex-row md:justify-between items-start md:items-center mb-6">
-      <div className="relative overflow-hidden whitespace-nowrap">
+        <div className="relative overflow-hidden whitespace-nowrap">
           <marquee className="text-2xl sm:text-3xl font-bold">
             <span className="mx-2">Sub</span>
             <span className="mx-2">Branch</span>
@@ -204,44 +234,42 @@ const SubBranchMaster = () => {
                 <th className="px-4 py-2 hover:text-black cursor-pointer">Main Department</th>
                 <th className="px-4 py-2 hover:text-black cursor-pointer">Sub-Branch</th>
                 <th className="px-4 py-2 hover:text-black cursor-pointer">Status</th>
-                <th className="px-4 py-2 hover:text-black cursor-pointer">Actions</th>
+                <th className="px-4 py-2">Actions</th>
               </tr>
             </thead>
             <tbody>
-              {filteredSubBranches.map((branch) => (
+              {filteredSubBranches.map((branch, index) => (
                 <tr key={branch.id}>
-                  <td className="px-4 py-2">{branch.id}</td>
-                  <td className="px-4 py-2">{branch.mainDept}</td>
-                  <td className="px-4 py-2">{branch.subBranch}</td>
+                  <td className="px-4 py-2">{index + 1}</td>
+                  <td className="px-4 py-2">{branch.mainDepartmentMaster}</td>
+                  <td className="px-4 py-2">{branch.subBranchName}</td>
                   <td className="px-4 py-2">
-                    <span
-                      className={`font-bold ${
-                        branch.status === "Active" ? "text-green-500" : "text-red-500"
-                      }`}
-                    >
+                    <span className={`inline-block px-2 py-1 text-xs font-semibold rounded-full ${branch.status === "Active" ? "bg-green-500 text-white" : "bg-red-500 text-white"}`}>
                       {branch.status}
                     </span>
                   </td>
                   <td className="px-4 py-2 flex space-x-2">
-                    {branch.status === "Active" ? (
-                      <FaCheck
-                        className="text-blue-500 cursor-pointer"
-                        onClick={() => handleToggleStatus(branch.id, "Active")}
-                      />
-                    ) : (
-                      <FaTimes
-                        className="text-blue-500 cursor-pointer"
-                        onClick={() => handleToggleStatus(branch.id, "Inactive")}
-                      />
-                    )}
-                    <FaEdit
-                      className="text-blue-500 cursor-pointer"
+                    <button
                       onClick={() => handleEditSubBranch(branch.id)}
-                    />
-                    <FaTrash
-                      className="text-blue-500 cursor-pointer"
+                      className="text-blue-500 hover:text-blue-600 transition duration-300"
+                      title="Edit"
+                    >
+                      <FaEdit />
+                    </button>
+                    <button
                       onClick={() => handleDeleteSubBranch(branch.id)}
-                    />
+                      className="text-red-500 hover:text-red-600 transition duration-300"
+                      title="Delete"
+                    >
+                      <FaTrash />
+                    </button>
+                    <button
+                      onClick={() => handleToggleStatus(branch.id, branch.status)}
+                      className={`text-${branch.status === "Active" ? "red" : "green"}-500 hover:text-${branch.status === "Active" ? "red" : "green"}-600 transition duration-300`}
+                      title={branch.status === "Active" ? "Deactivate" : "Activate"}
+                    >
+                      {branch.status === "Active" ? <FaTimes /> : <FaCheck />}
+                    </button>
                   </td>
                 </tr>
               ))}

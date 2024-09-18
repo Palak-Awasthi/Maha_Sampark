@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { FaSearch, FaSyncAlt, FaEdit, FaTrash, FaCheck, FaTimes } from "react-icons/fa";
+import Swal from 'sweetalert2';
 
 const StateMaster = () => {
   const [states, setStates] = useState([]);
@@ -24,7 +25,11 @@ const StateMaster = () => {
 
   const handleAddOrUpdateState = async () => {
     if (!formState.stateName) {
-      alert("State name is required!");
+      Swal.fire({
+        icon: 'warning',
+        title: 'Validation Error',
+        text: 'State name is required!',
+      });
       return;
     }
 
@@ -36,13 +41,21 @@ const StateMaster = () => {
           ...formState,
           status: "Inactive"
         });
-        alert("State updated successfully!");
+        Swal.fire({
+          icon: 'success',
+          title: 'Success',
+          text: 'State updated successfully!',
+        });
       } else {
         response = await axios.post("http://localhost:8080/api/states", {
           ...formState,
           status: "Inactive"
         });
-        alert("State added successfully!");
+        Swal.fire({
+          icon: 'success',
+          title: 'Success',
+          text: 'State added successfully!',
+        });
       }
 
       if (response.status === 200 || response.status === 201) {
@@ -66,11 +79,21 @@ const StateMaster = () => {
   };
 
   const handleDeleteState = async (id) => {
-    if (window.confirm("Are you sure you want to delete this state?")) {
+    const result = await Swal.fire({
+      title: 'Are you sure?',
+      text: 'You will not be able to recover this state!',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#3085d6',
+      cancelButtonColor: '#d33',
+      confirmButtonText: 'Yes, delete it!',
+    });
+
+    if (result.isConfirmed) {
       try {
         await axios.delete(`http://localhost:8080/api/states/${id}`);
         setStates(states.filter((st) => st.id !== id));
-        alert("State deleted successfully!");
+        Swal.fire('Deleted!', 'State has been deleted.', 'success');
       } catch (error) {
         handleError(error);
       }
@@ -82,7 +105,7 @@ const StateMaster = () => {
     try {
       await axios.put(`http://localhost:8080/api/states/${id}/status`, { status: newStatus });
       fetchStates();
-      alert(`State status updated to ${newStatus} successfully!`);
+      Swal.fire('Success', `State status updated to ${newStatus} successfully!`, 'success');
     } catch (error) {
       handleError(error);
     }
@@ -104,11 +127,23 @@ const StateMaster = () => {
   const handleError = (error) => {
     console.error("Error:", error);
     if (error.response) {
-      alert(`Error: ${error.response.status} - ${error.response.data.message || "An error occurred."}`);
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: `Error: ${error.response.status} - ${error.response.data.message || "An error occurred."}`,
+      });
     } else if (error.request) {
-      alert("No response received from the server. Please try again.");
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'No response received from the server. Please try again.',
+      });
     } else {
-      alert("An unexpected error occurred. Please try again.");
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'An unexpected error occurred. Please try again.',
+      });
     }
   };
 
@@ -126,7 +161,7 @@ const StateMaster = () => {
           {showSearch && (
             <input
               type="text"
-              placeholder="Search Sub-Branch"
+              placeholder="Search State"
               value={searchTerm}
               onChange={handleSearch}
               className="px-3 py-2 border rounded-md focus:outline-none focus:border-blue-500 w-full sm:w-auto"
@@ -180,7 +215,6 @@ const StateMaster = () => {
                 {isEditing ? "Update" : "Submit"}
               </button>
             </div>
-
           </form>
         </div>
       </div>
