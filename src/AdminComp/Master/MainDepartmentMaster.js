@@ -4,20 +4,15 @@ import axios from "axios";
 
 const MainDepartmentMaster = () => {
   const [mainDepartments, setMainDepartments] = useState([]);
-  const [formState, setFormState] = useState({ mainDept: "", id: null });
+  const [formState, setFormState] = useState({ mainDept: "", id: null, status: false });
   const [showSearch, setShowSearch] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
     const fetchDepartments = async () => {
       try {
-        const response = await axios.get("http://localhost:8080/api/mainDepartments");
-        console.log("API Response:", response.data);
-        if (Array.isArray(response.data)) {
-          setMainDepartments(response.data);
-        } else {
-          console.error("Expected an array but got:", response.data);
-        }
+        const response = await axios.get("http://localhost:8080/api/mainDepartments/all");
+        setMainDepartments(response.data);
       } catch (error) {
         console.error("Error fetching departments", error);
       }
@@ -26,33 +21,33 @@ const MainDepartmentMaster = () => {
   }, []);
 
   const handleAddMainDepartment = async () => {
-    console.log("Form State Before Submission:", formState); // Debugging statement
-    if (!formState.mainDept) {
+    if (!formState.mainDept.trim()) { // Ensure that it's not empty
       console.error("Main department is required");
-      return; // Prevent submission if mainDept is empty
+      return;
     }
-
+  
     try {
       const response = formState.id 
         ? await axios.put(`http://localhost:8080/api/mainDepartments/${formState.id}`, {
             mainDept: formState.mainDept,
             status: formState.status,
           })
-        : await axios.post("http://localhost:8080/api/mainDepartments", {
+        : await axios.post("http://localhost:8080/api/mainDepartments/save", {
             mainDept: formState.mainDept,
-            status: false,
+            status: formState.status,
           });
-
+  
       const updatedDepartments = formState.id 
         ? mainDepartments.map((dept) => (dept.id === response.data.id ? response.data : dept)) 
         : [...mainDepartments, response.data];
-
+  
       setMainDepartments(updatedDepartments);
-      setFormState({ mainDept: "", id: null }); // Reset form state
+      setFormState({ mainDept: "", id: null, status: false });
     } catch (error) {
-      console.error("Error adding/updating department", error.response ? error.response.data : error.message);
+      console.error("Error adding/updating department", error);
     }
   };
+  
 
   const handleEdit = (id) => {
     const dept = mainDepartments.find((d) => d.id === id);
@@ -61,7 +56,7 @@ const MainDepartmentMaster = () => {
 
   const handleDelete = async (id) => {
     try {
-      await axios.delete(`http://localhost:8080/api/mainDepartments/${id}`);
+      await axios.delete(`http://localhost:8080/api/mainDepartments/delete/${id}`);
       setMainDepartments(mainDepartments.filter((dept) => dept.id !== id));
     } catch (error) {
       console.error("Error deleting department", error);
@@ -71,10 +66,7 @@ const MainDepartmentMaster = () => {
   const toggleStatus = async (id) => {
     const dept = mainDepartments.find((d) => d.id === id);
     try {
-      const response = await axios.put(`http://localhost:8080/api/mainDepartments/${id}`, {
-        ...dept,
-        status: !dept.status,
-      });
+      const response = await axios.put(`http://localhost:8080/api/mainDepartments/toggle-status/${id}`);
       setMainDepartments(mainDepartments.map((d) => (d.id === id ? response.data : d)));
     } catch (error) {
       console.error("Error toggling status", error);
@@ -85,9 +77,9 @@ const MainDepartmentMaster = () => {
     setSearchTerm(event.target.value);
   };
 
-  const filteredDepartments = Array.isArray(mainDepartments) ? mainDepartments.filter((dept) => 
+  const filteredDepartments = mainDepartments.filter((dept) => 
     dept.mainDept && dept.mainDept.toLowerCase().includes(searchTerm.toLowerCase())
-  ) : [];
+  );
 
   return (
     <div className="container mx-auto p-4">

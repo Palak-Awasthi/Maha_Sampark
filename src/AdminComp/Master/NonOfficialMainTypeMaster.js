@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { FaSearch, FaSyncAlt, FaEdit, FaTrash, FaCheck, FaTimes } from "react-icons/fa";
+import Swal from "sweetalert2";  // Import SweetAlert
 
 const NonOfficialMainTypeMaster = () => {
   const [mainTypes, setMainTypes] = useState([]);
@@ -27,17 +28,17 @@ const NonOfficialMainTypeMaster = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.mainType) {
-      alert("Main Type is required!");
+      Swal.fire("Error", "Main Type is required!", "error");
       return;
     }
 
     try {
       if (isEditing) {
         await axios.put(`http://localhost:8080/api/nonofficialmaintypes/${isEditing}`, formData);
-        alert("Main Type updated successfully!");
+        Swal.fire("Success", "Main Type updated successfully!", "success");
       } else {
         await axios.post("http://localhost:8080/api/nonofficialmaintypes", formData);
-        alert("Main Type added successfully!");
+        Swal.fire("Success", "Main Type added successfully!", "success");
       }
       fetchMainTypes();
       resetForm();
@@ -53,32 +54,55 @@ const NonOfficialMainTypeMaster = () => {
     setIsEditing(id);
   };
 
-  // Handle deletion of a main type
+  // Handle deletion of a main type with SweetAlert confirmation
   const handleDelete = async (id) => {
-    if (window.confirm("Are you sure you want to delete this main type?")) {
-      try {
-        await axios.delete(`http://localhost:8080/api/nonofficialmaintypes/${id}`);
-        fetchMainTypes();
-        alert("Main Type deleted successfully!");
-      } catch (error) {
-        handleError(error);
+    Swal.fire({
+      title: "Are you sure?",
+      text: "You won't be able to revert this!",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#3085d6",
+      cancelButtonColor: "#d33",
+      confirmButtonText: "Yes, delete it!"
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        try {
+          await axios.delete(`http://localhost:8080/api/nonofficialmaintypes/${id}`);
+          fetchMainTypes();
+          Swal.fire("Deleted!", "Main Type has been deleted.", "success");
+        } catch (error) {
+          handleError(error);
+        }
       }
-    }
+    });
   };
 
-  // Toggle status of a main type
+  // Toggle status of a main type with confirmation
   const handleToggleStatus = async (id, currentStatus) => {
-    try {
-      const updatedMainType = await axios.put(`http://localhost:8080/api/nonofficialmaintypes/${id}/toggle-status`);
-      setMainTypes(prevMainTypes => 
-        prevMainTypes.map(mainType =>
-          mainType.id === id ? { ...mainType, status: updatedMainType.data.status } : mainType
-        )
-      );
-      alert(`Main Type status updated to ${updatedMainType.data.status} successfully!`);
-    } catch (error) {
-      handleError(error);
-    }
+    const newStatus = currentStatus === "Active" ? "Inactive" : "Active";
+    Swal.fire({
+      title: "Are you sure?",
+      text: `Do you want to change the status to ${newStatus}?`,
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#3085d6",
+      cancelButtonColor: "#d33",
+      confirmButtonText: "Yes, change it!"
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        try {
+          const updatedMainType = await axios.put(`http://localhost:8080/api/nonofficialmaintypes/${id}/toggle-status`);
+          setMainTypes((prevMainTypes) =>
+            prevMainTypes.map((mainType) =>
+              mainType.id === id ? { ...mainType, status: updatedMainType.data.status } : mainType
+            )
+          );
+          Swal.fire("Success", `Main Type status updated to ${updatedMainType.data.status} successfully!`, "success");
+        } catch (error) {
+          handleError(error);
+        }
+      }
+    });
   };
 
   // Handle search input change
@@ -100,11 +124,11 @@ const NonOfficialMainTypeMaster = () => {
   const handleError = (error) => {
     console.error("Error:", error);
     if (error.response) {
-      alert(`Error: ${error.response.status} - ${error.response.data.message || "An error occurred."}`);
+      Swal.fire("Error", `${error.response.status} - ${error.response.data.message || "An error occurred."}`, "error");
     } else if (error.request) {
-      alert("No response received from the server. Please try again.");
+      Swal.fire("Error", "No response received from the server. Please try again.", "error");
     } else {
-      alert("An unexpected error occurred. Please try again.");
+      Swal.fire("Error", "An unexpected error occurred. Please try again.", "error");
     }
   };
 
@@ -198,40 +222,38 @@ const NonOfficialMainTypeMaster = () => {
                 <tr key={mainType.id} className="hover:bg-gray-100">
                   <td className="px-4 py-2 border-b">{mainType.mainType}</td>
                   <td className="px-4 py-2 border-b">
-                    <span
-                      className={`font-bold ${mainType.status === "Active" ? "text-green-500" : "text-red-500"}`}
-                    >
+                    <span className={`px-2 py-1 rounded-md ${mainType.status === "Active" ? "bg-green-500 text-white" : "bg-red-500 text-white"}`}>
                       {mainType.status}
                     </span>
                   </td>
                   <td className="px-4 py-2 border-b flex space-x-2">
-                    {mainType.status === "Active" ? (
-                      <FaCheck
-                        className="text-blue-500 cursor-pointer"
-                        onClick={() => handleToggleStatus(mainType.id, mainType.status)}
-                      />
-                    ) : (
-                      <FaTimes
-                        className="text-blue-500 cursor-pointer"
-                        onClick={() => handleToggleStatus(mainType.id, mainType.status)}
-                      />
-                    )}
-                    <FaEdit
-                      className="text-blue-500 cursor-pointer"
+                    <button
                       onClick={() => handleEdit(mainType.id)}
-                    />
-                    <FaTrash
-                      className="text-blue-500 cursor-pointer"
+                      className="text-blue-500 hover:text-blue-700"
+                      title="Edit"
+                    >
+                      <FaEdit />
+                    </button>
+                    <button
                       onClick={() => handleDelete(mainType.id)}
-                    />
+                      className="text-red-500 hover:text-red-700"
+                      title="Delete"
+                    >
+                      <FaTrash />
+                    </button>
+                    <button
+                      onClick={() => handleToggleStatus(mainType.id, mainType.status)}
+                      className={`text-${mainType.status === "Active" ? "green" : "gray"}-500 hover:text-${mainType.status === "Active" ? "green" : "gray"}-700`}
+                      title={mainType.status === "Active" ? "Deactivate" : "Activate"}
+                    >
+                      {mainType.status === "Active" ? <FaTimes /> : <FaCheck />}
+                    </button>
                   </td>
                 </tr>
               ))
             ) : (
               <tr>
-                <td colSpan="3" className="text-center py-4">
-                  No Main Types found
-                </td>
+                <td colSpan="3" className="text-center py-4">No Main Types Found</td>
               </tr>
             )}
           </tbody>

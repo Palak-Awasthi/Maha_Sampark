@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
+import swal from 'sweetalert';  // Import SweetAlert
 import { FaSearch, FaSyncAlt, FaEdit, FaTrash, FaCheck, FaTimes } from "react-icons/fa";
+
 
 const DepartmentMaster = () => {
   const [departments, setDepartments] = useState([]);
@@ -24,7 +26,7 @@ const DepartmentMaster = () => {
 
   const handleAddOrUpdateDepartment = async () => {
     if (!formState.departmentName) {
-      alert("Department Name field is required!");
+      swal("Error", "Department Name field is required!", "error");
       return;
     }
 
@@ -33,10 +35,10 @@ const DepartmentMaster = () => {
 
       if (isEditing) {
         response = await axios.put(`http://localhost:8080/api/departments/${isEditing}`, formState);
-        alert("Department updated successfully!");
+        swal("Success", "Department updated successfully!", "success");
       } else {
         response = await axios.post("http://localhost:8080/api/departments", formState);
-        alert("Department added successfully!");
+        swal("Success", "Department added successfully!", "success");
       }
 
       if (response.status === 200 || response.status === 201) {
@@ -62,15 +64,23 @@ const DepartmentMaster = () => {
   };
 
   const handleDeleteDepartment = async (id) => {
-    if (window.confirm("Are you sure you want to delete this department?")) {
-      try {
-        await axios.delete(`http://localhost:8080/api/departments/${id}`);
-        setDepartments(departments.filter((d) => d.id !== id));
-        alert("Department deleted successfully!");
-      } catch (error) {
-        handleError(error);
+    swal({
+      title: "Are you sure?",
+      text: "Once deleted, you will not be able to recover this department!",
+      icon: "warning",
+      buttons: true,
+      dangerMode: true,
+    }).then(async (willDelete) => {
+      if (willDelete) {
+        try {
+          await axios.delete(`http://localhost:8080/api/departments/${id}`);
+          setDepartments(departments.filter((d) => d.id !== id));
+          swal("Success", "Department deleted successfully!", "success");
+        } catch (error) {
+          handleError(error);
+        }
       }
-    }
+    });
   };
 
   const handleToggleStatus = async (id, currentStatus) => {
@@ -78,7 +88,7 @@ const DepartmentMaster = () => {
     try {
       await axios.put(`http://localhost:8080/api/departments/${id}/status`, { status: newStatus });
       fetchDepartments();
-      alert(`Department status updated to ${newStatus} successfully!`);
+      swal("Success", `Department status updated to ${newStatus} successfully!`, "success");
     } catch (error) {
       handleError(error);
     }
@@ -100,11 +110,11 @@ const DepartmentMaster = () => {
   const handleError = (error) => {
     console.error("Error:", error);
     if (error.response) {
-      alert(`Error: ${error.response.status} - ${error.response.data.message || "An error occurred."}`);
+      swal("Error", `Error: ${error.response.status} - ${error.response.data.message || "An error occurred."}`, "error");
     } else if (error.request) {
-      alert("No response received from the server. Please try again.");
+      swal("Error", "No response received from the server. Please try again.", "error");
     } else {
-      alert("An unexpected error occurred. Please try again.");
+      swal("Error", "An unexpected error occurred. Please try again.", "error");
     }
   };
 
@@ -122,7 +132,7 @@ const DepartmentMaster = () => {
           {showSearch && (
             <input
               type="text"
-              placeholder="Search District"
+              placeholder="Search Department"
               value={searchTerm}
               onChange={handleSearch}
               className="px-3 py-2 border rounded-md focus:outline-none focus:border-blue-500 w-full sm:w-auto"
@@ -146,7 +156,6 @@ const DepartmentMaster = () => {
             <FaSyncAlt />
           </button>
         </div>
-
       </div>
 
       {/* Add/Update Department Form */}
@@ -192,7 +201,6 @@ const DepartmentMaster = () => {
                 <th className="px-4 py-2 hover:text-black cursor-pointer">Department Name</th>
                 <th className="px-4 py-2 hover:text-black cursor-pointer">Status</th>
                 <th className="px-4 py-2 hover:text-black cursor-pointer">Actions</th>
-
               </tr>
             </thead>
 
@@ -209,28 +217,29 @@ const DepartmentMaster = () => {
                       {department.status === "Active" ? "Active" : "Inactive"}
                     </span>
                   </td>
-                  <td className="px-4 py-2 flex space-x-2">
-                    {department.status === "Active" ? (
-                      <FaCheck
-                        className="text-blue-500 cursor-pointer"
+                  <td className="px-4 py-2">
+                    <div className="flex items-center space-x-2">
+                      <button
+                        onClick={() => handleEditDepartment(department.id)}
+                        className="text-blue-500 hover:text-blue-700"
+                      >
+                        <FaEdit />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteDepartment(department.id)}
+                        className="text-red-500 hover:text-red-700"
+                      >
+                        <FaTrash />
+                      </button>
+                      <button
                         onClick={() => handleToggleStatus(department.id, department.status)}
-                      />
-                    ) : (
-                      <FaTimes
-                        className="text-blue-500 cursor-pointer"
-                        onClick={() => handleToggleStatus(department.id, department.status)}
-                      />
-                    )}
-                    <FaEdit
-                      className="text-blue-500 cursor-pointer"
-                      onClick={() => handleEditDepartment(department.id)}
-                    />
-                    <FaTrash
-                      className="text-blue-500 cursor-pointer"
-                      onClick={() => handleDeleteDepartment(department.id)}
-                    />
+                        className={`hover:text-${department.status === "Active" ? "red" : "green"
+                          }-700`}
+                      >
+                        {department.status === "Active" ? <FaTimes /> : <FaCheck />}
+                      </button>
+                    </div>
                   </td>
-                  <td className="px-4 py-2">{/* Example column content */}</td>
                 </tr>
               ))}
             </tbody>

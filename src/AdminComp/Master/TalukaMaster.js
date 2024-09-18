@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
+import Swal from "sweetalert2";
 import { FaSearch, FaSyncAlt, FaEdit, FaTrash, FaCheck, FaTimes } from "react-icons/fa";
 
 const TalukaMaster = () => {
@@ -31,7 +32,7 @@ const TalukaMaster = () => {
   // Add or Update Taluka
   const handleAddOrUpdateTaluka = async () => {
     if (!formState.stateName || !formState.district || !formState.talukaName) {
-      alert("All fields are required!");
+      Swal.fire("Error", "All fields are required!", "error");
       return;
     }
 
@@ -40,10 +41,10 @@ const TalukaMaster = () => {
 
       if (isEditing) {
         response = await axios.put(`http://localhost:8080/api/talukas/${isEditing}`, formState);
-        alert("Taluka updated successfully!");
+        Swal.fire("Success", "Taluka updated successfully!", "success");
       } else {
         response = await axios.post("http://localhost:8080/api/talukas", formState);
-        alert("Taluka added successfully!");
+        Swal.fire("Success", "Taluka added successfully!", "success");
       }
 
       if (response.status === 200 || response.status === 201) {
@@ -73,11 +74,21 @@ const TalukaMaster = () => {
 
   // Delete Taluka
   const handleDeleteTaluka = async (id) => {
-    if (window.confirm("Are you sure you want to delete this taluka?")) {
+    const result = await Swal.fire({
+      title: "Are you sure?",
+      text: "You won't be able to recover this taluka!",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#3085d6",
+      cancelButtonColor: "#d33",
+      confirmButtonText: "Yes, delete it!",
+    });
+
+    if (result.isConfirmed) {
       try {
         await axios.delete(`http://localhost:8080/api/talukas/${id}`);
         setTalukas(talukas.filter((t) => t.id !== id));
-        alert("Taluka deleted successfully!");
+        Swal.fire("Deleted!", "Taluka has been deleted.", "success");
       } catch (error) {
         handleError(error);
       }
@@ -90,7 +101,7 @@ const TalukaMaster = () => {
     try {
       await axios.put(`http://localhost:8080/api/talukas/${id}/status`, { status: newStatus });
       fetchTalukas();
-      alert(`Taluka status updated to ${newStatus} successfully!`);
+      Swal.fire("Success", `Taluka status updated to ${newStatus} successfully!`, "success");
     } catch (error) {
       handleError(error);
     }
@@ -117,11 +128,11 @@ const TalukaMaster = () => {
   const handleError = (error) => {
     console.error("Error:", error);
     if (error.response) {
-      alert(`Error: ${error.response.status} - ${error.response.data.message || "An error occurred."}`);
+      Swal.fire("Error", `Error: ${error.response.status} - ${error.response.data.message || "An error occurred."}`, "error");
     } else if (error.request) {
-      alert("No response received from the server. Please try again.");
+      Swal.fire("Error", "No response received from the server. Please try again.", "error");
     } else {
-      alert("An unexpected error occurred. Please try again.");
+      Swal.fire("Error", "An unexpected error occurred. Please try again.", "error");
     }
   };
 
@@ -129,7 +140,7 @@ const TalukaMaster = () => {
     <div className="container mx-auto p-4">
       {/* Header Section */}
       <div className="flex flex-col md:flex-row md:justify-between items-start md:items-center mb-6">
-      <div className="relative overflow-hidden whitespace-nowrap">
+        <div className="relative overflow-hidden whitespace-nowrap">
           <marquee className="text-2xl sm:text-3xl font-bold">
             <span className="mx-2">Taluka</span>
             <span className="mx-2">Master</span>
@@ -139,7 +150,7 @@ const TalukaMaster = () => {
           {showSearch && (
             <input
               type="text"
-              placeholder="Search Sub-Branch"
+              placeholder="Search Taluka"
               value={searchTerm}
               onChange={handleSearch}
               className="px-3 py-2 border rounded-md focus:outline-none focus:border-blue-500 w-full sm:w-auto"
@@ -218,51 +229,54 @@ const TalukaMaster = () => {
         </div>
       </div>
 
-      {/* Taluka List Table */}
-      <div className="bg-white rounded-lg shadow-md mb-6">
-        <div className="px-6 py-4">
-          <table className="w-full bg-white rounded-lg shadow-md mb-6">
+      {/* Taluka Table */}
+      <div className="bg-white rounded-lg shadow-md">
+        <div className="bg-blue-500 text-white px-6 py-3 rounded-t-lg">
+          <h3 className="text-lg sm:text-xl font-semibold">Taluka List</h3>
+        </div>
+        <div className="p-6">
+          <table className="min-w-full bg-white border border-gray-300">
             <thead>
-              <tr className="bg-blue-500 text-white">
-                <th className="px-4 py-2 hover:text-black cursor-pointer">Sr No</th>
-                <th className="px-4 py-2 hover:text-black cursor-pointer">State</th>
-                <th className="px-4 py-2 hover:text-black cursor-pointer">District</th>
-                <th className="px-4 py-2 hover:text-black cursor-pointer">Taluka</th>
-                <th className="px-4 py-2 hover:text-black cursor-pointer">Status</th>
-                <th className="px-4 py-2 hover:text-black cursor-pointer">Actions</th>
+              <tr>
+                <th className="px-4 py-2 border-b">State</th>
+                <th className="px-4 py-2 border-b">District</th>
+                <th className="px-4 py-2 border-b">Taluka Name</th>
+                <th className="px-4 py-2 border-b">Status</th>
+                <th className="px-4 py-2 border-b">Actions</th>
               </tr>
             </thead>
             <tbody>
               {filteredTalukas.map((taluka) => (
-                <tr key={taluka.id} className="border-b">
-                  <td className="px-4 py-2">{taluka.id}</td>
-                  <td className="px-4 py-2">{taluka.stateName}</td>
-                  <td className="px-4 py-2">{taluka.district}</td>
-                  <td className="px-4 py-2">{taluka.talukaName}</td>
-                  <td className="px-4 py-2">
+                <tr key={taluka.id}>
+                  <td className="px-4 py-2 border-b">{taluka.stateName}</td>
+                  <td className="px-4 py-2 border-b">{taluka.district}</td>
+                  <td className="px-4 py-2 border-b">{taluka.talukaName}</td>
+                  <td className="px-4 py-2 border-b">
                     <span
-                      className={`font-semibold ${taluka.status === "Active" ? "text-green-600" : "text-red-600"
-                        }`}
+                      onClick={() => handleToggleStatus(taluka.id, taluka.status)}
+                      className={`cursor-pointer ${
+                        taluka.status === "Active" ? "text-green-500" : "text-red-500"
+                      }`}
+                      title="Toggle Status"
                     >
                       {taluka.status}
                     </span>
                   </td>
-                  <td className="px-4 py-2 flex space-x-2">
-
-                  <button onClick={() => handleToggleStatus(taluka.id, taluka.status)} title="Toggle Status">
-                      {taluka.status === "Active" ? (
-                        <FaTimes className="text-blue-500 hover:text-red-700" />
-                      ) : (
-                        <FaCheck className="text-blue-500 hover:text-green-700" />
-                      )}
+                  <td className="px-4 py-2 border-b flex items-center space-x-2">
+                    <button
+                      onClick={() => handleEditTaluka(taluka.id)}
+                      className="p-2 bg-green-500 text-white rounded-md transition-transform transform hover:scale-110"
+                      title="Edit"
+                    >
+                      <FaEdit />
                     </button>
-                    <button onClick={() => handleEditTaluka(taluka.id)} title="Edit">
-                      <FaEdit className="text-blue-500 hover:text-blue-700" />
+                    <button
+                      onClick={() => handleDeleteTaluka(taluka.id)}
+                      className="p-2 bg-red-500 text-white rounded-md transition-transform transform hover:scale-110"
+                      title="Delete"
+                    >
+                      <FaTrash />
                     </button>
-                    <button onClick={() => handleDeleteTaluka(taluka.id)} title="Delete">
-                      <FaTrash className="text-blue-500 hover:text-red-700" />
-                    </button>
-                   
                   </td>
                 </tr>
               ))}
