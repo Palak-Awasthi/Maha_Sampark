@@ -1,42 +1,48 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import swal from "sweetalert"; // Importing SweetAlert
 import { FaSearch, FaSyncAlt, FaEdit, FaTrash, FaCheck, FaTimes } from "react-icons/fa";
+import { toast } from "react-toastify";
 
 const DistrictMaster = () => {
   const [districts, setDistricts] = useState([]);
-  const [formState, setFormState] = useState({ state: "", district: "" });
+  const [formState, setFormState] = useState({ stateName: "", districtName: "", status: "Active" });
   const [isEditing, setIsEditing] = useState(null);
   const [showSearch, setShowSearch] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     fetchDistricts();
   }, []);
 
   const fetchDistricts = async () => {
+    setLoading(true);
     try {
       const response = await axios.get("http://localhost:8080/api/districts");
       setDistricts(response.data);
     } catch (error) {
       handleError(error);
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleAddOrUpdateDistrict = async () => {
-    if (!formState.state || !formState.district) {
-      swal("Error", "Both state and district fields are required!", "error");
+    if (!formState.stateName || !formState.districtName) {
+      toast.error("Both State Name and District Name fields are required!");
       return;
     }
 
+    setLoading(true);
     try {
       let response;
+
       if (isEditing) {
         response = await axios.put(`http://localhost:8080/api/districts/${isEditing}`, formState);
-        swal("Success", "District updated successfully!", "success");
+        toast.success("District updated successfully!");
       } else {
         response = await axios.post("http://localhost:8080/api/districts", formState);
-        swal("Success", "District added successfully!", "success");
+        toast.success("District added successfully!");
       }
 
       if (response.status === 200 || response.status === 201) {
@@ -45,6 +51,8 @@ const DistrictMaster = () => {
       }
     } catch (error) {
       handleError(error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -55,41 +63,36 @@ const DistrictMaster = () => {
 
   const handleEditDistrict = (id) => {
     const district = districts.find((d) => d.id === id);
-    setFormState({
-      state: district.state,
-      district: district.district,
-    });
+    setFormState({ stateName: district.stateName, districtName: district.districtName, status: district.status });
     setIsEditing(id);
   };
 
   const handleDeleteDistrict = async (id) => {
-    swal({
-      title: "Are you sure?",
-      text: "Once deleted, you will not be able to recover this district!",
-      icon: "warning",
-      buttons: true,
-      dangerMode: true,
-    }).then(async (willDelete) => {
-      if (willDelete) {
-        try {
-          await axios.delete(`http://localhost:8080/api/districts/${id}`);
-          setDistricts(districts.filter((d) => d.id !== id));
-          swal("Success", "District deleted successfully!", "success");
-        } catch (error) {
-          handleError(error);
-        }
+    if (window.confirm("Are you sure you want to delete this district?")) {
+      setLoading(true);
+      try {
+        await axios.delete(`http://localhost:8080/api/districts/${id}`);
+        setDistricts(districts.filter((d) => d.id !== id));
+        toast.success("District deleted successfully!");
+      } catch (error) {
+        handleError(error);
+      } finally {
+        setLoading(false);
       }
-    });
+    }
   };
 
   const handleToggleStatus = async (id, currentStatus) => {
     const newStatus = currentStatus === "Active" ? "Inactive" : "Active";
+    setLoading(true);
     try {
       await axios.put(`http://localhost:8080/api/districts/${id}/status`, { status: newStatus });
       fetchDistricts();
-      swal("Success", `District status updated to ${newStatus} successfully!`, "success");
+      toast.success(`District status updated to ${newStatus} successfully!`);
     } catch (error) {
       handleError(error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -98,34 +101,31 @@ const DistrictMaster = () => {
   };
 
   const filteredDistricts = districts.filter((d) =>
-    d.district?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false
+    d.districtName?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false
   );
 
   const resetForm = () => {
-    setFormState({ state: "", district: "" });
+    setFormState({ stateName: "", districtName: "", status: "Active" });
     setIsEditing(null);
   };
 
   const handleError = (error) => {
     console.error("Error:", error);
     if (error.response) {
-      swal("Error", `${error.response.status} - ${error.response.data.message || "An error occurred."}`, "error");
+      toast.error(`Error: ${error.response.status} - ${error.response.data.message || "An error occurred."}`);
     } else if (error.request) {
-      swal("Error", "No response received from the server. Please try again.", "error");
+      toast.error("No response received from the server. Please try again.");
     } else {
-      swal("Error", "An unexpected error occurred. Please try again.", "error");
+      toast.error("An unexpected error occurred. Please try again.");
     }
   };
 
   return (
     <div className="container mx-auto p-4">
       {/* Header Section */}
-      <div className="flex flex-col md:flex-row md:justify-between items-start md:items-center mb-6">
+      <div className="flex justify-between items-center mb-6">
         <div className="relative overflow-hidden whitespace-nowrap">
-          <marquee className="text-2xl sm:text-3xl font-bold">
-            <span className="mx-2">District</span>
-            <span className="mx-2">Master</span>
-          </marquee>
+          <marquee className="text-2xl font-bold">District Master</marquee>
         </div>
         <div className="flex flex-col md:flex-row md:items-center space-y-2 md:space-y-0 md:space-x-2">
           {showSearch && (
@@ -167,31 +167,34 @@ const DistrictMaster = () => {
         <div className="p-6">
           <form onSubmit={handleSubmit}>
             <div className="grid grid-cols-1 gap-2">
-              <div className="flex flex-col">
-                <label className="mb-1 font-medium">State</label>
-                <input
-                  type="text"
-                  value={formState.state}
-                  onChange={(e) => setFormState({ ...formState, state: e.target.value })}
-                  className="p-2 border rounded hover:scale-105 transition duration-300 w-1/2"
-                  required
-                />
-              </div>
-              <div className="flex flex-col">
-                <label className="mb-1 font-medium">District</label>
-                <input
-                  type="text"
-                  value={formState.district}
-                  onChange={(e) => setFormState({ ...formState, district: e.target.value })}
-                  className="p-2 border rounded hover:scale-105 transition duration-300 w-1/2"
-                  required
-                />
+              <div className="flex flex-col md:flex-row md:space-x-4">
+                <div className="flex flex-col w-full">
+                  <label className="mb-1 font-medium">State Name</label>
+                  <input
+                    type="text"
+                    value={formState.stateName}
+                    onChange={(e) => setFormState({ ...formState, stateName: e.target.value })}
+                    className="p-2 border rounded hover:scale-105 transition duration-300 w-full"
+                    required
+                  />
+                </div>
+                <div className="flex flex-col w-full">
+                  <label className="mb-1 font-medium">District Name</label>
+                  <input
+                    type="text"
+                    value={formState.districtName}
+                    onChange={(e) => setFormState({ ...formState, districtName: e.target.value })}
+                    className="p-2 border rounded hover:scale-105 transition duration-300 w-full"
+                    required
+                  />
+                </div>
               </div>
             </div>
-            <div className="flex justify-end mt-4">
+            <div className="flex justify-center mt-4">
               <button
                 type="submit"
                 className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition duration-300"
+                disabled={loading} // Disable button while loading
               >
                 {isEditing ? "Update" : "Submit"}
               </button>
@@ -200,50 +203,44 @@ const DistrictMaster = () => {
         </div>
       </div>
 
+     
+
       {/* District List Table */}
-      <div className="bg-white rounded-lg shadow-md mb-6">
+      <div className="bg-white rounded-lg shadow-md mb-6 overflow-x-auto">
         <div className="px-6 py-4">
-          <table className="w-full bg-white rounded-lg shadow-md mb-6">
+          <table className="w-full bg-white rounded-lg shadow-md">
             <thead>
               <tr className="bg-blue-500 text-white">
-                <th className="px-4 py-2 hover:text-black cursor-pointer">ID</th>
-                <th className="px-4 py-2 hover:text-black cursor-pointer">State</th>
-                <th className="px-4 py-2 hover:text-black cursor-pointer">District</th>
-                <th className="px-4 py-2 hover:text-black cursor-pointer">Status</th>
-                <th className="px-4 py-2 hover:text-black cursor-pointer">Actions</th>
+                <th className="px-6 py-3 text-center  hover:text-black cursor-pointer">Sr No</th>
+                <th className="px-6 py-3 text-center  hover:text-black cursor-pointer">State Name</th>
+                <th className="px-6 py-3 text-center  hover:text-black cursor-pointer">District Name</th>
+                <th className="px-6 py-3 text-center  hover:text-black cursor-pointer">Status</th>
+                <th className="px-6 py-3 text-center  hover:text-black cursor-pointer">Actions</th>
               </tr>
             </thead>
             <tbody>
-              {filteredDistricts.map((district) => (
-                <tr key={district.id}>
-                  <td className="px-4 py-2">{district.id}</td>
-                  <td className="px-4 py-2">{district.state}</td>
-                  <td className="px-4 py-2">{district.district}</td>
-                  <td className="px-4 py-2">{district.status}</td>
-                  <td className="px-4 py-2">
-                    <button
-                      onClick={() => handleEditDistrict(district.id)}
-                      className="p-2 bg-yellow-500 text-white rounded-md mr-2"
-                      title="Edit"
-                    >
-                      <FaEdit />
-                    </button>
-                    <button
-                      onClick={() => handleDeleteDistrict(district.id)}
-                      className="p-2 bg-red-500 text-white rounded-md mr-2"
-                      title="Delete"
-                    >
-                      <FaTrash />
-                    </button>
-                    <button
-                      onClick={() => handleToggleStatus(district.id, district.status)}
-                      className={`p-2 text-white rounded-md mr-2 ${
-                        district.status === "Active" ? "bg-green-500" : "bg-gray-500"
-                      }`}
-                      title={district.status === "Active" ? "Deactivate" : "Activate"}
-                    >
-                      {district.status === "Active" ? <FaTimes /> : <FaCheck />}
-                    </button>
+              {filteredDistricts.map((district, index) => (
+                <tr key={district.id} className="border-b">
+                  <td className="px-6 py-3 text-center">{index + 1}</td>
+                  <td className="px-6 py-3 text-center">{district.stateName}</td>
+                  <td className="px-6 py-3 text-center">{district.districtName}</td>
+                  <td className="px-6 py-3 text-center">
+                    <span className={`font-bold ${district.status === "Active" ? "text-green-500" : "text-red-500"}`}>
+                      {district.status}
+                    </span>
+                  </td>
+                  <td className="px-6 py-3 text-center">
+                    <div className="flex justify-center space-x-4">
+                      <span onClick={() => handleEditDistrict(district.id)} className="cursor-pointer text-blue-500" title="Edit">
+                        <FaEdit />
+                      </span>
+                      <span onClick={() => handleToggleStatus(district.id, district.status)} className="cursor-pointer" title="Toggle Status">
+                        {district.status === "Active" ? <FaTimes className="text-red-500" /> : <FaCheck className="text-green-500" />}
+                      </span>
+                      <span onClick={() => handleDeleteDistrict(district.id)} className="cursor-pointer text-red-500" title="Delete">
+                        <FaTrash />
+                      </span>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -256,3 +253,4 @@ const DistrictMaster = () => {
 };
 
 export default DistrictMaster;
+ 
