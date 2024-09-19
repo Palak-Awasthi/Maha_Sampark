@@ -1,75 +1,99 @@
 import React, { useState, useEffect } from "react";
-import { FaCheck, FaTimes, FaSyncAlt, FaSearch, FaEdit, FaTrash } from "react-icons/fa";
 import axios from "axios";
+import { FaSearch, FaSyncAlt, FaEdit, FaTrash, FaCheck, FaTimes } from "react-icons/fa";
+import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const MainDepartmentMaster = () => {
   const [mainDepartments, setMainDepartments] = useState([]);
-  const [formState, setFormState] = useState({ mainDept: "", id: null, status: false });
+  const [formState, setFormState] = useState({ mainDepartmentName: "" });
+  const [isEditing, setIsEditing] = useState(null);
   const [showSearch, setShowSearch] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    const fetchDepartments = async () => {
-      try {
-        const response = await axios.get("http://localhost:8080/api/mainDepartments/all");
-        setMainDepartments(response.data);
-      } catch (error) {
-        console.error("Error fetching departments", error);
-      }
-    };
-    fetchDepartments();
+    fetchMainDepartments();
   }, []);
 
-  const handleAddMainDepartment = async () => {
-    if (!formState.mainDept.trim()) { // Ensure that it's not empty
-      console.error("Main department is required");
+  const fetchMainDepartments = async () => {
+    setLoading(true);
+    try {
+      const response = await axios.get("http://localhost:8080/api/main-departments");
+      setMainDepartments(response.data);
+    } catch (error) {
+      handleError(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAddOrUpdateMainDepartment = async () => {
+    if (!formState.mainDepartmentName) {
+      toast.error("Main Department Name field is required!");
       return;
     }
-  
-    try {
-      const response = formState.id 
-        ? await axios.put(`http://localhost:8080/api/mainDepartments/${formState.id}`, {
-            mainDept: formState.mainDept,
-            status: formState.status,
-          })
-        : await axios.post("http://localhost:8080/api/mainDepartments/save", {
-            mainDept: formState.mainDept,
-            status: formState.status,
-          });
-  
-      const updatedDepartments = formState.id 
-        ? mainDepartments.map((dept) => (dept.id === response.data.id ? response.data : dept)) 
-        : [...mainDepartments, response.data];
-  
-      setMainDepartments(updatedDepartments);
-      setFormState({ mainDept: "", id: null, status: false });
-    } catch (error) {
-      console.error("Error adding/updating department", error);
-    }
-  };
-  
 
-  const handleEdit = (id) => {
-    const dept = mainDepartments.find((d) => d.id === id);
-    setFormState({ mainDept: dept.mainDept, id: dept.id, status: dept.status });
-  };
-
-  const handleDelete = async (id) => {
+    setLoading(true);
     try {
-      await axios.delete(`http://localhost:8080/api/mainDepartments/delete/${id}`);
-      setMainDepartments(mainDepartments.filter((dept) => dept.id !== id));
+      let response;
+
+      if (isEditing) {
+        response = await axios.put(`http://localhost:8080/api/main-departments/${isEditing}`, formState);
+        toast.success("Main Department updated successfully!");
+      } else {
+        response = await axios.post("http://localhost:8080/api/main-departments", formState);
+        toast.success("Main Department added successfully!");
+      }
+
+      if (response.status === 200 || response.status === 201) {
+        fetchMainDepartments();
+        resetForm();
+      }
     } catch (error) {
-      console.error("Error deleting department", error);
+      handleError(error);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const toggleStatus = async (id) => {
-    const dept = mainDepartments.find((d) => d.id === id);
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    handleAddOrUpdateMainDepartment();
+  };
+
+  const handleEditMainDepartment = (id) => {
+    const department = mainDepartments.find((d) => d.id === id);
+    setFormState({ mainDepartmentName: department.mainDepartmentName });
+    setIsEditing(id);
+  };
+
+  const handleDeleteMainDepartment = async (id) => {
+    if (window.confirm("Are you sure you want to delete this main department?")) {
+      setLoading(true);
+      try {
+        await axios.delete(`http://localhost:8080/api/main-departments/${id}`);
+        setMainDepartments(mainDepartments.filter((d) => d.id !== id));
+        toast.success("Main Department deleted successfully!");
+      } catch (error) {
+        handleError(error);
+      } finally {
+        setLoading(false);
+      }
+    }
+  };
+
+  const handleToggleStatus = async (id, currentStatus) => {
+    const newStatus = currentStatus === "Active" ? "Inactive" : "Active";
+    setLoading(true);
     try {
-      const response = await axios.put(`http://localhost:8080/api/mainDepartments/toggle-status/${id}`);
-      setMainDepartments(mainDepartments.map((d) => (d.id === id ? response.data : d)));
+      await axios.put(`http://localhost:8080/api/main-departments/${id}/status`, { status: newStatus });
+      fetchMainDepartments();
+      toast.success(`Main Department status updated to ${newStatus} successfully!`);
     } catch (error) {
-      console.error("Error toggling status", error);
+      handleError(error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -77,9 +101,25 @@ const MainDepartmentMaster = () => {
     setSearchTerm(event.target.value);
   };
 
-  const filteredDepartments = mainDepartments.filter((dept) => 
-    dept.mainDept && dept.mainDept.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredMainDepartments = mainDepartments.filter((d) =>
+    d.mainDepartmentName?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false
   );
+
+  const resetForm = () => {
+    setFormState({ mainDepartmentName: "" });
+    setIsEditing(null);
+  };
+
+  const handleError = (error) => {
+    console.error("Error:", error);
+    if (error.response) {
+      toast.error(`Error: ${error.response.status} - ${error.response.data.message || "An error occurred."}`);
+    } else if (error.request) {
+      toast.error("No response received from the server. Please try again.");
+    } else {
+      toast.error("An unexpected error occurred. Please try again.");
+    }
+  };
 
   return (
     <div className="container mx-auto p-4">
@@ -92,7 +132,7 @@ const MainDepartmentMaster = () => {
           {showSearch && (
             <input
               type="text"
-              placeholder="Search Department"
+              placeholder="Search Main Department"
               value={searchTerm}
               onChange={handleSearch}
               className="px-3 py-2 border rounded-md focus:outline-none focus:border-blue-500 w-full sm:w-auto"
@@ -118,69 +158,100 @@ const MainDepartmentMaster = () => {
         </div>
       </div>
 
-      {/* Form Section */}
+      {/* Add/Update Main Department Form */}
       <div className="bg-white rounded-lg shadow-md mb-6">
         <div className="bg-blue-500 text-white px-6 py-3 rounded-t-lg">
-          <h3 className="text-xl font-semibold">Add Main Department</h3>
+          <h3 className="text-lg sm:text-xl font-semibold hover:text-black cursor-pointer">
+            {isEditing ? "Edit Main Department" : "Add Main Department"}
+          </h3>
         </div>
-
-        <div className="p-6 grid grid-cols-2 gap-4">
-          <div className="flex flex-col col-span-2">
-            <label className="mb-1 font-medium">Main Department</label>
-            <input
-              type="text"
-              placeholder="Main Department Name"
-              value={formState.mainDept}
-              onChange={(e) => setFormState({ ...formState, mainDept: e.target.value })}
-              className="w-full p-2 border rounded"
-            />
-          </div>
-          <div className="col-span-2 flex justify-center">
-            <button
-              onClick={handleAddMainDepartment}
-              className="bg-blue-500 text-white p-2 rounded w-32"
-            >
-              Submit
-            </button>
-          </div>
+        <div className="p-6">
+          <form onSubmit={handleSubmit}>
+            <div className="grid grid-cols-1 gap-2">
+              <div className="flex flex-col">
+                <label className="mb-1 font-medium">Main Department Name</label>
+                <input
+                  type="text"
+                  value={formState.mainDepartmentName}
+                  onChange={(e) => setFormState({ mainDepartmentName: e.target.value })}
+                  className="p-2 border rounded hover:scale-105 transition duration-300 w-full sm:w-1/2"
+                  required
+                />
+              </div>
+            </div>
+            <div className="flex justify-center mt-4">
+              <button
+                type="submit"
+                className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition duration-300"
+                disabled={loading} // Disable button while loading
+              >
+                {isEditing ? "Update" : "Submit"}
+              </button>
+            </div>
+          </form>
         </div>
       </div>
 
-      {/* Table Section */}
-      <table className="w-full bg-white rounded-lg shadow-md">
-        <thead>
-          <tr className="bg-blue-500 text-white">
-            <th className="p-4">Sr No</th>
-            <th className="p-4">Main Department</th>
-            <th className="p-4">Status</th>
-            <th className="p-4">Action</th>
-          </tr>
-        </thead>
-        <tbody>
-          {filteredDepartments.map((dept, index) => (
-            <tr key={dept.id} className="border-b">
-              <td className="p-4">{index + 1}</td>
-              <td className="p-4">{dept.mainDept}</td>
-              <td className="p-4">
-                <span className={`font-bold ${dept.status ? 'text-green-500' : 'text-red-500'}`}>
-                  {dept.status ? "Active" : "Inactive"}
-                </span>
-              </td>
-              <td className="p-4 space-x-2">
-                <button onClick={() => toggleStatus(dept.id)} className="text-blue-500">
-                  {dept.status ? <FaCheck /> : <FaTimes />}
-                </button>
-                <button onClick={() => handleEdit(dept.id)} className="text-blue-500">
-                  <FaEdit />
-                </button>
-                <button onClick={() => handleDelete(dept.id)} className="text-blue-500">
-                  <FaTrash />
-                </button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+    
+      {/* Main Department List Table */}
+      <div className="bg-white rounded-lg shadow-md mb-6 overflow-x-auto">
+        <div className="px-6 py-4">
+          <table className="w-full bg-white rounded-lg shadow-md">
+            <thead>
+              <tr className="bg-blue-500 text-white">
+                <th className="px-6 py-3 text-center  hover:text-black cursor-pointer">Sr No</th>
+                <th className="px-6 py-3 text-center  hover:text-black cursor-pointer">Main Department Name</th>
+                <th className="px-6 py-3 text-center  hover:text-black cursor-pointer">Status</th>
+                <th className="px-6 py-3 text-center  hover:text-black cursor-pointer">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredMainDepartments.map((department) => (
+                <tr key={department.id} className="border-b">
+                  <td className="px-6 py-3 text-center">{department.id}</td>
+                  <td className="px-6 py-3 text-center">{department.mainDepartmentName}</td>
+                  <td className="px-6 py-3 text-center">
+                    <span
+                      className={`font-bold ${department.status === "Active" ? "text-green-500" : "text-red-500"}`}
+                    >
+                      {department.status}
+                    </span>
+                  </td>
+                  <td className="px-6 py-3 text-center">
+                    <div className="flex justify-center space-x-2">
+                      <span
+                        onClick={() => handleToggleStatus(department.id, department.status)}
+                        className="cursor-pointer"
+                        title={`Mark as ${department.status === "Active" ? "Inactive" : "Active"}`}
+                      >
+                        {department.status === "Active" ? (
+                          <FaTimes className="text-red-500" />
+                        ) : (
+                          <FaCheck className="text-green-500" />
+                        )}
+                      </span>
+                      <span
+                        onClick={() => handleEditMainDepartment(department.id)}
+                        className="cursor-pointer text-blue-500"
+                        title="Edit"
+                      >
+                        <FaEdit />
+                      </span>
+                      <span
+                        onClick={() => handleDeleteMainDepartment(department.id)}
+                        className="cursor-pointer text-red-500"
+                        title="Delete"
+                      >
+                        <FaTrash />
+                      </span>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   );
 };

@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { FaSearch, FaSyncAlt, FaEdit, FaTrash, FaCheck, FaTimes } from "react-icons/fa";
-import Swal from 'sweetalert2';
 
-const StaffMaster = () => {
+const StaffDesignationMaster = () => {
   const [staffMembers, setStaffMembers] = useState([]);
   const [formState, setFormState] = useState({ designation: "" });
   const [isEditing, setIsEditing] = useState(null);
@@ -25,11 +24,7 @@ const StaffMaster = () => {
 
   const handleAddOrUpdateStaff = async () => {
     if (!formState.designation) {
-      Swal.fire({
-        icon: 'warning',
-        title: 'Validation Error',
-        text: 'Designation field is required!',
-      });
+      alert("Designation field is required!");
       return;
     }
 
@@ -38,18 +33,10 @@ const StaffMaster = () => {
 
       if (isEditing) {
         response = await axios.put(`http://localhost:8080/api/staff/${isEditing}`, formState);
-        Swal.fire({
-          icon: 'success',
-          title: 'Success',
-          text: 'Staff member updated successfully!',
-        });
+        alert("Staff member updated successfully!");
       } else {
         response = await axios.post("http://localhost:8080/api/staff", formState);
-        Swal.fire({
-          icon: 'success',
-          title: 'Success',
-          text: 'Staff member added successfully!',
-        });
+        alert("Staff member added successfully!");
       }
 
       if (response.status === 200 || response.status === 201) {
@@ -75,21 +62,11 @@ const StaffMaster = () => {
   };
 
   const handleDeleteStaff = async (id) => {
-    const result = await Swal.fire({
-      title: 'Are you sure?',
-      text: 'You will not be able to recover this staff member!',
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonColor: '#3085d6',
-      cancelButtonColor: '#d33',
-      confirmButtonText: 'Yes, delete it!',
-    });
-
-    if (result.isConfirmed) {
+    if (window.confirm("Are you sure you want to delete this staff member?")) {
       try {
         await axios.delete(`http://localhost:8080/api/staff/${id}`);
         setStaffMembers(staffMembers.filter((s) => s.id !== id));
-        Swal.fire('Deleted!', 'Staff member has been deleted.', 'success');
+        alert("Staff member deleted successfully!");
       } catch (error) {
         handleError(error);
       }
@@ -101,7 +78,7 @@ const StaffMaster = () => {
     try {
       await axios.put(`http://localhost:8080/api/staff/${id}/status`, { status: newStatus });
       fetchStaffMembers();
-      Swal.fire('Success', `Staff member status updated to ${newStatus} successfully!`, 'success');
+      alert(`Staff member status updated to ${newStatus} successfully!`);
     } catch (error) {
       handleError(error);
     }
@@ -123,23 +100,11 @@ const StaffMaster = () => {
   const handleError = (error) => {
     console.error("Error:", error);
     if (error.response) {
-      Swal.fire({
-        icon: 'error',
-        title: 'Error',
-        text: `Error: ${error.response.status} - ${error.response.data.message || "An error occurred."}`,
-      });
+      alert(`Error: ${error.response.status} - ${error.response.data.message || "An error occurred."}`);
     } else if (error.request) {
-      Swal.fire({
-        icon: 'error',
-        title: 'Error',
-        text: 'No response received from the server. Please try again.',
-      });
+      alert("No response received from the server. Please try again.");
     } else {
-      Swal.fire({
-        icon: 'error',
-        title: 'Error',
-        text: 'An unexpected error occurred. Please try again.',
-      });
+      alert("An unexpected error occurred. Please try again.");
     }
   };
 
@@ -182,6 +147,7 @@ const StaffMaster = () => {
             <FaSyncAlt />
           </button>
         </div>
+
       </div>
 
       {/* Add/Update Staff Form */}
@@ -227,6 +193,7 @@ const StaffMaster = () => {
                 <th className="px-4 py-2 hover:text-black cursor-pointer">Designation</th>
                 <th className="px-4 py-2 hover:text-black cursor-pointer">Status</th>
                 <th className="px-4 py-2 hover:text-black cursor-pointer">Actions</th>
+            
               </tr>
             </thead>
 
@@ -264,6 +231,7 @@ const StaffMaster = () => {
                       onClick={() => handleDeleteStaff(staff.id)}
                     />
                   </td>
+    
                 </tr>
               ))}
             </tbody>
@@ -274,4 +242,4 @@ const StaffMaster = () => {
   );
 };
 
-export default StaffMaster;
+export default StaffDesignationMaster;

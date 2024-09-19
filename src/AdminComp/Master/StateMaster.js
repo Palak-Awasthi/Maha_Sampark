@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { FaSearch, FaSyncAlt, FaEdit, FaTrash, FaCheck, FaTimes } from "react-icons/fa";
-import Swal from 'sweetalert2';
 
 const StateMaster = () => {
   const [states, setStates] = useState([]);
@@ -9,6 +8,7 @@ const StateMaster = () => {
   const [isEditing, setIsEditing] = useState(null);
   const [showSearch, setShowSearch] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     fetchStates();
@@ -25,13 +25,11 @@ const StateMaster = () => {
 
   const handleAddOrUpdateState = async () => {
     if (!formState.stateName) {
-      Swal.fire({
-        icon: 'warning',
-        title: 'Validation Error',
-        text: 'State name is required!',
-      });
+      alert("State name is required!");
       return;
     }
+
+    setLoading(true);
 
     try {
       let response;
@@ -41,21 +39,13 @@ const StateMaster = () => {
           ...formState,
           status: "Inactive"
         });
-        Swal.fire({
-          icon: 'success',
-          title: 'Success',
-          text: 'State updated successfully!',
-        });
+        alert("State updated successfully!");
       } else {
         response = await axios.post("http://localhost:8080/api/states", {
           ...formState,
           status: "Inactive"
         });
-        Swal.fire({
-          icon: 'success',
-          title: 'Success',
-          text: 'State added successfully!',
-        });
+        alert("State added successfully!");
       }
 
       if (response.status === 200 || response.status === 201) {
@@ -64,6 +54,8 @@ const StateMaster = () => {
       }
     } catch (error) {
       handleError(error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -79,21 +71,11 @@ const StateMaster = () => {
   };
 
   const handleDeleteState = async (id) => {
-    const result = await Swal.fire({
-      title: 'Are you sure?',
-      text: 'You will not be able to recover this state!',
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonColor: '#3085d6',
-      cancelButtonColor: '#d33',
-      confirmButtonText: 'Yes, delete it!',
-    });
-
-    if (result.isConfirmed) {
+    if (window.confirm("Are you sure you want to delete this state?")) {
       try {
         await axios.delete(`http://localhost:8080/api/states/${id}`);
         setStates(states.filter((st) => st.id !== id));
-        Swal.fire('Deleted!', 'State has been deleted.', 'success');
+        alert("State deleted successfully!");
       } catch (error) {
         handleError(error);
       }
@@ -105,7 +87,7 @@ const StateMaster = () => {
     try {
       await axios.put(`http://localhost:8080/api/states/${id}/status`, { status: newStatus });
       fetchStates();
-      Swal.fire('Success', `State status updated to ${newStatus} successfully!`, 'success');
+      alert(`State status updated to ${newStatus} successfully!`);
     } catch (error) {
       handleError(error);
     }
@@ -127,35 +109,20 @@ const StateMaster = () => {
   const handleError = (error) => {
     console.error("Error:", error);
     if (error.response) {
-      Swal.fire({
-        icon: 'error',
-        title: 'Error',
-        text: `Error: ${error.response.status} - ${error.response.data.message || "An error occurred."}`,
-      });
+      alert(`Error: ${error.response.status} - ${error.response.data.message || "An error occurred."}`);
     } else if (error.request) {
-      Swal.fire({
-        icon: 'error',
-        title: 'Error',
-        text: 'No response received from the server. Please try again.',
-      });
+      alert("No response received from the server. Please try again.");
     } else {
-      Swal.fire({
-        icon: 'error',
-        title: 'Error',
-        text: 'An unexpected error occurred. Please try again.',
-      });
+      alert("An unexpected error occurred. Please try again.");
     }
   };
 
   return (
     <div className="container mx-auto p-4">
       {/* Header Section */}
-      <div className="flex flex-col md:flex-row md:justify-between items-start md:items-center mb-6">
+      <div className="flex flex-col md:flex-row justify-between items-center mb-6">
         <div className="relative overflow-hidden whitespace-nowrap">
-          <marquee className="text-2xl sm:text-3xl font-bold">
-            <span className="mx-2">State</span>
-            <span className="mx-2">Master</span>
-          </marquee>
+          <marquee className="text-2xl font-bold">State Master</marquee>
         </div>
         <div className="flex flex-col md:flex-row md:items-center space-y-2 md:space-y-0 md:space-x-2">
           {showSearch && (
@@ -206,11 +173,11 @@ const StateMaster = () => {
                 required
               />
             </div>
-            <div className="flex justify-end">
+            <div className="flex justify-center mt-4">
               <button
                 type="submit"
-                className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition duration-300 
-               w-full sm:w-auto" // Makes the button full width on small screens and auto on larger screens
+                className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition duration-300"
+                disabled={loading}
               >
                 {isEditing ? "Update" : "Submit"}
               </button>
@@ -225,10 +192,10 @@ const StateMaster = () => {
           <table className="min-w-full bg-white rounded-lg shadow-md mb-6">
             <thead>
               <tr className="bg-blue-500 text-white">
-                <th className="px-4 py-2">ID</th>
-                <th className="px-4 py-2">State</th>
-                <th className="px-4 py-2">Status</th>
-                <th className="px-4 py-2">Actions</th>
+                <th className="px-4 py-2 hover:text-black cursor-pointer">Sr No</th>
+                <th className="px-4 py-2 hover:text-black cursor-pointer">State</th>
+                <th className="px-4 py-2 hover:text-black cursor-pointer">Status</th>
+                <th className="px-4 py-2 hover:text-black cursor-pointer">Actions</th>
               </tr>
             </thead>
             <tbody>

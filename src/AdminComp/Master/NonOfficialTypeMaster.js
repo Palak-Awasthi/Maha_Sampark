@@ -1,32 +1,37 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import Swal from "sweetalert2";
 import { FaSearch, FaSyncAlt, FaEdit, FaTrash, FaCheck, FaTimes } from "react-icons/fa";
+import { toast } from "react-toastify";
+import 'react-toastify/dist/ReactToastify.css'; // Import Toastify CSS
 
 const NonOfficialTypeMaster = () => {
   const [types, setTypes] = useState([]);
-  const [mainTypes, setMainTypes] = useState([]); // State for available main types
-  const [form, setForm] = useState({ mainType: "", subType: "", status: "Inactive" }); // Initialize mainType as empty string
+  const [mainTypes, setMainTypes] = useState([]);
+  const [form, setForm] = useState({ mainType: "", subType: "", status: "Inactive" });
   const [editingId, setEditingId] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [showSearch, setShowSearch] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     fetchTypes();
-    initializeMainTypes(); // Initialize the static main types
+    initializeMainTypes();
   }, []);
 
-  // Fetch Non-Official Types from the API
+  // Fetch Non-Official Types
   const fetchTypes = async () => {
+    setLoading(true);
     try {
-      const response = await axios.get("http://localhost:8080/api/nonOfficialTypes/all");
+      const response = await axios.get("http://localhost:8080/api/nonOfficialTypes");
       setTypes(response.data);
     } catch (error) {
       handleError(error);
+    } finally {
+      setLoading(false);
     }
   };
 
-  // Initialize static main types (AIS, RIS, FIS, ITC)
+  // Initialize static main types
   const initializeMainTypes = () => {
     const staticMainTypes = [
       { id: "ais", name: "AIS" },
@@ -37,96 +42,70 @@ const NonOfficialTypeMaster = () => {
     setMainTypes(staticMainTypes);
   };
 
-  // Handle form submission for adding/updating types
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!form.mainType || !form.subType) {
-      Swal.fire({
-        icon: 'error',
-        title: 'Validation Error',
-        text: 'Main Type and Sub-Type are required!',
-      });
+      toast.error("Main Type and Sub-Type are required!");
       return;
     }
 
+    setLoading(true);
     try {
-      const newForm = { ...form };
       if (editingId) {
-        await axios.put(`http://localhost:8080/api/nonOfficialTypes/${editingId}`, newForm);
-        Swal.fire('Updated!', 'Type updated successfully!', 'success');
+        await axios.put(`http://localhost:8080/api/nonOfficialTypes/${editingId}`, form);
+        toast.success("Type updated successfully!");
       } else {
-        await axios.post("http://localhost:8080/api/nonOfficialTypes/save", newForm);
-        Swal.fire('Added!', 'Type added successfully!', 'success');
+        await axios.post("http://localhost:8080/api/nonOfficialTypes", form);
+        toast.success("Type added successfully!");
       }
       fetchTypes();
       resetForm();
     } catch (error) {
       handleError(error);
+    } finally {
+      setLoading(false);
     }
   };
 
-  // Handle edit of a type
   const handleEdit = (id) => {
     const typeToEdit = types.find((type) => type.id === id);
     setForm({ mainType: typeToEdit.mainType, subType: typeToEdit.subType, status: typeToEdit.status });
     setEditingId(id);
   };
 
-  // Handle deletion of a type
   const handleDelete = async (id) => {
-    const result = await Swal.fire({
-      title: 'Are you sure?',
-      text: "You won't be able to revert this!",
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonColor: '#3085d6',
-      cancelButtonColor: '#d33',
-      confirmButtonText: 'Yes, delete it!',
-    });
-    if (result.isConfirmed) {
+    if (window.confirm("Are you sure you want to delete this type?")) {
+      setLoading(true);
       try {
-        await axios.delete(`http://localhost:8080/api/nonOfficialTypes/delete/${id}`);
+        await axios.delete(`http://localhost:8080/api/nonOfficialTypes/${id}`);
         fetchTypes();
-        Swal.fire('Deleted!', 'Type deleted successfully!', 'success');
+        toast.success("Type deleted successfully!");
       } catch (error) {
         handleError(error);
+      } finally {
+        setLoading(false);
       }
     }
   };
 
-  // Toggle status of a type
   const handleToggleStatus = async (id, currentStatus) => {
-    const result = await Swal.fire({
-      title: 'Are you sure?',
-      text: `Do you want to ${currentStatus === "Active" ? "deactivate" : "activate"} this type?`,
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonColor: '#3085d6',
-      cancelButtonColor: '#d33',
-      confirmButtonText: currentStatus === "Active" ? 'Yes, deactivate it!' : 'Yes, activate it!',
-    });
-    if (result.isConfirmed) {
-      try {
-        await axios.put(`http://localhost:8080/api/nonOfficialTypes/toggle-status/${id}`);
-        fetchTypes(); // Re-fetch to update the status
-        Swal.fire('Updated!', `Type status updated successfully!`, 'success');
-      } catch (error) {
-        handleError(error);
-      }
+    const newStatus = currentStatus === "Active" ? "Inactive" : "Active";
+    setLoading(true);
+    try {
+      await axios.put(`http://localhost:8080/api/nonOfficialTypes/${id}/status`, { status: newStatus });
+      fetchTypes();
+      toast.success(`Type status updated to ${newStatus} successfully!`);
+    } catch (error) {
+      handleError(error);
+    } finally {
+      setLoading(false);
     }
   };
 
-  // Handle search input change
   const handleSearch = (e) => {
     setSearchTerm(e.target.value);
   };
 
-  // Filter types based on the search term
-  const filteredTypes = types.filter((type) =>
-    type.mainType.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  // Reset form fields
   const resetForm = () => {
     setForm({ mainType: "", subType: "", status: "Inactive" });
     setEditingId(null);
@@ -135,34 +114,26 @@ const NonOfficialTypeMaster = () => {
   const handleError = (error) => {
     console.error("Error:", error);
     if (error.response) {
-      Swal.fire({
-        icon: 'error',
-        title: 'Error',
-        text: `Error: ${error.response.status} - ${error.response.data.message || "An error occurred."}`,
-      });
+      toast.error(`Error: ${error.response.status} - ${error.response.data.message || "An error occurred."}`);
     } else if (error.request) {
-      Swal.fire({
-        icon: 'error',
-        title: 'Error',
-        text: 'No response received from the server. Please try again.',
-      });
+      toast.error("No response received from the server. Please try again.");
     } else {
-      Swal.fire({
-        icon: 'error',
-        title: 'Error',
-        text: 'An unexpected error occurred. Please try again.',
-      });
+      toast.error("An unexpected error occurred. Please try again.");
     }
   };
 
+  // Filter types based on the search term
+  const filteredTypes = types.filter((type) =>
+    type.mainType.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   return (
     <div className="container mx-auto p-4">
-      <div className="flex flex-col md:flex-row md:justify-between items-start md:items-center mb-6">
-        <h2 className="text-2xl font-bold">
-          <marquee behavior="scroll" direction="left">
-            Non-Official Type Master
-          </marquee>
-        </h2>
+      {/* Header Section */}
+      <div className="flex justify-between items-center mb-6">
+        <div className="relative overflow-hidden whitespace-nowrap">
+          <marquee className="text-2xl font-bold">Non-Official Type Master</marquee>
+        </div>
         <div className="flex flex-col md:flex-row md:items-center space-y-2 md:space-y-0 md:space-x-2">
           {showSearch && (
             <input
@@ -196,20 +167,19 @@ const NonOfficialTypeMaster = () => {
       {/* Add/Update Type Form */}
       <div className="bg-white rounded-lg shadow-md mb-6">
         <div className="bg-blue-500 text-white px-6 py-3 rounded-t-lg">
-          <h3 className="text-lg sm:text-xl font-semibold">
+          <h3 className="text-lg sm:text-xl font-semibold hover:text-black cursor-pointer">
             {editingId ? "Edit Non-Official Type" : "Add Non-Official Type"}
           </h3>
         </div>
         <div className="p-6">
           <form onSubmit={handleSubmit}>
-            <div className="grid grid-cols-1 gap-2">
-              {/* Main Type Dropdown */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="flex flex-col">
                 <label className="mb-1 font-medium">Main Type</label>
                 <select
                   value={form.mainType}
                   onChange={(e) => setForm({ ...form, mainType: e.target.value })}
-                  className="p-2 border rounded hover:scale-105 transition duration-300 w-1/2"
+                  className="p-2 border rounded hover:scale-105 transition duration-300 w-full"
                   required
                 >
                   <option value="">Select Main Type</option>
@@ -222,95 +192,70 @@ const NonOfficialTypeMaster = () => {
               </div>
 
               <div className="flex flex-col">
-                <label className="mb-1 font-medium">Sub Type</label>
+                <label className="mb-1 font-medium">Sub-Type</label>
                 <input
                   type="text"
                   value={form.subType}
                   onChange={(e) => setForm({ ...form, subType: e.target.value })}
-                  className="p-2 border rounded hover:scale-105 transition duration-300"
+                  className="p-2 border rounded hover:scale-105 transition duration-300 w-full"
+                  placeholder="Enter Sub-Type"
                   required
                 />
               </div>
+            </div>
 
-              <div className="flex flex-col">
-                <label className="mb-1 font-medium">Status</label>
-                <select
-                  value={form.status}
-                  onChange={(e) => setForm({ ...form, status: e.target.value })}
-                  className="p-2 border rounded hover:scale-105 transition duration-300"
-                >
-                  <option value="Active">Active</option>
-                  <option value="Inactive">Inactive</option>
-                </select>
-              </div>
-
-              <div className="mt-4">
+    
+              <div className="flex justify-center mt-4">
                 <button
                   type="submit"
-                  className="p-2 bg-blue-500 text-white rounded-md transition-transform transform hover:scale-110"
+                  className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition duration-300"
+                  disabled={loading}
                 >
-                  {editingId ? "Update" : "Add"}
+                  {editingId ? "Update" : "Submit"}
                 </button>
-                {editingId && (
-                  <button
-                    type="button"
-                    onClick={resetForm}
-                    className="ml-2 p-2 bg-gray-500 text-white rounded-md transition-transform transform hover:scale-110"
-                  >
-                    Cancel
-                  </button>
-                )}
               </div>
-            </div>
+          
           </form>
         </div>
       </div>
 
-      {/* Non-Official Types Table */}
-      <div className="bg-white rounded-lg shadow-md">
-        <div className="bg-blue-500 text-white px-6 py-3 rounded-t-lg">
-          <h3 className="text-lg sm:text-xl font-semibold">Non-Official Types List</h3>
-        </div>
-        <div className="p-6">
-          <table className="w-full border-collapse border border-gray-200">
+   
+      {/* Non-Official Type Master Table */}
+      <div className="bg-white rounded-lg shadow-md mb-6 overflow-x-auto">
+        <div className="px-6 py-4">
+          <table className="w-full bg-white rounded-lg shadow-md">
             <thead>
-              <tr>
-                <th className="border border-gray-300 px-4 py-2">Main Type</th>
-                <th className="border border-gray-300 px-4 py-2">Sub Type</th>
-                <th className="border border-gray-300 px-4 py-2">Status</th>
-                <th className="border border-gray-300 px-4 py-2">Actions</th>
+              <tr className="bg-blue-500 text-white">
+                <th className="px-6 py-3 text-center hover:text-black cursor-pointer">Sr No</th>
+                <th className="px-6 py-3 text-center hover:text-black cursor-pointer">Main Type</th>
+                <th className="px-6 py-3 text-center hover:text-black cursor-pointer">Sub-Type</th>
+                <th className="px-6 py-3 text-center hover:text-black cursor-pointer">Status</th>
+                <th className="px-6 py-3 text-center hover:text-black cursor-pointer">Actions</th>
               </tr>
             </thead>
             <tbody>
-              {filteredTypes.map((type) => (
-                <tr key={type.id}>
-                  <td className="border border-gray-300 px-4 py-2">{type.mainType}</td>
-                  <td className="border border-gray-300 px-4 py-2">{type.subType}</td>
-                  <td className="border border-gray-300 px-4 py-2">{type.status}</td>
-                  <td className="border border-gray-300 px-4 py-2 flex gap-2">
-                    <button
-                      onClick={() => handleEdit(type.id)}
-                      className="p-2 bg-yellow-500 text-white rounded-md transition-transform transform hover:scale-110"
-                      title="Edit"
-                    >
-                      <FaEdit />
-                    </button>
-                    <button
-                      onClick={() => handleDelete(type.id)}
-                      className="p-2 bg-red-500 text-white rounded-md transition-transform transform hover:scale-110"
-                      title="Delete"
-                    >
-                      <FaTrash />
-                    </button>
-                    <button
-                      onClick={() => handleToggleStatus(type.id, type.status)}
-                      className={`p-2 rounded-md transition-transform transform hover:scale-110 ${
-                        type.status === "Active" ? "bg-red-500 text-white" : "bg-green-500 text-white"
-                      }`}
-                      title={type.status === "Active" ? "Deactivate" : "Activate"}
-                    >
-                      {type.status === "Active" ? <FaTimes /> : <FaCheck />}
-                    </button>
+              {filteredTypes.map((type, index) => (
+                <tr key={type.id} className="border-b">
+                  <td className="px-6 py-3 text-center">{index + 1}</td>
+                  <td className="px-6 py-3 text-center">{type.mainType}</td>
+                  <td className="px-6 py-3 text-center">{type.subType}</td>
+                  <td className="px-6 py-3 text-center">
+                    <span className={`font-bold ${type.status === "Active" ? "text-green-500" : "text-red-500"}`}>
+                      {type.status}
+                    </span>
+                  </td>
+                  <td className="px-6 py-3 text-center">
+                    <div className="flex justify-center space-x-4">
+                      <span onClick={() => handleEdit(type.id)} className="cursor-pointer text-blue-500" title="Edit">
+                        <FaEdit />
+                      </span>
+                      <span onClick={() => handleToggleStatus(type.id, type.status)} className="cursor-pointer" title="Toggle Status">
+                        {type.status === "Active" ? <FaTimes className="text-red-500" /> : <FaCheck className="text-green-500" />}
+                      </span>
+                      <span onClick={() => handleDelete(type.id)} className="cursor-pointer text-red-500" title="Delete">
+                        <FaTrash />
+                      </span>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -318,8 +263,9 @@ const NonOfficialTypeMaster = () => {
           </table>
         </div>
       </div>
+
     </div>
   );
 };
 
-export default NonOfficialTypeMaster;
+export default NonOfficialTypeMaster;  

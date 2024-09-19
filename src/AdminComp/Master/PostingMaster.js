@@ -1,14 +1,6 @@
 import React, { useState, useEffect } from "react";
-import {
-  FaCheck,
-  FaTimes,
-  FaSyncAlt,
-  FaSearch,
-  FaEdit,
-  FaTrash,
-} from "react-icons/fa";
+import { FaCheck, FaTimes, FaSyncAlt, FaSearch, FaEdit, FaTrash } from "react-icons/fa";
 import axios from "axios";
-import Swal from "sweetalert2";
 
 const PostingMaster = () => {
   const [postings, setPostings] = useState([]);
@@ -28,7 +20,7 @@ const PostingMaster = () => {
 
   const fetchPostings = async () => {
     try {
-      const response = await axios.get("http://localhost:8080/api/postings/all");
+      const response = await axios.get("http://localhost:8080/api/postings");
       setPostings(response.data);
     } catch (error) {
       console.error("Error fetching postings", error);
@@ -48,50 +40,31 @@ const PostingMaster = () => {
     e.preventDefault();
     try {
       if (!postingFormState.type || !postingFormState.designation || !postingFormState.postingName) {
-        Swal.fire({
-          icon: 'warning',
-          title: 'Incomplete Form',
-          text: 'All fields are required!',
-        });
+        alert("All fields are required!");
         return;
       }
 
-      const response = await axios.post("http://localhost:8080/api/postings/save", {
-        type: postingFormState.type,
-        designation: { id: postingFormState.designation },
-        postingName: postingFormState.postingName,
-        status: "Inactive",
+      const response = await axios.post("http://localhost:8080/api/postings", {
+        maintype: postingFormState.type,
+        designation: { id: postingFormState.designation },  // Send designation as an object
+        post: postingFormState.postingName,
+        status: "Inactive",  // Set status to "Inactive" by default
       });
 
       setPostings([...postings, response.data]);
       setPostingFormState({ type: "", designation: "", postingName: "" });
-      Swal.fire({
-        icon: 'success',
-        title: 'Success',
-        text: 'Data added successfully!',
-      });
+
+      alert("Data added successfully!");
     } catch (error) {
       if (error.response) {
         console.error("Error response:", error.response);
-        Swal.fire({
-          icon: 'error',
-          title: 'Error',
-          text: `Failed to add data: ${error.response.data.message || error.message}`,
-        });
+        alert(`Failed to add data: ${error.response.data.message || error.message}`);
       } else if (error.request) {
         console.error("Error request:", error.request);
-        Swal.fire({
-          icon: 'error',
-          title: 'Error',
-          text: 'Failed to add data. No response from server.',
-        });
+        alert("Failed to add data. No response from server.");
       } else {
         console.error("Error message:", error.message);
-        Swal.fire({
-          icon: 'error',
-          title: 'Error',
-          text: 'Failed to add data. Please check your input or try again.',
-        });
+        alert("Failed to add data. Please check your input or try again.");
       }
     }
   };
@@ -100,55 +73,31 @@ const PostingMaster = () => {
     const posting = postings.find((p) => p.id === id);
     setPostingFormState({
       type: posting.type,
-      designation: posting.designation.id,
+      designation: posting.designation.id,  // Store designation id
       postingName: posting.postingName,
     });
   };
 
   const handleDeletePosting = async (id) => {
     try {
-      const result = await Swal.fire({
-        title: 'Are you sure?',
-        text: 'You won\'t be able to revert this!',
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#3085d6',
-        cancelButtonColor: '#d33',
-        confirmButtonText: 'Yes, delete it!',
-      });
-
-      if (result.isConfirmed) {
-        await axios.delete(`http://localhost:8080/api/postings/delete/${id}`);
-        setPostings(postings.filter((posting) => posting.id !== id));
-        Swal.fire(
-          'Deleted!',
-          'Your posting has been deleted.',
-          'success'
-        );
-      }
+      await axios.delete(`http://localhost:8080/api/postings/${id}`);
+      setPostings(postings.filter((posting) => posting.id !== id));
     } catch (error) {
       console.error("Error deleting posting", error);
-      Swal.fire({
-        icon: 'error',
-        title: 'Error',
-        text: 'Failed to delete posting.',
-      });
     }
   };
 
   const togglePostingStatus = async (id) => {
+    const posting = postings.find((p) => p.id === id);
     try {
-      const response = await axios.put(
-        `http://localhost:8080/api/postings/toggle-status/${id}`
-      );
+      const updatedStatus = posting.status === "Active" ? "Inactive" : "Active";
+      const response = await axios.put(`http://localhost:8080/api/postings/${id}`, {
+        ...posting,
+        status: updatedStatus,
+      });
       setPostings(postings.map((p) => (p.id === id ? response.data : p)));
     } catch (error) {
       console.error("Error toggling status", error);
-      Swal.fire({
-        icon: 'error',
-        title: 'Error',
-        text: 'Failed to toggle status.',
-      });
     }
   };
 
@@ -203,20 +152,12 @@ const PostingMaster = () => {
           <h3 className="text-xl font-semibold">Add Posting</h3>
         </div>
 
-        <form
-          onSubmit={handleAddPosting}
-          className="p-6 grid grid-cols-3 gap-4"
-        >
+        <form onSubmit={handleAddPosting} className="p-6 grid grid-cols-3 gap-4">
           <div className="flex flex-col">
             <label className="mb-1 font-medium">Type</label>
             <select
               value={postingFormState.type}
-              onChange={(e) =>
-                setPostingFormState({
-                  ...postingFormState,
-                  type: e.target.value,
-                })
-              }
+              onChange={(e) => setPostingFormState({ ...postingFormState, type: e.target.value })}
               className="w-full p-2 border rounded"
             >
               <option value="">Select Type</option>
@@ -252,12 +193,7 @@ const PostingMaster = () => {
               type="text"
               placeholder="Posting Name"
               value={postingFormState.postingName}
-              onChange={(e) =>
-                setPostingFormState({
-                  ...postingFormState,
-                  postingName: e.target.value,
-                })
-              }
+              onChange={(e) => setPostingFormState({ ...postingFormState, postingName: e.target.value })}
               className="w-full p-2 border rounded"
             />
           </div>
@@ -275,50 +211,39 @@ const PostingMaster = () => {
       </div>
 
       {/* Posting Table Section */}
-      <table className="w-full border-collapse border border-gray-200">
+      <table className="w-full bg-white rounded-lg shadow-md mb-6">
         <thead>
-          <tr>
-            <th className="border border-gray-300 px-4 py-2">Posting Name</th>
-            <th className="border border-gray-300 px-4 py-2">Type</th>
-            <th className="border border-gray-300 px-4 py-2">Designation</th>
-            <th className="border border-gray-300 px-4 py-2">Status</th>
-            <th className="border border-gray-300 px-4 py-2">Actions</th>
+          <tr className="bg-blue-500 text-white">
+            <th className="p-4">Sr No</th>
+            <th className="p-4">Type</th>
+            <th className="p-4">Designation</th>
+            <th className="p-4">Posting Name</th>
+            <th className="p-4">Status</th>
+            <th className="p-4">Actions</th>
           </tr>
         </thead>
         <tbody>
-          {filteredPostings.map((posting) => (
-            <tr key={posting.id}>
-              <td className="border border-gray-300 px-4 py-2">
-                {posting.postingName}
-              </td>
-              <td className="border border-gray-300 px-4 py-2">{posting.type}</td>
-              <td className="border border-gray-300 px-4 py-2">
-                {posting.designation.designationName}
-              </td>
-              <td className="border border-gray-300 px-4 py-2">
-                <button
-                  onClick={() => togglePostingStatus(posting.id)}
-                  className={`py-1 px-3 rounded ${
-                    posting.status === "Active" ? "bg-green-500" : "bg-red-500"
-                  } text-white`}
-                >
-                  {posting.status}
+          {filteredPostings.map((posting, index) => (
+            <tr key={posting.id} className="border-b hover:bg-gray-100">
+              <td className="p-4">{index + 1}</td>
+              <td className="p-4">{posting.maintype}</td>
+              <td className="p-4">{posting.designation.designationName}</td>
+              <td className="p-4">{posting.post}</td>
+              <td className="p-4">
+                <button onClick={() => togglePostingStatus(posting.id)}>
+                  {posting.status === "Active" ? (
+                    <FaCheck className="text-green-500" />
+                  ) : (
+                    <FaTimes className="text-red-500" />
+                  )}
                 </button>
               </td>
-              <td className="border border-gray-300 px-4 py-2">
-                <button
-                  onClick={() => handleEditPosting(posting.id)}
-                  className="text-blue-500 hover:text-blue-700"
-                  title="Edit"
-                >
-                  <FaEdit />
+              <td className="p-4">
+                <button onClick={() => handleEditPosting(posting.id)}>
+                  <FaEdit className="text-blue-500" />
                 </button>
-                <button
-                  onClick={() => handleDeletePosting(posting.id)}
-                  className="text-red-500 hover:text-red-700 ml-2"
-                  title="Delete"
-                >
-                  <FaTrash />
+                <button onClick={() => handleDeletePosting(posting.id)}>
+                  <FaTrash className="text-red-500 ml-2" />
                 </button>
               </td>
             </tr>

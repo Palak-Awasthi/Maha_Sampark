@@ -1,7 +1,5 @@
-import React, { useState, useEffect } from "react";
-import axios from "axios";
-import { FaEdit, FaTrashAlt, FaSearch, FaSyncAlt, FaCheck, FaTimes } from "react-icons/fa";
-import Swal from 'sweetalert2';  // Import SweetAlert
+import React, { useState } from "react";
+import { FaEdit, FaTrashAlt, FaSearch, FaRedo, FaCheck, FaTimes, FaSyncAlt } from "react-icons/fa";
 
 const OfficeDesignationMaster = () => {
   const [designations, setDesignations] = useState([]);
@@ -13,36 +11,22 @@ const OfficeDesignationMaster = () => {
   const [showSearch, setShowSearch] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
 
-  // Fetch designations from the API on component mount
-  useEffect(() => {
-    fetchDesignations();
-  }, []);
-
-  const fetchDesignations = async () => {
-    try {
-      const response = await axios.get("http://localhost:8080/api/designation/all"); 
-      setDesignations(response.data);
-    } catch (error) {
-      console.error("Error fetching designations:", error);
-    }
-  };
-
-  const handleAddDesignation = async () => {
+  const handleAddDesignation = () => {
     if (!formState.mainDepartment || !formState.designation) {
-      Swal.fire("Error", "Both fields are required!", "error");  // Show error alert
+      alert("Both fields are required!");
       return;
     }
 
-    try {
-      const response = await axios.post("http://localhost:8080/api/designation/save", formState); 
-      setDesignations([...designations, response.data]);
-      setFormState({ mainDepartment: "", designation: "" });
-
-      Swal.fire("Success", "Designation added successfully!", "success");  // Show success alert
-    } catch (error) {
-      console.error("Error adding designation:", error);
-      Swal.fire("Error", "There was an error adding the designation.", "error");  // Show error alert
-    }
+    setDesignations([
+      ...designations,
+      {
+        id: designations.length + 1,
+        mainDepartment: formState.mainDepartment,
+        designation: formState.designation,
+        status: "Inactive", // Default to Inactive
+      },
+    ]);
+    setFormState({ mainDepartment: "", designation: "" });
   };
 
   const handleEditDesignation = (id) => {
@@ -53,41 +37,15 @@ const OfficeDesignationMaster = () => {
     });
   };
 
-  const handleDeleteDesignation = async (id) => {
-    Swal.fire({
-      title: "Are you sure?",
-      text: "You won't be able to revert this!",
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonColor: "#3085d6",
-      cancelButtonColor: "#d33",
-      confirmButtonText: "Yes, delete it!"
-    }).then(async (result) => {
-      if (result.isConfirmed) {
-        try {
-          await axios.delete(`http://localhost:8080/api/designation/delete/${id}`);
-          setDesignations(designations.filter((d) => d.id !== id));
-
-          Swal.fire("Deleted!", "Designation has been deleted.", "success");  // Show success alert
-        } catch (error) {
-          console.error("Error deleting designation:", error);
-          Swal.fire("Error", "There was an error deleting the designation.", "error");  // Show error alert
-        }
-      }
-    });
+  const handleDeleteDesignation = (id) => {
+    setDesignations(designations.filter((d) => d.id !== id));
   };
 
-  const toggleStatus = async (id) => {
-    try {
-      const response = await axios.put(`http://localhost:8080/api/designation/toggle-status/${id}`); 
-      setDesignations(
-        designations.map((d) =>
-          d.id === id ? { ...d, status: response.data.status } : d
-        )
-      );
-    } catch (error) {
-      console.error("Error toggling status:", error);
-    }
+  const handleToggleStatus = (id, currentStatus) => {
+    const newStatus = currentStatus === "Active" ? "Inactive" : "Active";
+    setDesignations(
+      designations.map((d) => (d.id === id ? { ...d, status: newStatus } : d))
+    );
   };
 
   const handleSearch = (event) => {
@@ -101,13 +59,9 @@ const OfficeDesignationMaster = () => {
   return (
     <div className="container mx-auto p-4">
       {/* Header Section */}
-      <div className="flex flex-col md:flex-row md:justify-between items-start md:items-center mb-6">
+      <div className="flex justify-between items-center mb-6">
         <div className="relative overflow-hidden whitespace-nowrap">
-          <marquee className="text-2xl sm:text-3xl font-bold">
-            <span className="mx-2">Office</span>
-            <span className="mx-2">Designation</span>
-            <span className="mx-2">Master</span>
-          </marquee>
+          <marquee className="text-2xl font-bold">Other Office Designation Master</marquee>
         </div>
         <div className="flex flex-col md:flex-row md:items-center space-y-2 md:space-y-0 md:space-x-2">
           {showSearch && (
@@ -146,6 +100,7 @@ const OfficeDesignationMaster = () => {
         </div>
 
         <div className="p-6 grid grid-cols-2 gap-4">
+          {/* Main Department Dropdown */}
           <div className="flex flex-col">
             <label className="mb-1 font-medium">Main Department</label>
             <select
@@ -157,9 +112,11 @@ const OfficeDesignationMaster = () => {
               <option value="Revenue Department">Revenue Department</option>
               <option value="Finance Department">Finance Department</option>
               <option value="Forest Department">Forest Department</option>
+              {/* Add more options as needed */}
             </select>
           </div>
 
+          {/* Designation Field */}
           <div className="flex flex-col">
             <label className="mb-1 font-medium">Designation</label>
             <input
@@ -171,6 +128,7 @@ const OfficeDesignationMaster = () => {
             />
           </div>
 
+          {/* Submit Button */}
           <div className="flex justify-center col-span-2 mt-4">
             <button
               onClick={handleAddDesignation}
@@ -182,43 +140,65 @@ const OfficeDesignationMaster = () => {
         </div>
       </div>
 
-      {/* Designation Table Section */}
-      <table className="w-full bg-white rounded-lg shadow-md mb-6">
-        <thead>
-          <tr className="bg-blue-500 text-white">
-            <th className="p-4">Sr No</th>
-            <th className="p-4">Main Department</th>
-            <th className="p-4">Designation</th>
-            <th className="p-4">Status</th>
-            <th className="p-4">Action</th>
-          </tr>
-        </thead>
-        <tbody>
-          {filteredDesignations.map((d, index) => (
-            <tr key={d.id} className="border-b">
-              <td className="p-4">{index + 1}</td>
-              <td className="p-4">{d.mainDepartment}</td>
-              <td className="p-4">{d.designation}</td>
-              <td className="p-4">
-                <button
-                  className={`p-2 rounded ${d.status ? "text-green-500" : "text-red-500"}`}
-                  onClick={() => toggleStatus(d.id)}
-                >
-                  {d.status ? <FaCheck /> : <FaTimes />}
-                </button>
-              </td>
-              <td className="p-4 space-x-2">
-                <button onClick={() => handleEditDesignation(d.id)} className="text-blue-500">
-                  <FaEdit />
-                </button>
-                <button onClick={() => handleDeleteDesignation(d.id)} className="text-red-500">
-                  <FaTrashAlt />
-                </button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      {/* Office Designation List Table */}
+      <div className="bg-white rounded-lg shadow-md mb-6 overflow-x-auto">
+        <div className="px-6 py-4">
+          <table className="w-full bg-white rounded-lg shadow-md">
+            <thead>
+              <tr className="bg-blue-500 text-white">
+                <th className="px-6 py-3 text-center hover:text-black cursor-pointer">Sr No</th>
+                <th className="px-6 py-3 text-center hover:text-black cursor-pointer">Designation</th>
+                <th className="px-6 py-3 text-center hover:text-black cursor-pointer">Status</th>
+                <th className="px-6 py-3 text-center hover:text-black cursor-pointer">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredDesignations.map((designation, index) => (
+                <tr key={designation.id} className="border-b">
+                  <td className="px-6 py-3 text-center">{index + 1}</td>
+                  <td className="px-6 py-3 text-center">{designation.designation}</td>
+                  <td className="px-6 py-3 text-center">
+                    <span
+                      className={`font-bold ${designation.status === "Active" ? "text-green-500" : "text-red-500"}`}
+                    >
+                      {designation.status}
+                    </span>
+                  </td>
+                  <td className="px-6 py-3 text-center">
+                    <div className="flex justify-center space-x-2">
+                      <span
+                        onClick={() => handleToggleStatus(designation.id, designation.status)}
+                        className="cursor-pointer"
+                        title={`Mark as ${designation.status === "Active" ? "Inactive" : "Active"}`}
+                      >
+                        {designation.status === "Active" ? (
+                          <FaTimes className="text-red-500" />
+                        ) : (
+                          <FaCheck className="text-green-500" />
+                        )}
+                      </span>
+                      <span
+                        onClick={() => handleEditDesignation(designation.id)}
+                        className="cursor-pointer text-blue-500"
+                        title="Edit"
+                      >
+                        <FaEdit />
+                      </span>
+                      <span
+                        onClick={() => handleDeleteDesignation(designation.id)}
+                        className="cursor-pointer text-red-500"
+                        title="Delete"
+                      >
+                        <FaTrashAlt />
+                      </span>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   );
 };
