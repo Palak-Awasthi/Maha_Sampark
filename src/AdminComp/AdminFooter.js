@@ -1,6 +1,6 @@
 import React from 'react';
 
-function Footer() {
+function AdminFooter() {
   return (
     <footer className="bg-black text-white py-4 px-6 text-center border-t-4 border-gray-800">
       <p className="text-sm mb-2">© 2024 MAHA SAMPARK. All rights reserved.</p>
@@ -11,4 +11,4 @@ function Footer() {
   );
 }
 
-export default Footer;
+export default AdminFooter;

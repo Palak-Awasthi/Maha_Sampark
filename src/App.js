@@ -10,7 +10,7 @@ import DepartmentInformation from './components/DepartmentInformation';
 import RegistrationForm from './components/RegistrationForm';
 import AdminDashboard from './AdminComp/AdminDashboard';
 import AdminLayout from './AdminComp/AdminLayout';
-import Profile from './AdminComp/Profile';
+
 import MCSAISDesignationMaster from './AdminComp/Master/MCSAISDesignationMaster';
 import StaffDesignationMaster from './AdminComp/Master/StaffDesignationMaster';
 import GovernmentOfficeDepartmentMaster from './AdminComp/Master/GovernmentOfficeDepartmentMaster';
@@ -30,8 +30,8 @@ import MCSOfficerProfileList from './AdminComp/Profile/MCSOfficerProfileList';
 import AISOfficerProfileList from './AdminComp/Profile/AISOfficerProfileList';
 import GovtOfficeContact from './AdminComp/AdminGovtOfficeContact';
 import MaharashtraGovtOfficers from './AdminComp/Profile/MaharashtraGovtOfficers';
-import NonOfficialContacts from './AdminComp/Profile/NonOfficialContacts';
-import PoliticianList from './AdminComp/Profile/PoliticianList';
+import AdminHeader from './AdminComp/AdminHeader';
+import AdminFooter from './AdminComp/AdminFooter';
 
 
 
@@ -52,7 +52,6 @@ function App() {
           <Route path="/department-information" element={<DepartmentInformation />} /> 
           <Route path="/adminDashboard" element={<AdminDashboard />} />
           <Route path="/admin" element={<AdminLayout />}></Route>
-          <Route path="/profile" element={<Profile />} />
           <Route path="/mcsmaster" element={<MCSAISDesignationMaster />} />
           <Route path="/staffmaster" element={<StaffDesignationMaster />} />
           <Route path="/govmaster" element={<GovernmentOfficeDepartmentMaster />} />
@@ -71,9 +70,12 @@ function App() {
           <Route path="/mcsofficerprofile" element={<MCSOfficerProfileList/>} />
           <Route path="/aisofficerprofile" element={<AISOfficerProfileList/>} />
           <Route path="/govofficer"         element={<GovtOfficeContact/>} />
-        <Route path="/mahagovofficer" element={<MaharashtraGovtOfficers />}  />
-        <Route path="/nonofficialcontact"   element={< NonOfficialContacts/>} />
-        <Route path="/politicianprofile" element={<PoliticianList />} />
+          <Route path="/mahagovofficer" element={<MaharashtraGovtOfficers />}  />
+          
+          
+          <Route path="/AdminHeader" element={<AdminHeader />} />
+          <Route path="/AdminFooter" element={<AdminFooter />} />
+          
           
           {/* Default Route */}
           
