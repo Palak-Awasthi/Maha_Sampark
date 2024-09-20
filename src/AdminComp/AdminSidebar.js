@@ -13,21 +13,11 @@ import {
 function AdminSidebar() {
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
   const [isMasterDropdownOpen, setIsMasterDropdownOpen] = useState(false);
-  const [isOtherDropdownOpen, setIsOtherDropdownOpen] = useState(false); // New state for "Other" dropdown
-  const location = useLocation(); // Get the current route
-
-    // Toggle Master dropdown on click
-  const handleMasterDropdownClick = () => {
-    setIsMasterDropdownOpen((prev) => !prev); // Toggle the dropdown open/close state
-  };
-
-
-  
+  const [isOtherDropdownOpen, setIsOtherDropdownOpen] = useState(false); 
+  const location = useLocation();
 
   // Function to check if the link is active
   const isActive = (path) => (location.pathname === path ? 'bg-blue-600 text-white' : '');
-
- 
 
   return (
     <div className="bg-blue-800 text-white h-screen w-64 p-4 shadow-md rounded-md">
@@ -42,6 +32,59 @@ function AdminSidebar() {
             Dashboard
           </Link>
         </li>
+                {/* Master with Hover Dropdown */}
+                <li
+                className="relative group"
+                onMouseEnter={() => setIsMasterDropdownOpen(true)}
+                onMouseLeave={() => setIsMasterDropdownOpen(false)}
+              >
+                <span
+                  className={`flex items-center p-3 rounded-md cursor-pointer hover:bg-blue-700 transition ${isActive('/master')}`}
+                >
+                  <FaSlidersH className="mr-3" />
+                  Master
+                </span>
+                {isMasterDropdownOpen && (
+                  <ul className="absolute left-full top-0 mt-2 bg-blue-800 text-white shadow-lg p-2 rounded-md w-56 z-10">
+                    <li className="p-2 hover:bg-blue-700 transition">
+                      <Link to="/mcsmaster">MCS & AIS Designation</Link>
+                    </li>
+                    <li className="p-2 hover:bg-blue-700 transition">
+                      <Link to="/desigmaster">Other Officer Designation</Link>
+                    </li>
+                    <li className="p-2 hover:bg-blue-700 transition">
+                      <Link to="/posting">Posting</Link>
+                    </li>
+                    <li className="p-2 hover:bg-blue-700 transition">
+                      <Link to="/maindeptmaster">Main Department</Link>
+                    </li>
+                    <li className="p-2 hover:bg-blue-700 transition">
+                      <Link to="/subbranch">Sub-Branch</Link>
+                    </li>
+                    <li className="p-2 hover:bg-blue-700 transition">
+                      <Link to="/state">State</Link>
+                    </li>
+                    <li className="p-2 hover:bg-blue-700 transition">
+                      <Link to="/district">District</Link>
+                    </li>
+                    <li className="p-2 hover:bg-blue-700 transition">
+                      <Link to="/taluka">Taluka</Link>
+                    </li>
+                    <li className="p-2 hover:bg-blue-700 transition">
+                      <Link to="/officialtype">Non-Official Type</Link>
+                    </li>
+                    <li className="p-2 hover:bg-blue-700 transition">
+                      <Link to="/officialmain">Non-Official Main Type</Link>
+                    </li>
+                    <li className="p-2 hover:bg-blue-700 transition">
+                      <Link to="/govmaster">Govt Offices Department</Link>
+                    </li>
+                    <li className="p-2 hover:bg-blue-700 transition">
+                      <Link to="/staffmaster">Staff Designation</Link>
+                    </li>
+                  </ul>
+                )}
+              </li>
 
         {/* Profile with Hover Dropdown */}
         <li
@@ -69,15 +112,10 @@ function AdminSidebar() {
               <li className="p-2 hover:bg-blue-700 transition">
                 <Link to="/mahagovofficer">Maharashtra Govt Officers</Link>
               </li>
-              <li className="p-2 hover:bg-blue-700 transition">
-                <Link to="/nonofficialcontact">Non Officials</Link>
-              </li>
-              <li className="p-2 hover:bg-blue-700 transition">
-                <Link to="/politicianprofile">Politicians</Link>
-              </li>
             </ul>
           )}
         </li>
+        
 
         <li>
           <Link
@@ -112,6 +150,35 @@ function AdminSidebar() {
             News
           </Link>
         </li>
+         {/* Other with Hover Dropdown */}
+         <li
+         className="relative group"
+         onMouseEnter={() => setIsOtherDropdownOpen(true)}
+         onMouseLeave={() => setIsOtherDropdownOpen(false)}
+       >
+         <span
+           className={`flex items-center p-3 rounded-md cursor-pointer hover:bg-blue-700 transition ${isActive('/other')}`}
+         >
+           <FaCog className="mr-3" />
+           Other
+         </span>
+         {isOtherDropdownOpen && (
+           <ul className="absolute left-full top-0 mt-2 bg-blue-800 text-white shadow-lg p-2 rounded-md w-56 z-10">
+             <li className="p-2 hover:bg-blue-700 transition">
+               <Link to="/revenue-forum">Revenue Forum</Link>
+             </li>
+             <li className="p-2 hover:bg-blue-700 transition">
+               <Link to="/quick-alert">Quick Alert</Link>
+             </li>
+             <li className="p-2 hover:bg-blue-700 transition">
+               <Link to="/feedback">Feedback</Link>
+             </li>
+             <li className="p-2 hover:bg-blue-700 transition">
+               <Link to="/notification">Notification</Link>
+             </li>
+           </ul>
+         )}
+       </li>
         <li>
           <Link
             to="/department-info"
@@ -123,89 +190,10 @@ function AdminSidebar() {
             Department Info
           </Link>
         </li>
-        {/* Other with Click Dropdown */}
-        <li className="relative" 
-        onMouseEnter={() => setIsOtherDropdownOpen(true)}
-        onMouseLeave={() => setIsOtherDropdownOpen(false)}
-        >
-          <span
-            className={`flex items-center p-3 rounded-md cursor-pointer hover:bg-blue-700 transition ${isActive('/other')}`}
-          >
-            <FaCog className="mr-3" />
-            Other
-          </span>
-          {/* Other Dropdown Menu */}
-          {isOtherDropdownOpen && (
-            <ul className="absolute left-full top-0 mt-2 bg-blue-800 text-white shadow-lg p-2 rounded-md w-56 z-10">
-              <li className="p-2 hover:bg-blue-700 transition">
-                <Link to="/revenue-forum">Revenue Forum</Link>
-              </li>
-              <li className="p-2 hover:bg-blue-700 transition">
-                <Link to="/quick-alert">Quick Alert</Link>
-              </li>
-              <li className="p-2 hover:bg-blue-700 transition">
-                <Link to="/feedback">Feedback</Link>
-              </li>
-              <li className="p-2 hover:bg-blue-700 transition">
-                <Link to="/notification">Notification</Link>
-              </li>
-            </ul>
-          )}
-        </li>
+        
+       
 
-        {/* Master with Click Dropdown */}
-        <li className="relative">
-          <span
-            className={`flex items-center p-3 rounded-md cursor-pointer hover:bg-blue-700 transition ${isActive(
-              '/master'
-            )}`}
-            onClick={handleMasterDropdownClick}
-          >
-            <FaSlidersH className="mr-3" />
-            Master
-          </span>
-          {/* Master Dropdown Menu Positioned Upward */}
-          {isMasterDropdownOpen && (
-            <ul className="absolute left-full bottom-full mb-2 bg-blue-800 text-white shadow-lg p-2 rounded-md w-56 z-10">
-              <li className="p-2 hover:bg-blue-700 transition">
-                <Link to="/mcsmaster">MCS & AIS Designation</Link>
-              </li>
-              <li className="p-2 hover:bg-blue-700 transition">
-                <Link to="/desigmaster">Other Officer Designation</Link>
-              </li>
-              <li className="p-2 hover:bg-blue-700 transition">
-                <Link to="/posting">Posting</Link>
-              </li>
-              <li className="p-2 hover:bg-blue-700 transition">
-                <Link to="/maindeptmaster">Main Department</Link>
-              </li>
-              <li className="p-2 hover:bg-blue-700 transition">
-                <Link to="/subbranch">Sub-Branch</Link>
-              </li>
-              <li className="p-2 hover:bg-blue-700 transition">
-                <Link to="/state">State</Link>
-              </li>
-              <li className="p-2 hover:bg-blue-700 transition">
-                <Link to="/district">District</Link>
-              </li>
-              <li className="p-2 hover:bg-blue-700 transition">
-                <Link to="/taluka">Taluka</Link>
-              </li>
-              <li className="p-2 hover:bg-blue-700 transition">
-                <Link to="/officialtype">Non-Official Type</Link>
-              </li>
-              <li className="p-2 hover:bg-blue-700 transition">
-                <Link to="/officialmain">Non-Official Main Type</Link>
-              </li>
-              <li className="p-2 hover:bg-blue-700 transition">
-                <Link to="/govmaster">Govt Offices Department</Link>
-              </li>
-              <li className="p-2 hover:bg-blue-700 transition">
-                <Link to="/staffmaster">Staff Designation</Link>
-              </li>
-            </ul>
-          )}
-        </li>
+
       </ul>
     </div>
   );
