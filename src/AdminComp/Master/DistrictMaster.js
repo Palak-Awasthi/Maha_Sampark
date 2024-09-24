@@ -183,7 +183,7 @@ const DistrictMaster = () => {
                 <div className="grid grid-cols-1 gap-2">
                   <div className="flex flex-col md:flex-row md:space-x-4">
                     <div className="flex flex-col w-full">
-                      <label className="mb-1 font-medium">State Name</label>
+                      <label className="mb-1 font-medium">State</label>
                       <input
                         type="text"
                         value={formState.stateName}
@@ -193,7 +193,7 @@ const DistrictMaster = () => {
                       />
                     </div>
                     <div className="flex flex-col w-full">
-                      <label className="mb-1 font-medium">District Name</label>
+                      <label className="mb-1 font-medium">District</label>
                       <input
                         type="text"
                         value={formState.districtName}
@@ -226,8 +226,9 @@ const DistrictMaster = () => {
               <table className="w-full bg-white rounded-lg shadow-md">
                 <thead>
                   <tr className="bg-blue-500 text-white">
-                    <th className="px-4 py-2">State Name</th>
-                    <th className="px-4 py-2">District Name</th>
+                    <th  className="px-4 py-2">Sr No.</th>
+                    <th className="px-4 py-2">State</th>
+                    <th className="px-4 py-2">District</th>
                     <th className="px-4 py-2">Status</th>
                     <th className="px-4 py-2">Actions</th>
                   </tr>

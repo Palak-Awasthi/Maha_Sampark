@@ -182,7 +182,7 @@ const StaffDesignationMaster = () => {
                       type="text"
                       value={formState.designationName}
                       onChange={(e) => setFormState({ ...formState, designationName: e.target.value })}
-                      className="p-2 border rounded hover:scale-105 transition duration-300 w-full"
+                      className="p-2 border rounded hover:scale-105 transition duration-300 w-full sm:w-1/2"
                       required
                     />
                   </div>
@@ -209,6 +209,7 @@ const StaffDesignationMaster = () => {
               <table className="w-full bg-white rounded-lg shadow-md">
                 <thead>
                   <tr className="bg-blue-500 text-white">
+                    <th className="px-4 py-2">Sr No</th>
                     <th className="px-4 py-2">Designation Name</th>
                     <th className="px-4 py-2">Status</th>
                     <th className="px-4 py-2">Actions</th>

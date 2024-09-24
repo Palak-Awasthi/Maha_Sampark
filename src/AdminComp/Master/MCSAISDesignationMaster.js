@@ -8,15 +8,13 @@ import AdminFooter from "../AdminFooter";
 
 const MCSAISDesignationMaster = () => {
   const [designations, setDesignations] = useState([]);
-  const [formState, setFormState] = useState({ designation: "", status: "Active" });
+  const [formState, setFormState] = useState({ type: "", designation: "", status: "Active" });
   const [isEditing, setIsEditing] = useState(null);
-  const [errors, setErrors] = useState({ designation: "", status: "" });
+  const [errors, setErrors] = useState({ designation: "" });
   const [showSearch, setShowSearch] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
-
+  
   useEffect(() => {
     fetchDesignations();
   }, []);
@@ -36,7 +34,6 @@ const MCSAISDesignationMaster = () => {
   const handleAddOrUpdateDesignation = async () => {
     const trimmedDesignation = formState.designation.trim();
 
-    // Real-time validation check
     if (!trimmedDesignation) {
       setErrors((prevErrors) => ({ ...prevErrors, designation: "Designation is required." }));
       return;
@@ -73,7 +70,7 @@ const MCSAISDesignationMaster = () => {
 
   const handleEditDesignation = (id) => {
     const designation = designations.find((d) => d.id === id);
-    setFormState({ designation: designation.designation, status: designation.status });
+    setFormState({ type: designation.type, designation: designation.designation, status: designation.status });
     setIsEditing(id);
   };
 
@@ -96,9 +93,9 @@ const MCSAISDesignationMaster = () => {
     const newStatus = currentStatus === "Active" ? "Inactive" : "Active";
     setLoading(true);
     try {
-      await axios.put(`http://localhost:8080/api/designations/${id}/status`, { status: newStatus });
-      fetchDesignations();
+      await axios.put(`http://localhost:8080/api/designations/${id}`, { ...formState, status: newStatus });
       toast.success(`Designation status updated to ${newStatus} successfully!`);
+      fetchDesignations(); // Fetch updated designations
     } catch (error) {
       handleError(error);
     } finally {
@@ -110,8 +107,13 @@ const MCSAISDesignationMaster = () => {
     setSearchTerm(event.target.value);
   };
 
+  const resetSearch = () => {
+    setSearchTerm("");
+    setShowSearch(false);
+  };
+
   const resetForm = () => {
-    setFormState({ designation: "", status: "Active" });
+    setFormState({ type: "", designation: "", status: "Active" });
     setIsEditing(null);
   };
 
@@ -130,9 +132,6 @@ const MCSAISDesignationMaster = () => {
     d.designation?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false
   );
 
-  const totalPages = Math.ceil(filteredDesignations.length / itemsPerPage);
-  const currentDesignations = filteredDesignations.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
-
   return (
     <div className="flex">
       <AdminSidebar />
@@ -141,7 +140,7 @@ const MCSAISDesignationMaster = () => {
         <div className="container mx-auto p-4">
           {/* Header Section */}
           <div className="flex justify-between items-center mb-6">
-            <div className="text-2xl font-bold">Designation Master</div>
+            <div className="text-2xl font-bold">MCS & AIS Designation Master</div>
             <div className="flex flex-col md:flex-row md:items-center space-y-2 md:space-y-0 md:space-x-2">
               {showSearch && (
                 <input
@@ -160,10 +159,7 @@ const MCSAISDesignationMaster = () => {
                 <FaSearch />
               </button>
               <button
-                onClick={() => {
-                  setSearchTerm("");
-                  setShowSearch(false);
-                }}
+                onClick={resetSearch}
                 className="p-2 bg-blue-500 text-white rounded-md transition-transform transform hover:scale-110"
                 title="Reset"
               >
@@ -179,9 +175,24 @@ const MCSAISDesignationMaster = () => {
             </div>
             <div className="p-6">
               <form onSubmit={handleSubmit}>
-                <div className="grid grid-cols-2 gap-4">
-                  {/* Designation Field */}
-                  <div className="flex flex-col w-full">
+                <div className="grid grid-cols-3 gap-2">
+                  {/* Type Dropdown */}
+                  <div className="flex flex-col">
+                    <label className="mb-1 font-medium">Type</label>
+                    <select
+                      value={formState.type}
+                      onChange={(e) => setFormState({ ...formState, type: e.target.value })}
+                      className="p-1 border rounded hover:scale-105 transition duration-300 w-full"
+                      required
+                    >
+                      <option value="">Select Type</option>
+                      <option value="AIS">AIS</option>
+                      <option value="MCS">MCS</option>
+                    </select>
+                  </div>
+
+                  {/* Designation Input Field */}
+                  <div className="flex flex-col">
                     <label className="mb-1 font-medium">Designation</label>
                     <input
                       type="text"
@@ -194,129 +205,66 @@ const MCSAISDesignationMaster = () => {
                           setErrors((prevErrors) => ({ ...prevErrors, designation: "" }));
                         }
                       }}
-                      className={`p-2 border rounded hover:scale-105 transition duration-300 w-full ${
-                        errors.designation ? "border-red-500" : ""
-                      }`}
+                      className={`p-1 border rounded hover:scale-105 transition duration-300 w-full ${errors.designation ? "border-red-500" : ""}`}
                       required
                     />
                     {errors.designation && <p className="text-red-500">{errors.designation}</p>}
                   </div>
+                </div>
 
-                  {/* Status Field */}
-                  <div className="flex flex-col w-full">
-                    <label className="mb-1 font-medium">Status</label>
-                    <select
-                      value={formState.status}
-                      onChange={(e) => setFormState({ ...formState, status: e.target.value })}
-                      className="p-2 border rounded hover:scale-105 transition duration-300 w-full"
-                    >
-                      <option value="Active">Active</option>
-                      <option value="Inactive">Inactive</option>
-                    </select>
-                  </div>
-                </div>
-                <div className="flex justify-center mt-4">
-                  <button
-                    type="submit"
-                    className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition duration-300"
-                    disabled={loading}
-                  >
-                    {isEditing ? "Update" : "Submit"}
-                  </button>
-                  {isEditing && (
-                    <button
-                      type="button"
-                      onClick={resetForm}
-                      className="ml-4 px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 transition duration-300"
-                    >
-                      Cancel
-                    </button>
-                  )}
-                </div>
+                {/* Submit Button */}
+                <button type="submit" className="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition duration-300">
+                  {isEditing ? "Update Designation" : "Add Designation"}
+                </button>
               </form>
             </div>
           </div>
 
-          {/* Designation List */}
+          {/* Designation Table */}
           <div className="bg-white rounded-lg shadow-md">
-            <table className="min-w-full border-collapse">
-              <thead>
-                <tr className="bg-blue-500 text-white">
-                  <th className="px-4 py-2">ID</th>
-                  <th className="px-4 py-2">Designation</th>
-                  <th className="px-4 py-2">Status</th>
-                  <th className="px-4 py-2">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {loading && (
-                  <tr>
-                    <td colSpan="4" className="text-center py-4">
-                      Loading...
-                    </td>
-                  </tr>
-                )}
-                {!loading && currentDesignations.length === 0 && (
-                  <tr>
-                    <td colSpan="4" className="text-center py-4">
-                      No designations found.
-                    </td>
-                  </tr>
-                )}
-                {currentDesignations.map((designation) => (
-                  <tr key={designation.id} className="border-t hover:bg-gray-100">
-                    <td className="border px-4 py-2">{designation.id}</td>
-                    <td className="border px-4 py-2">{designation.designation}</td>
-                    <td className="border px-4 py-2 text-center">
-                      <span className={`font-semibold text-${designation.status === "Active" ? "green" : "red"}-500`}>
-                        {designation.status}
-                      </span>
-                    </td>
-                    <td className="border px-4 py-2 flex justify-around">
-                      <button
-                        onClick={() => handleEditDesignation(designation.id)}
-                        className="p-1 bg-yellow-300 text-black rounded-full hover:scale-105 transition-transform"
-                        title="Edit"
-                      >
-                        <FaEdit />
-                      </button>
-                      <button
-                        onClick={() => handleDeleteDesignation(designation.id)}
-                        className="p-1 bg-red-500 text-white rounded-full hover:scale-105 transition-transform"
-                        title="Delete"
-                      >
-                        <FaTrash />
-                      </button>
-                      <button
-                        onClick={() => handleToggleStatus(designation.id, designation.status)}
-                        className={`p-1 rounded-full transition-transform ${
-                          designation.status === "Active" ? "bg-green-500 text-white" : "bg-gray-500 text-white"
-                        } hover:scale-105`}
-                        title={designation.status === "Active" ? "Mark Inactive" : "Mark Active"}
-                      >
-                        {designation.status === "Active" ? <FaCheck /> : <FaTimes />}
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            {/* Pagination */}
-            <div className="flex justify-center mt-4">
-              <button
-                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-                disabled={currentPage === 1}
-                className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition duration-300 mr-2"
-              >
-                Previous
-              </button>
-              <button
-                onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-                disabled={currentPage === totalPages}
-                className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition duration-300"
-              >
-                Next
-              </button>
+            <div className="p-6 overflow-auto">
+              {loading ? (
+                <p>Loading...</p>
+              ) : (
+                <table className="min-w-full">
+                  <thead>
+                    <tr className="bg-blue-500 text-white">
+                      <th className="text-left border-b p-2">Sr No</th>
+                      <th className="text-left border-b p-2">Type</th>
+                      <th className="text-left border-b p-2">Designation</th>
+                      <th className="text-left border-b p-2">Status</th>
+                      <th className="text-left border-b p-2">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredDesignations.map((designation, index) => (
+                      <tr key={designation.id}>
+                        <td className="border-b p-2">{index + 1}</td>
+                        <td className="border-b p-2">{designation.type}</td>
+                        <td className="border-b p-2">{designation.designation}</td>
+                        <td className="border-b p-2">
+                          <span
+                            className={`font-bold ${designation.status === "Active" ? "text-green-500" : "text-red-500"}`}
+                          >
+                            {designation.status}
+                          </span>
+                        </td>
+                        <td className="border-b p-2 flex space-x-2">
+                          <button onClick={() => handleToggleStatus(designation.id, designation.status)}>
+                            {designation.status === "Active" ? <FaTimes className="text-red-500" /> : <FaCheck className="text-green-500" />}
+                          </button>
+                          <button onClick={() => handleEditDesignation(designation.id)}>
+                            <FaEdit className="text-blue-500" />
+                          </button>
+                          <button onClick={() => handleDeleteDesignation(designation.id)}>
+                            <FaTrash className="text-red-500" />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
             </div>
           </div>
         </div>

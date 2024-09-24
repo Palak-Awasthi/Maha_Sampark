@@ -139,7 +139,7 @@ const NonOfficialTypeMaster = () => {
           {/* Header Section */}
           <div className="flex justify-between items-center mb-6">
             <div className="relative overflow-hidden whitespace-nowrap">
-              <marquee className="text-2xl font-bold">Non-Official Type Master</marquee>
+              <div className="text-2xl font-bold">Non-Official Type Master</div>
             </div>
             <div className="flex flex-col md:flex-row md:items-center space-y-2 md:space-y-0 md:space-x-2">
               {showSearch && (

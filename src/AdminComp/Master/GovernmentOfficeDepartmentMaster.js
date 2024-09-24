@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { FaSearch, FaSyncAlt, FaEdit, FaTrash, FaCheck, FaTimes } from "react-icons/fa";
 import { toast } from "react-toastify";
+import Swal from "sweetalert2"; // Import SweetAlert2
 import AdminHeader from "../AdminHeader";
 import AdminSidebar from "../AdminSidebar";
 import AdminFooter from "../AdminFooter";
@@ -74,7 +75,18 @@ const GovernmentOfficeDepartmentMaster = () => {
   };
 
   const handleDeleteDepartment = async (id) => {
-    if (window.confirm("Are you sure you want to delete this department?")) {
+    // Use SweetAlert2 for confirmation
+    const result = await Swal.fire({
+      title: 'Are you sure?',
+      text: "You won't be able to revert this!",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#3085d6',
+      cancelButtonColor: '#d33',
+      confirmButtonText: 'Yes, delete it!'
+    });
+
+    if (result.isConfirmed) {
       setLoading(true);
       try {
         await axios.delete(`http://localhost:8080/api/government-offices/departments/${id}`);
@@ -182,7 +194,7 @@ const GovernmentOfficeDepartmentMaster = () => {
                       type="text"
                       value={formState.departmentName}
                       onChange={(e) => setFormState({ ...formState, departmentName: e.target.value })}
-                      className="p-2 border rounded hover:scale-105 transition duration-300 w-full"
+                      className="p-2 border rounded hover:scale-105 transition duration-300 w-full sm:w-1/2"
                       required
                     />
                   </div>
@@ -209,6 +221,7 @@ const GovernmentOfficeDepartmentMaster = () => {
               <table className="w-full bg-white rounded-lg shadow-md">
                 <thead>
                   <tr className="bg-blue-500 text-white">
+                    <th className="px-4 py-2">Sr No</th>
                     <th className="px-4 py-2">Department Name</th>
                     <th className="px-4 py-2">Status</th>
                     <th className="px-4 py-2">Actions</th>
@@ -218,64 +231,49 @@ const GovernmentOfficeDepartmentMaster = () => {
                   {currentDepartments.map((department) => (
                     <tr key={department.id}>
                       <td className="border px-4 py-2">{department.departmentName}</td>
+                      <td className="border px-4 py-2">{department.status}</td>
                       <td className="border px-4 py-2">
-                        <span className={`text-${department.status === "Active" ? "green" : "red"}-500`}>
-                          {department.status}
-                        </span>
-                      </td>
-                      <td className="border px-4 py-2 flex items-center space-x-2">
-                        <FaEdit
-                          className="cursor-pointer text-blue-500 hover:text-blue-600"
-                          onClick={() => handleEditDepartment(department.id)}
-                          title="Edit"
-                          aria-label="Edit department"
-                        />
-                        <FaTrash
-                          className="cursor-pointer text-red-500 hover:text-red-600"
-                          onClick={() => handleDeleteDepartment(department.id)}
-                          title="Delete"
-                          aria-label="Delete department"
-                        />
-                        <span
-                          className="cursor-pointer"
+                        <button
                           onClick={() => handleToggleStatus(department.id, department.status)}
-                          title="Toggle Status"
+                          className={`px-2 py-1 rounded text-white ${department.status === "Active" ? "bg-green-500" : "bg-red-500"}`}
                         >
-                          {department.status === "Active" ? <FaTimes className="text-red-500" /> : <FaCheck className="text-green-500" />}
-                        </span>
+                          {department.status === "Active" ? <FaCheck /> : <FaTimes />}
+                        </button>
+                      </td>
+                      <td className="border px-4 py-2">
+                        <button
+                          onClick={() => handleEditDepartment(department.id)}
+                          className="text-blue-600 hover:text-blue-800 mr-2"
+                          title="Edit"
+                        >
+                          <FaEdit />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteDepartment(department.id)}
+                          className="text-red-600 hover:text-red-800"
+                          title="Delete"
+                        >
+                          <FaTrash />
+                        </button>
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
-
-              {/* Pagination */}
-              <div className="flex justify-center mt-4">
-                <button
-                  className={`px-3 py-1 mx-1 ${currentPage === 1 ? "text-gray-400" : "text-blue-500"}`}
-                  disabled={currentPage === 1}
-                  onClick={() => setCurrentPage(currentPage - 1)}
-                >
-                  Previous
-                </button>
-                {[...Array(totalPages).keys()].map((page) => (
-                  <button
-                    key={page}
-                    className={`px-3 py-1 mx-1 ${page + 1 === currentPage ? "bg-blue-500 text-white" : "text-blue-500"}`}
-                    onClick={() => setCurrentPage(page + 1)}
-                  >
-                    {page + 1}
-                  </button>
-                ))}
-                <button
-                  className={`px-3 py-1 mx-1 ${currentPage === totalPages ? "text-gray-400" : "text-blue-500"}`}
-                  disabled={currentPage === totalPages}
-                  onClick={() => setCurrentPage(currentPage + 1)}
-                >
-                  Next
-                </button>
-              </div>
             </div>
+          </div>
+
+          {/* Pagination Controls */}
+          <div className="flex justify-center space-x-2 mb-6">
+            {Array.from({ length: totalPages }, (_, index) => (
+              <button
+                key={index + 1}
+                onClick={() => setCurrentPage(index + 1)}
+                className={`px-3 py-1 rounded-md ${currentPage === index + 1 ? "bg-blue-500 text-white" : "bg-gray-200"}`}
+              >
+                {index + 1}
+              </button>
+            ))}
           </div>
         </div>
         <AdminFooter />

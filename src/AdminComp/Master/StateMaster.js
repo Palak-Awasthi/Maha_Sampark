@@ -44,10 +44,16 @@ const StateMaster = () => {
     try {
       let response;
       if (isEditing) {
-        response = await axios.put(`http://localhost:8080/api/states/${isEditing}`, { ...formState, stateName: trimmedStateName });
+        response = await axios.put(`http://localhost:8080/api/states/${isEditing}`, {
+          ...formState,
+          stateName: trimmedStateName,
+        });
         toast.success("State updated successfully!");
       } else {
-        response = await axios.post("http://localhost:8080/api/states", { ...formState, stateName: trimmedStateName });
+        response = await axios.post("http://localhost:8080/api/states", {
+          ...formState,
+          stateName: trimmedStateName,
+        });
         toast.success("State added successfully!");
       }
 
@@ -135,7 +141,6 @@ const StateMaster = () => {
       <div className="flex-grow">
         <AdminHeader />
         <div className="container mx-auto p-4">
-          {/* Header Section */}
           <div className="flex justify-between items-center mb-6">
             <div className="text-2xl font-bold">State Master</div>
             <div className="flex flex-col md:flex-row md:items-center space-y-2 md:space-y-0 md:space-x-2">
@@ -168,7 +173,6 @@ const StateMaster = () => {
             </div>
           </div>
 
-          {/* Add/Update State Form */}
           <div className="bg-white rounded-lg shadow-md mb-6">
             <div className="bg-blue-500 text-white px-6 py-3 rounded-t-lg">
               <h3 className="text-lg sm:text-xl font-semibold">{isEditing ? "Edit State" : "Add State"}</h3>
@@ -176,13 +180,13 @@ const StateMaster = () => {
             <div className="p-6">
               <form onSubmit={handleSubmit}>
                 <div className="grid grid-cols-1 gap-2">
-                  <div className="flex flex-col w-full">
+                  <div className="flex flex-col">
                     <label className="mb-1 font-medium">State Name</label>
                     <input
                       type="text"
                       value={formState.stateName}
                       onChange={(e) => setFormState({ ...formState, stateName: e.target.value })}
-                      className="p-2 border rounded hover:scale-105 transition duration-300 w-full"
+                      className="p-2 border rounded hover:scale-105 transition duration-300 w-full sm:w-1/2"
                       required
                     />
                   </div>
@@ -200,86 +204,79 @@ const StateMaster = () => {
             </div>
           </div>
 
-          {/* Loader UI */}
           {loading && <div className="text-center">Loading...</div>}
 
-          {/* State List Table */}
           <div className="bg-white rounded-lg shadow-md mb-6 overflow-x-auto">
             <div className="px-6 py-4">
               <table className="w-full bg-white rounded-lg shadow-md">
                 <thead>
                   <tr className="bg-blue-500 text-white">
-                    <th className="px-4 py-2">State Name</th>
+                    <th className="px-4 py-2">Sr No</th>
+                    <th className="px-4 py-2">State</th>
                     <th className="px-4 py-2">Status</th>
                     <th className="px-4 py-2">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {currentStates.map((state) => (
-                    <tr key={state.id}>
-                      <td className="border px-4 py-2">{state.stateName}</td>
-                      <td className="border px-4 py-2">
-                        <span className={`text-${state.status === "Active" ? "green" : "red"}-500`}>
-                          {state.status}
-                        </span>
-                      </td>
-                      <td className="border px-4 py-2 flex items-center space-x-2">
-                        <FaEdit
-                          className="cursor-pointer text-blue-500 hover:text-blue-600"
-                          onClick={() => handleEditState(state.id)}
-                          title="Edit"
-                          aria-label="Edit state"
-                        />
-                        <FaTrash
-                          className="cursor-pointer text-red-500 hover:text-red-600"
-                          onClick={() => handleDeleteState(state.id)}
-                          title="Delete"
-                          aria-label="Delete state"
-                        />
-                        <span
-                          onClick={() => handleToggleStatus(state.id, state.status)}
-                          title="Toggle Status"
-                          aria-label="Toggle state status"
-                        >
-                          {state.status === "Active" ? <FaTimes /> : <FaCheck />}
-                        </span>
-                      </td>
+                  {currentStates.length === 0 ? (
+                    <tr>
+                      <td colSpan="4" className="text-center py-4">No records found.</td>
                     </tr>
-                  ))}
+                  ) : (
+                    currentStates.map((state, index) => (
+                      <tr key={state.id}>
+                        <td className="border px-4 py-2">{(currentPage - 1) * itemsPerPage + index + 1}</td>
+                        <td className="border px-4 py-2">{state.stateName}</td>
+                        <td className="border px-4 py-2 text-center">
+                          {state.status === "Active" ? (
+                            <FaCheck
+                              className="text-green-500 cursor-pointer"
+                              onClick={() => handleToggleStatus(state.id, state.status)}
+                            />
+                          ) : (
+                            <FaTimes
+                              className="text-red-500 cursor-pointer"
+                              onClick={() => handleToggleStatus(state.id, state.status)}
+                            />
+                          )}
+                        </td>
+                        <td className="border px-4 py-2 text-center">
+                          <FaEdit
+                            className="text-blue-500 cursor-pointer mx-2"
+                            onClick={() => handleEditState(state.id)}
+                          />
+                          <FaTrash
+                            className="text-red-500 cursor-pointer mx-2"
+                            onClick={() => handleDeleteState(state.id)}
+                          />
+                        </td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
-
-              {/* Pagination */}
-              <div className="flex justify-center mt-4">
-                <button
-                  className={`px-3 py-1 mx-1 ${currentPage === 1 ? "text-gray-400" : "text-blue-500"}`}
-                  disabled={currentPage === 1}
-                  onClick={() => setCurrentPage(currentPage - 1)}
-                >
-                  Previous
-                </button>
-                {[...Array(totalPages).keys()].map((page) => (
-                  <button
-                    key={page}
-                    className={`px-3 py-1 mx-1 ${page + 1 === currentPage ? "bg-blue-500 text-white" : "text-blue-500"}`}
-                    onClick={() => setCurrentPage(page + 1)}
-                  >
-                    {page + 1}
-                  </button>
-                ))}
-                <button
-                  className={`px-3 py-1 mx-1 ${currentPage === totalPages ? "text-gray-400" : "text-blue-500"}`}
-                  disabled={currentPage === totalPages}
-                  onClick={() => setCurrentPage(currentPage + 1)}
-                >
-                  Next
-                </button>
-              </div>
             </div>
           </div>
+
+          <div className="flex justify-center mb-6">
+            <button
+              onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+              disabled={currentPage === 1}
+              className="px-4 py-2 bg-blue-500 text-white rounded-md mr-2 disabled:opacity-50"
+            >
+              Previous
+            </button>
+            <button
+              onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+              disabled={currentPage === totalPages}
+              className="px-4 py-2 bg-blue-500 text-white rounded-md disabled:opacity-50"
+            >
+              Next
+            </button>
+          </div>
         </div>
-        <AdminFooter />
       </div>
+      <AdminFooter />
     </div>
   );
 };

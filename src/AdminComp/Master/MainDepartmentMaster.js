@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { FaSearch, FaSyncAlt, FaEdit, FaTrash, FaCheck, FaTimes } from "react-icons/fa";
 import { toast } from "react-toastify";
+import Swal from "sweetalert2"; // Import SweetAlert2
 import "react-toastify/dist/ReactToastify.css";
 import AdminSidebar from "../AdminSidebar"; // Adjust path as necessary
 import AdminHeader from "../AdminHeader"; // Adjust path as necessary
@@ -72,12 +73,22 @@ const MainDepartmentMaster = () => {
   };
 
   const handleDeleteMainDepartment = async (id) => {
-    if (window.confirm("Are you sure you want to delete this main department?")) {
+    const result = await Swal.fire({
+      title: "Are you sure?",
+      text: "You won't be able to revert this!",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#3085d6",
+      cancelButtonColor: "#d33",
+      confirmButtonText: "Yes, delete it!",
+    });
+
+    if (result.isConfirmed) {
       setLoading(true);
       try {
         await axios.delete(`http://localhost:8080/api/main-departments/${id}`);
         setMainDepartments(mainDepartments.filter((d) => d.id !== id));
-        toast.success("Main Department deleted successfully!");
+        Swal.fire("Deleted!", "Main Department has been deleted.", "success");
       } catch (error) {
         handleError(error);
       } finally {
@@ -88,15 +99,27 @@ const MainDepartmentMaster = () => {
 
   const handleToggleStatus = async (id, currentStatus) => {
     const newStatus = currentStatus === "Active" ? "Inactive" : "Active";
-    setLoading(true);
-    try {
-      await axios.put(`http://localhost:8080/api/main-departments/${id}/status`, { status: newStatus });
-      fetchMainDepartments();
-      toast.success(`Main Department status updated to ${newStatus} successfully!`);
-    } catch (error) {
-      handleError(error);
-    } finally {
-      setLoading(false);
+    const result = await Swal.fire({
+      title: "Are you sure?",
+      text: `Change status to ${newStatus}?`,
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#3085d6",
+      cancelButtonColor: "#d33",
+      confirmButtonText: `Yes, change to ${newStatus}!`,
+    });
+
+    if (result.isConfirmed) {
+      setLoading(true);
+      try {
+        await axios.put(`http://localhost:8080/api/main-departments/${id}/status`, { status: newStatus });
+        fetchMainDepartments();
+        Swal.fire("Updated!", `Main Department status updated to ${newStatus}.`, "success");
+      } catch (error) {
+        handleError(error);
+      } finally {
+        setLoading(false);
+      }
     }
   };
 
@@ -176,7 +199,7 @@ const MainDepartmentMaster = () => {
               <form onSubmit={handleSubmit}>
                 <div className="grid grid-cols-1 gap-2">
                   <div className="flex flex-col">
-                    <label className="mb-1 font-medium">Main Department Name</label>
+                    <label className="mb-1 font-medium">Main Department</label>
                     <input
                       type="text"
                       value={formState.mainDepartmentName}
@@ -212,45 +235,44 @@ const MainDepartmentMaster = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredMainDepartments.map((department) => (
-                    <tr key={department.id} className="border-b">
-                      <td className="px-6 py-3 text-center">{department.id}</td>
-                      <td className="px-6 py-3 text-center">{department.mainDepartmentName}</td>
-                      <td className="px-6 py-3 text-center">
+                  {filteredMainDepartments.map((department, index) => (
+                    <tr key={department.id} className="hover:bg-gray-100">
+                      <td className="px-6 py-4 text-center">{index + 1}</td>
+                      <td className="px-6 py-4 text-center">{department.mainDepartmentName}</td>
+                      <td className="px-6 py-4 text-center">
                         <span
-                          className={`font-bold ${department.status === "Active" ? "text-green-500" : "text-red-500"}`}
+                          className={`inline-block px-2 py-1 rounded-full text-white ${
+                            department.status === "Active" ? "bg-green-500" : "bg-red-500"
+                          }`}
                         >
                           {department.status}
                         </span>
                       </td>
-                      <td className="px-6 py-3 text-center">
-                        <div className="flex justify-center space-x-2">
-                          <span
-                            onClick={() => handleToggleStatus(department.id, department.status)}
-                            className="cursor-pointer"
-                            title={`Mark as ${department.status === "Active" ? "Inactive" : "Active"}`}
-                          >
-                            {department.status === "Active" ? (
-                              <FaTimes className="text-red-500" />
-                            ) : (
-                              <FaCheck className="text-green-500" />
-                            )}
-                          </span>
-                          <span
-                            onClick={() => handleEditMainDepartment(department.id)}
-                            className="cursor-pointer text-blue-500"
-                            title="Edit"
-                          >
-                            <FaEdit />
-                          </span>
-                          <span
-                            onClick={() => handleDeleteMainDepartment(department.id)}
-                            className="cursor-pointer text-red-500"
-                            title="Delete"
-                          >
-                            <FaTrash />
-                          </span>
-                        </div>
+                      <td className="px-6 py-4 text-center">
+                        <button
+                          onClick={() => handleEditMainDepartment(department.id)}
+                          className="p-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600 transition duration-300"
+                          title="Edit"
+                        >
+                          <FaEdit />
+                        </button>
+                        <button
+                          onClick={() => handleToggleStatus(department.id, department.status)}
+                          className="p-2 mx-2 rounded-md text-white"
+                          style={{
+                            backgroundColor: department.status === "Active" ? "#f59e0b" : "#4ade80",
+                          }}
+                          title="Toggle Status"
+                        >
+                          {department.status === "Active" ? <FaTimes /> : <FaCheck />}
+                        </button>
+                        <button
+                          onClick={() => handleDeleteMainDepartment(department.id)}
+                          className="p-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition duration-300"
+                          title="Delete"
+                        >
+                          <FaTrash />
+                        </button>
                       </td>
                     </tr>
                   ))}

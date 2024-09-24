@@ -116,7 +116,7 @@ const NonOfficialMainTypeMaster = () => {
         <div className="container mx-auto p-4">
           <div className="flex justify-between items-center mb-6">
             <div className="relative overflow-hidden whitespace-nowrap">
-              <marquee className="text-2xl font-bold">Non-Official Main Type Master</marquee>
+              <div className="text-2xl font-bold">Non-Official Main Type Master</div>
             </div>
             <div className="flex flex-col md:flex-row md:items-center space-y-2 md:space-y-0 md:space-x-2">
               {showSearch && (

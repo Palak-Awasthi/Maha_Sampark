@@ -6,7 +6,7 @@ import AdminHeader from "../AdminHeader";
 import AdminSidebar from "../AdminSidebar";
 import AdminFooter from "../AdminFooter";
 
-const SubBranchMaster = () => {
+const OfficeNameMaster = () => {
   const [subBranches, setSubBranches] = useState([]);
   const [formState, setFormState] = useState({ subBranchName: "", status: "Active" });
   const [isEditing, setIsEditing] = useState(null);
@@ -137,7 +137,7 @@ const SubBranchMaster = () => {
         <div className="container mx-auto p-4">
           {/* Header Section */}
           <div className="flex justify-between items-center mb-6">
-            <div className="text-2xl font-bold">Sub Branch Master</div>
+            <div className="text-2xl font-bold">Office Name Master</div>
             <div className="flex flex-col md:flex-row md:items-center space-y-2 md:space-y-0 md:space-x-2">
               {showSearch && (
                 <input
@@ -171,13 +171,13 @@ const SubBranchMaster = () => {
           {/* Add/Update Sub Branch Form */}
           <div className="bg-white rounded-lg shadow-md mb-6">
             <div className="bg-blue-500 text-white px-6 py-3 rounded-t-lg">
-              <h3 className="text-lg sm:text-xl font-semibold">{isEditing ? "Edit Sub Branch" : "Add Sub Branch"}</h3>
+              <h3 className="text-lg sm:text-xl font-semibold">{isEditing ? "Edit Office Name" : "Add Office Name"}</h3>
             </div>
             <div className="p-6">
               <form onSubmit={handleSubmit}>
                 <div className="grid grid-cols-1 gap-2">
                   <div className="flex flex-col w-full">
-                    <label className="mb-1 font-medium">Sub Branch Name</label>
+                    <label className="mb-1 font-medium">Office Name</label>
                     <input
                       type="text"
                       value={formState.subBranchName}
@@ -209,7 +209,8 @@ const SubBranchMaster = () => {
               <table className="w-full bg-white rounded-lg shadow-md">
                 <thead>
                   <tr className="bg-blue-500 text-white">
-                    <th className="px-4 py-2">Sub Branch Name</th>
+                  <th className="px-4 py-2">Sr No</th>
+                    <th className="px-4 py-2">Office Name</th>
                     <th className="px-4 py-2">Status</th>
                     <th className="px-4 py-2">Actions</th>
                   </tr>
@@ -284,4 +285,4 @@ const SubBranchMaster = () => {
   );
 };
 
-export default SubBranchMaster;
+export default OfficeNameMaster;

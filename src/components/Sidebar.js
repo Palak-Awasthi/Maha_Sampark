@@ -4,7 +4,7 @@ import { FaUserTie, FaBuilding, FaNewspaper, FaBirthdayCake, FaUser, FaSignOutAl
 function Sidebar({ isOpen, toggleSidebar, onSelectSection }) {
   return (
     <aside
-      className={`fixed top-0 left-0 h-full bg-gradient-to-r from-gray-700 via-gray-800 to-gray-900 p-6 text-white transition-transform duration-300 transform ${
+      className={`fixed top-0 left-0 h-full bg-blue-800 p-6 text-white transition-transform duration-300 transform ${
         isOpen ? 'translate-x-0' : '-translate-x-full'
       } lg:translate-x-0 lg:relative lg:w-64 lg:block z-40 shadow-lg`}
     >
@@ -12,12 +12,14 @@ function Sidebar({ isOpen, toggleSidebar, onSelectSection }) {
       <button
         className="lg:hidden text-white bg-blue-600 p-2 rounded mb-4"
         onClick={toggleSidebar}
+        aria-label="Toggle Sidebar"
       >
         <FaBars size={24} />
       </button>
 
       {/* Dashboard Title */}
       <h3 className="text-2xl font-semibold mb-6 text-center">Dashboard</h3>
+
       {/* Sidebar Links */}
       <ul className="space-y-4">
         <SidebarLink label="Home" icon={<FaUser />} onClick={() => onSelectSection('home')} />
@@ -35,11 +37,11 @@ function Sidebar({ isOpen, toggleSidebar, onSelectSection }) {
   );
 }
 
-const SidebarLink = ({ label, icon, onClick, isActive }) => (
+const SidebarLink = ({ label, icon, onClick }) => (
   <li>
     <button
       onClick={onClick}
-      className={`flex items-center py-3 px-4 rounded-lg w-full text-left transition duration-300 ${isActive ? 'bg-blue-600 text-white' : 'bg-gray-800 text-gray-300 hover:bg-blue-600 hover:text-white'}`}
+      className="flex items-center py-3 px-4 rounded-lg w-full text-left transition duration-300 bg-blue-800 text-gray-300 hover:bg-blue-600 hover:text-white"
     >
       <span className="mr-3">{icon}</span>
       <span className="font-medium">{label}</span>

@@ -16,16 +16,18 @@ function Dashboard() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [selectedSection, setSelectedSection] = useState('home'); // Manage current section view
 
+  // Function to toggle sidebar open/close state
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
   };
 
+  // Function to handle section changes from the sidebar or header
   const handleSectionChange = (section) => {
     setSelectedSection(section); // Change section when clicked on Sidebar or DashboardContent
   };
 
   return (
-    <div className="flex h-screen overflow-hidden">
+    <div className="flex h-screen overflow-hidden relative">
       {/* Sidebar */}
       <Sidebar
         isOpen={isSidebarOpen}
@@ -33,31 +35,18 @@ function Dashboard() {
         onSelectSection={handleSectionChange}
       />
 
+      {/* Overlay for mobile view when sidebar is open */}
+      {isSidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black opacity-50 lg:hidden"
+          onClick={toggleSidebar} // Clicking on overlay should close the sidebar
+        />
+      )}
+
       {/* Main Content Area */}
       <div className={`flex flex-col flex-1 transition-all duration-300 ${isSidebarOpen ? 'lg:ml-64' : 'ml-0'}`}>
-        {/* Toggle Button for Mobile */}
-        <button
-          className="lg:hidden fixed top-4 left-4 text-white bg-blue-600 p-3 rounded z-50"
-          onClick={toggleSidebar}
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-6 w-6"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              d="M4 6h16M4 12h16M4 18h16"
-            />
-          </svg>
-        </button>
-
         {/* Header */}
-        <Header />
+        <Header onToggleSidebar={toggleSidebar} />
 
         {/* Main Content */}
         <main className="flex-1 p-6 bg-gray-100 overflow-auto">

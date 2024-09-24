@@ -8,7 +8,7 @@ import AdminFooter from "../AdminFooter";
 
 const TalukaMaster = () => {
   const [talukas, setTalukas] = useState([]);
-  const [formState, setFormState] = useState({ talukaName: "", status: "Active" });
+  const [formState, setFormState] = useState({ talukaName: "", district: "", state: "", status: "Active" });
   const [isEditing, setIsEditing] = useState(null);
   const [showSearch, setShowSearch] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -69,7 +69,7 @@ const TalukaMaster = () => {
 
   const handleEditTaluka = (id) => {
     const taluka = talukas.find((tk) => tk.id === id);
-    setFormState({ talukaName: taluka.talukaName, status: taluka.status });
+    setFormState({ talukaName: taluka.talukaName, status: taluka.status, district: taluka.district, state: taluka.state });
     setIsEditing(id);
   };
 
@@ -107,7 +107,7 @@ const TalukaMaster = () => {
   };
 
   const resetForm = () => {
-    setFormState({ talukaName: "", status: "Active" });
+    setFormState({ talukaName: "", status: "Active", district: "", state: "" });
     setIsEditing(null);
   };
 
@@ -175,9 +175,29 @@ const TalukaMaster = () => {
             </div>
             <div className="p-6">
               <form onSubmit={handleSubmit}>
-                <div className="grid grid-cols-1 gap-2">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
                   <div className="flex flex-col w-full">
-                    <label className="mb-1 font-medium">Taluka Name</label>
+                    <label className="mb-1 font-medium">State</label>
+                    <input
+                      type="text"
+                      value={formState.state}
+                      onChange={(e) => setFormState({ ...formState, state: e.target.value })}
+                      className="p-2 border rounded hover:scale-105 transition duration-300 w-full"
+                      required
+                    />
+                  </div>
+                  <div className="flex flex-col w-full">
+                    <label className="mb-1 font-medium">District</label>
+                    <input
+                      type="text"
+                      value={formState.district}
+                      onChange={(e) => setFormState({ ...formState, district: e.target.value })}
+                      className="p-2 border rounded hover:scale-105 transition duration-300 w-full"
+                      required
+                    />
+                  </div>
+                  <div className="flex flex-col w-full">
+                    <label className="mb-1 font-medium">Taluka</label>
                     <input
                       type="text"
                       value={formState.talukaName}
@@ -209,68 +229,50 @@ const TalukaMaster = () => {
               <table className="w-full bg-white rounded-lg shadow-md">
                 <thead>
                   <tr className="bg-blue-500 text-white">
-                    <th className="px-4 py-2">Taluka Name</th>
+                    <th className="px-4 py-3">Sr No</th>
+                    <th className="px-4 py-2">State</th>
+                    <th className="px-4 py-2">District</th>
+                    <th className="px-4 py-2">Taluka</th>
                     <th className="px-4 py-2">Status</th>
                     <th className="px-4 py-2">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {currentTalukas.map((taluka) => (
-                    <tr key={taluka.id}>
-                      <td className="border px-4 py-2">{taluka.talukaName}</td>
-                      <td className="border px-4 py-2">
-                        <span className={`text-${taluka.status === "Active" ? "green" : "red"}-500`}>
-                          {taluka.status}
-                        </span>
+                    <tr key={taluka.id} className="border-b hover:bg-gray-100">
+                      <td className="px-4 py-2">{taluka.state}</td>
+                      <td className="px-4 py-2">{taluka.district}</td>
+                      <td className="px-4 py-2">{taluka.talukaName}</td>
+                      <td className="px-4 py-2">
+                        <button onClick={() => handleToggleStatus(taluka.id, taluka.status)}>
+                          {taluka.status === "Active" ? <FaCheck className="text-green-500" /> : <FaTimes className="text-red-500" />}
+                        </button>
                       </td>
-                      <td className="border px-4 py-2 flex items-center space-x-2">
-                        <FaEdit
-                          className="cursor-pointer text-blue-500 hover:text-blue-600"
-                          onClick={() => handleEditTaluka(taluka.id)}
-                          title="Edit"
-                          aria-label="Edit taluka"
-                        />
-                        <FaTrash
-                          className="cursor-pointer text-red-500 hover:text-red-600"
-                          onClick={() => handleDeleteTaluka(taluka.id)}
-                          title="Delete"
-                          aria-label="Delete taluka"
-                        />
-                        <span
-                          className="cursor-pointer"
-                          onClick={() => handleToggleStatus(taluka.id, taluka.status)}
-                          title="Toggle Status"
-                        >
-                          {taluka.status === "Active" ? <FaTimes className="text-red-500" /> : <FaCheck className="text-green-500" />}
-                        </span>
+                      <td className="px-4 py-2 flex space-x-2">
+                        <button onClick={() => handleEditTaluka(taluka.id)} className="text-blue-500">
+                          <FaEdit />
+                        </button>
+                        <button onClick={() => handleDeleteTaluka(taluka.id)} className="text-red-500">
+                          <FaTrash />
+                        </button>
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
-
-              {/* Pagination */}
-              <div className="flex justify-center mt-4">
+              {/* Pagination Logic */}
+              <div className="flex justify-between mt-4">
                 <button
-                  className={`px-3 py-1 mx-1 ${currentPage === 1 ? "text-gray-400" : "text-blue-500"}`}
                   disabled={currentPage === 1}
                   onClick={() => setCurrentPage(currentPage - 1)}
+                  className="bg-blue-500 text-white rounded-md px-4 py-2 disabled:opacity-50"
                 >
                   Previous
                 </button>
-                {[...Array(totalPages).keys()].map((page) => (
-                  <button
-                    key={page}
-                    className={`px-3 py-1 mx-1 ${page + 1 === currentPage ? "bg-blue-500 text-white" : "text-blue-500"}`}
-                    onClick={() => setCurrentPage(page + 1)}
-                  >
-                    {page + 1}
-                  </button>
-                ))}
                 <button
-                  className={`px-3 py-1 mx-1 ${currentPage === totalPages ? "text-gray-400" : "text-blue-500"}`}
                   disabled={currentPage === totalPages}
                   onClick={() => setCurrentPage(currentPage + 1)}
+                  className="bg-blue-500 text-white rounded-md px-4 py-2 disabled:opacity-50"
                 >
                   Next
                 </button>

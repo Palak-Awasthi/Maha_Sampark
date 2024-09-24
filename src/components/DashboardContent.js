@@ -1,18 +1,27 @@
+// DashboardContent.js
 import React, { useEffect, useState } from 'react';
 import News from './News'; // Import the News component
 import { FaUserTie, FaBuilding, FaFolderOpen, FaBirthdayCake, FaRegSmile } from 'react-icons/fa';
 import axios from 'axios'; // Import Axios
+import DashboardCard from './DashboardCard'; // Import the reusable card component
 
 function DashboardContent({ onSelectSection }) {
   const [officerProfiles, setOfficerProfiles] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   // Axios function to fetch officer profiles from Spring Boot backend
   const fetchOfficerProfiles = async () => {
+    setLoading(true); // Start loading
+    setError(null); // Clear any previous errors
+
     try {
       const response = await axios.get('http://localhost:8080/api/officers'); // Change the URL to your Spring Boot endpoint
       setOfficerProfiles(response.data); // Assuming the backend returns an array of officer profiles
     } catch (error) {
-      console.error('Error fetching officer profiles:', error);
+      setError('Error fetching officer profiles. Please try again later.');
+    } finally {
+      setLoading(false); // Stop loading
     }
   };
 
@@ -28,73 +37,74 @@ function DashboardContent({ onSelectSection }) {
         <div className="welcome-container bg-gradient-to-r from-gray-100 to-gray-200 rounded-lg p-6 mb-6">
           <h2 className="text-3xl font-bold welcome-text">Welcome to the Dashboard</h2>
         </div>
-        
+
+        {/* Loading and Error States */}
+        {loading && <p>Loading officer profiles...</p>}
+        {error && <p className="text-red-500">{error}</p>}
+
+        {/* Officer Profiles Section (if available) */}
+        {officerProfiles.length > 0 && (
+          <div className="mt-6">
+            <h3 className="text-lg font-semibold">Officer Profiles</h3>
+            <ul>
+              {officerProfiles.map((officer) => (
+                <li key={officer.id} className="bg-white p-4 rounded-lg shadow-md mb-4">
+                  <h4 className="font-bold">{officer.name}</h4>
+                  <p>Position: {officer.position}</p>
+                  <p>Department: {officer.department}</p>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {/* Dashboard Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-          {/* Officer Profile Card */}
-          <div
-            className="relative bg-gradient-to-r from-blue-500 to-purple-600 text-white p-8 rounded-2xl shadow-2xl cursor-pointer hover:scale-105 transition-transform duration-500 hover:shadow-lg hover:shadow-indigo-500/50 overflow-hidden"
+          <DashboardCard
+            title="MCS Officer Profile"
+            icon={<FaUserTie size={30} />}
+            gradientFrom="blue-500"
+            gradientTo="purple-600"
             onClick={() => onSelectSection('officers-profile')}
-          >
-            <div className="absolute inset-0 bg-gradient-to-t from-transparent to-black opacity-30"></div>
-            <div className="relative z-10 flex items-center justify-between">
-              <h3 className="text-lg font-semibold">MCS Officer Profile</h3>
-              <FaUserTie size={30} />
-            </div>
-          </div>
-
-          {/* Govt Office Contacts Card */}
-          <div
-            className="relative bg-gradient-to-r from-green-400 to-blue-500 text-white p-8 rounded-2xl shadow-2xl cursor-pointer hover:scale-105 transition-transform duration-500 hover:shadow-lg hover:shadow-blue-500/50 overflow-hidden"
+          />
+          <DashboardCard
+            title="Govt Office Contacts"
+            icon={<FaBuilding size={30} />}
+            gradientFrom="green-400"
+            gradientTo="blue-500"
             onClick={() => onSelectSection('govt-offices')}
-          >
-            <div className="absolute inset-0 bg-gradient-to-t from-transparent to-black opacity-30"></div>
-            <div className="relative z-10 flex items-center justify-between">
-              <h3 className="text-lg font-semibold">Govt Office Contacts</h3>
-              <FaBuilding size={30} />
-            </div>
-          </div>
-
-          {/* Department Information Card */}
-          <div
-            className="relative bg-gradient-to-r from-yellow-400 to-red-500 text-white p-8 rounded-2xl shadow-2xl cursor-pointer hover:scale-105 transition-transform duration-500 hover:shadow-lg hover:shadow-red-500/50 overflow-hidden"
+          />
+          <DashboardCard
+            title="Department Information"
+            icon={<FaFolderOpen size={30} />}
+            gradientFrom="yellow-400"
+            gradientTo="red-500"
             onClick={() => onSelectSection('department-information')}
-          >
-            <div className="absolute inset-0 bg-gradient-to-t from-transparent to-black opacity-30"></div>
-            <div className="relative z-10 flex items-center justify-between">
-              <h3 className="text-lg font-semibold">Department Information</h3>
-              <FaFolderOpen size={30} />
-            </div>
-          </div>
+          />
         </div>
 
         {/* Large Cards for Today's Birthday and Joining */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
-          {/* Today's Birthday */}
-          <div
-            className="relative bg-gradient-to-r from-pink-500 to-purple-500 text-white p-12 h-64 lg:h-96 rounded-2xl shadow-2xl cursor-pointer hover:scale-105 transition-transform duration-500 hover:shadow-lg hover:shadow-pink-500/50 overflow-hidden"
-            onClick={() => onSelectSection('todays-birthday')}
-          >
-            <div className="absolute inset-0 bg-gradient-to-t from-transparent to-black opacity-30"></div>
-            <div className="relative z-10">
-              <h3 className="text-2xl font-semibold text-center">🎉 Happy Birthday!</h3>
-              <FaBirthdayCake size={50} className="mx-auto mt-4" />
-              <p className="text-center mt-4">John Doe</p> {/* Example content */}
-            </div>
-          </div>
+<div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+{/* Today's Birthday */}
+<DashboardCard
+  title="🎉 Happy Birthday!"
+  icon={<FaBirthdayCake size={50} />}
+  gradientFrom="pink-500"
+  gradientTo="purple-500"
+  onClick={() => onSelectSection('todays-birthday')}
+  padding="p-20" // Increased padding
+/>
 
-          {/* Today's Joining */}
-          <div
-            className="relative bg-gradient-to-r from-green-400 to-teal-600 text-white p-12 h-64 lg:h-96 rounded-2xl shadow-2xl cursor-pointer hover:scale-105 transition-transform duration-500 hover:shadow-lg hover:shadow-teal-500/50 overflow-hidden"
-            onClick={() => onSelectSection('todays-joining')}
-          >
-            <div className="absolute inset-0 bg-gradient-to-t from-transparent to-black opacity-30"></div>
-            <div className="relative z-10">
-              <h3 className="text-2xl font-semibold text-center">🎉 Welcome Aboard!</h3>
-              <FaRegSmile size={50} className="mx-auto mt-4" />
-              <p className="text-center mt-4">Jane Smith</p> {/* Example content */}
-            </div>
-          </div>
-        </div>
+{/* Today's Joining */}
+<DashboardCard
+  title="🎉 Welcome Aboard!"
+  icon={<FaRegSmile size={50} />}
+  gradientFrom="green-400"
+  gradientTo="teal-600"
+  onClick={() => onSelectSection('todays-joining')}
+  padding="p-20" // Increased padding
+/>
+</div>
       </div>
 
       {/* News Section */}

@@ -10,7 +10,6 @@ import DepartmentInformation from './components/DepartmentInformation';
 import RegistrationForm from './components/RegistrationForm';
 import AdminDashboard from './AdminComp/AdminDashboard';
 import AdminLayout from './AdminComp/AdminLayout';
-
 import MCSAISDesignationMaster from './AdminComp/Master/MCSAISDesignationMaster';
 import StaffDesignationMaster from './AdminComp/Master/StaffDesignationMaster';
 import GovernmentOfficeDepartmentMaster from './AdminComp/Master/GovernmentOfficeDepartmentMaster';
@@ -19,7 +18,7 @@ import TalukaMaster from './AdminComp/Master/TalukaMaster';
 import NonOfficialMainTypeMaster from './AdminComp/Master/NonOfficialMainTypeMaster';
 import DistrictMaster from './AdminComp/Master/DistrictMaster';
 import StateMaster from './AdminComp/Master/StateMaster';
-import SubBranchMaster from './AdminComp/Master/SubBranchMaster';
+import OfficeNameMaster from './AdminComp/Master/OfficeNameMaster';
 import MainDepartmentMaster from './AdminComp/Master/MainDepartmentMaster';
 import PostingMaster from './AdminComp/Master/PostingMaster';
 import OfficeDesignationMaster from './AdminComp/Master/OfficeDesignationMaster';
@@ -60,7 +59,7 @@ function App() {
           <Route path="/officialmain" element={< NonOfficialMainTypeMaster />} />
           <Route path="/district" element={< DistrictMaster />} />
           <Route path="/state" element={< StateMaster />} />
-          <Route path="/subbranch" element={< SubBranchMaster />} />
+          <Route path="/officename" element={< OfficeNameMaster />} />
           <Route path="/maindeptmaster" element={< MainDepartmentMaster />} />
           <Route path="/posting" element={< PostingMaster />} />
           <Route path="/desigmaster" element={<  OfficeDesignationMaster />} />
@@ -70,9 +69,7 @@ function App() {
           <Route path="/mcsofficerprofile" element={<MCSOfficerProfileList/>} />
           <Route path="/aisofficerprofile" element={<AISOfficerProfileList/>} />
           <Route path="/govofficer"         element={<GovtOfficeContact/>} />
-          <Route path="/mahagovofficer" element={<MaharashtraGovtOfficers />}  />
-          
-          
+          <Route path="/mahagovofficer" element={<MaharashtraGovtOfficers />} />
           <Route path="/AdminHeader" element={<AdminHeader />} />
           <Route path="/AdminFooter" element={<AdminFooter />} />
           
