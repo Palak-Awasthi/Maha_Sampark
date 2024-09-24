@@ -1,103 +1,104 @@
 import React, { useState, useEffect } from "react";
-import { FaCheck, FaTimes, FaSyncAlt, FaSearch, FaEdit, FaTrash } from "react-icons/fa";
 import axios from "axios";
+import { FaSearch, FaSyncAlt, FaEdit, FaTrash, FaCheck, FaTimes } from "react-icons/fa";
+import { toast } from "react-toastify";
+import AdminHeader from "../AdminHeader";
+import AdminSidebar from "../AdminSidebar";
+import AdminFooter from "../AdminFooter";
 
 const PostingMaster = () => {
   const [postings, setPostings] = useState([]);
-  const [designations, setDesignations] = useState([]);
-  const [postingFormState, setPostingFormState] = useState({
-    type: "",
-    designation: "",
-    postingName: "",
-  });
+  const [formState, setFormState] = useState({ postingName: "", status: "Active" });
+  const [isEditing, setIsEditing] = useState(null);
   const [showSearch, setShowSearch] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   useEffect(() => {
     fetchPostings();
-    fetchDesignations();
   }, []);
 
   const fetchPostings = async () => {
+    setLoading(true);
     try {
       const response = await axios.get("http://localhost:8080/api/postings");
       setPostings(response.data);
     } catch (error) {
-      console.error("Error fetching postings", error);
+      handleError(error);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const fetchDesignations = async () => {
-    try {
-      const response = await axios.get("http://localhost:8080/api/designations");
-      setDesignations(response.data);
-    } catch (error) {
-      console.error("Error fetching designations", error);
+  const handleAddOrUpdatePosting = async () => {
+    const trimmedPostingName = formState.postingName.trim();
+
+    if (!trimmedPostingName) {
+      toast.error("Posting Name is required!");
+      return;
     }
-  };
 
-  const handleAddPosting = async (e) => {
-    e.preventDefault();
+    setLoading(true);
     try {
-      if (!postingFormState.type || !postingFormState.designation || !postingFormState.postingName) {
-        alert("All fields are required!");
-        return;
-      }
-
-      const response = await axios.post("http://localhost:8080/api/postings", {
-        maintype: postingFormState.type,
-        designation: { id: postingFormState.designation },  // Send designation as an object
-        post: postingFormState.postingName,
-        status: "Inactive",  // Set status to "Inactive" by default
-      });
-
-      setPostings([...postings, response.data]);
-      setPostingFormState({ type: "", designation: "", postingName: "" });
-
-      alert("Data added successfully!");
-    } catch (error) {
-      if (error.response) {
-        console.error("Error response:", error.response);
-        alert(`Failed to add data: ${error.response.data.message || error.message}`);
-      } else if (error.request) {
-        console.error("Error request:", error.request);
-        alert("Failed to add data. No response from server.");
+      let response;
+      if (isEditing) {
+        response = await axios.put(`http://localhost:8080/api/postings/${isEditing}`, { ...formState, postingName: trimmedPostingName });
+        toast.success("Posting updated successfully!");
       } else {
-        console.error("Error message:", error.message);
-        alert("Failed to add data. Please check your input or try again.");
+        response = await axios.post("http://localhost:8080/api/postings", { ...formState, postingName: trimmedPostingName });
+        toast.success("Posting added successfully!");
       }
+
+      if (response.status === 200 || response.status === 201) {
+        fetchPostings();
+        resetForm();
+      }
+    } catch (error) {
+      handleError(error);
+    } finally {
+      setLoading(false);
     }
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    handleAddOrUpdatePosting();
   };
 
   const handleEditPosting = (id) => {
     const posting = postings.find((p) => p.id === id);
-    setPostingFormState({
-      type: posting.type,
-      designation: posting.designation.id,  // Store designation id
-      postingName: posting.postingName,
-    });
+    setFormState({ postingName: posting.postingName, status: posting.status });
+    setIsEditing(id);
   };
 
   const handleDeletePosting = async (id) => {
-    try {
-      await axios.delete(`http://localhost:8080/api/postings/${id}`);
-      setPostings(postings.filter((posting) => posting.id !== id));
-    } catch (error) {
-      console.error("Error deleting posting", error);
+    if (window.confirm("Are you sure you want to delete this posting?")) {
+      setLoading(true);
+      try {
+        await axios.delete(`http://localhost:8080/api/postings/${id}`);
+        setPostings(postings.filter((p) => p.id !== id));
+        toast.success("Posting deleted successfully!");
+      } catch (error) {
+        handleError(error);
+      } finally {
+        setLoading(false);
+      }
     }
   };
 
-  const togglePostingStatus = async (id) => {
-    const posting = postings.find((p) => p.id === id);
+  const handleToggleStatus = async (id, currentStatus) => {
+    const newStatus = currentStatus === "Active" ? "Inactive" : "Active";
+    setLoading(true);
     try {
-      const updatedStatus = posting.status === "Active" ? "Inactive" : "Active";
-      const response = await axios.put(`http://localhost:8080/api/postings/${id}`, {
-        ...posting,
-        status: updatedStatus,
-      });
-      setPostings(postings.map((p) => (p.id === id ? response.data : p)));
+      await axios.put(`http://localhost:8080/api/postings/${id}/status`, { status: newStatus });
+      fetchPostings();
+      toast.success(`Posting status updated to ${newStatus} successfully!`);
     } catch (error) {
-      console.error("Error toggling status", error);
+      handleError(error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -105,151 +106,181 @@ const PostingMaster = () => {
     setSearchTerm(event.target.value);
   };
 
-  const filteredPostings = postings.filter((posting) =>
-    posting.postingName.toLowerCase().includes(searchTerm.toLowerCase())
+  const resetForm = () => {
+    setFormState({ postingName: "", status: "Active" });
+    setIsEditing(null);
+  };
+
+  const handleError = (error) => {
+    console.error("Error:", error);
+    if (error.response) {
+      toast.error(`Error: ${error.response.status} - ${error.response.data.message || "An error occurred."}`);
+    } else if (error.request) {
+      toast.error("No response received from the server. Please try again.");
+    } else {
+      toast.error("An unexpected error occurred. Please try again.");
+    }
+  };
+
+  const filteredPostings = postings.filter((p) =>
+    p.postingName?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false
   );
 
+  const totalPages = Math.ceil(filteredPostings.length / itemsPerPage);
+  const currentPostings = filteredPostings.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
   return (
-    <div className="container mx-auto p-4">
-      {/* Header Section */}
-      <div className="flex justify-between items-center mb-6">
-        <div className="relative overflow-hidden whitespace-nowrap">
-          <marquee className="text-2xl font-bold">Posting Master</marquee>
+    <div className="flex">
+      <AdminSidebar />
+      <div className="flex-grow">
+        <AdminHeader />
+        <div className="container mx-auto p-4">
+          {/* Header Section */}
+          <div className="flex justify-between items-center mb-6">
+            <div className="text-2xl font-bold">Posting Master</div>
+            <div className="flex flex-col md:flex-row md:items-center space-y-2 md:space-y-0 md:space-x-2">
+              {showSearch && (
+                <input
+                  type="text"
+                  placeholder="Search Posting"
+                  value={searchTerm}
+                  onChange={handleSearch}
+                  className="px-3 py-2 border rounded-md focus:outline-none focus:border-blue-500 w-full sm:w-auto"
+                />
+              )}
+              <button
+                onClick={() => setShowSearch(!showSearch)}
+                className="p-2 bg-blue-500 text-white rounded-md transition-transform transform hover:scale-110"
+                title="Search"
+              >
+                <FaSearch />
+              </button>
+              <button
+                onClick={() => {
+                  setSearchTerm("");
+                  setShowSearch(false);
+                }}
+                className="p-2 bg-blue-500 text-white rounded-md transition-transform transform hover:scale-110"
+                title="Reset"
+              >
+                <FaSyncAlt />
+              </button>
+            </div>
+          </div>
+
+          {/* Add/Update Posting Form */}
+          <div className="bg-white rounded-lg shadow-md mb-6">
+            <div className="bg-blue-500 text-white px-6 py-3 rounded-t-lg">
+              <h3 className="text-lg sm:text-xl font-semibold">{isEditing ? "Edit Posting" : "Add Posting"}</h3>
+            </div>
+            <div className="p-6">
+              <form onSubmit={handleSubmit}>
+                <div className="grid grid-cols-1 gap-2">
+                  <div className="flex flex-col w-full">
+                    <label className="mb-1 font-medium">Posting Name</label>
+                    <input
+                      type="text"
+                      value={formState.postingName}
+                      onChange={(e) => setFormState({ ...formState, postingName: e.target.value })}
+                      className="p-2 border rounded hover:scale-105 transition duration-300 w-full"
+                      required
+                    />
+                  </div>
+                </div>
+                <div className="flex justify-center mt-4">
+                  <button
+                    type="submit"
+                    className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition duration-300"
+                    disabled={loading}
+                  >
+                    {isEditing ? "Update" : "Submit"}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+
+          {/* Loader UI */}
+          {loading && <div className="text-center">Loading...</div>}
+
+          {/* Posting List Table */}
+          <div className="bg-white rounded-lg shadow-md mb-6 overflow-x-auto">
+            <div className="px-6 py-4">
+              <table className="w-full bg-white rounded-lg shadow-md">
+                <thead>
+                  <tr className="bg-blue-500 text-white">
+                    <th className="px-4 py-2">Posting Name</th>
+                    <th className="px-4 py-2">Status</th>
+                    <th className="px-4 py-2">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {currentPostings.map((posting) => (
+                    <tr key={posting.id}>
+                      <td className="border px-4 py-2">{posting.postingName}</td>
+                      <td className="border px-4 py-2">
+                        <span className={`text-${posting.status === "Active" ? "green" : "red"}-500`}>
+                          {posting.status}
+                        </span>
+                      </td>
+                      <td className="border px-4 py-2 flex items-center space-x-2">
+                        <FaEdit
+                          className="cursor-pointer text-blue-500 hover:text-blue-600"
+                          onClick={() => handleEditPosting(posting.id)}
+                          title="Edit"
+                          aria-label="Edit posting"
+                        />
+                        <FaTrash
+                          className="cursor-pointer text-red-500 hover:text-red-600"
+                          onClick={() => handleDeletePosting(posting.id)}
+                          title="Delete"
+                          aria-label="Delete posting"
+                        />
+                        <span
+                          className={`cursor-pointer ${posting.status === "Active" ? "text-red-500" : "text-green-500"}`}
+                          onClick={() => handleToggleStatus(posting.id, posting.status)}
+                          title="Toggle Status"
+                          aria-label="Toggle posting status"
+                        >
+                          {posting.status === "Active" ? <FaTimes /> : <FaCheck />}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+
+              {/* Pagination */}
+              <div className="flex justify-center mt-4">
+                <button
+                  className={`px-3 py-1 mx-1 ${currentPage === 1 ? "text-gray-400" : "text-blue-500"}`}
+                  disabled={currentPage === 1}
+                  onClick={() => setCurrentPage(currentPage - 1)}
+                >
+                  Previous
+                </button>
+                {[...Array(totalPages).keys()].map((page) => (
+                  <button
+                    key={page}
+                    className={`px-3 py-1 mx-1 ${page + 1 === currentPage ? "bg-blue-500 text-white" : "text-blue-500"}`}
+                    onClick={() => setCurrentPage(page + 1)}
+                  >
+                    {page + 1}
+                  </button>
+                ))}
+                <button
+                  className={`px-3 py-1 mx-1 ${currentPage === totalPages ? "text-gray-400" : "text-blue-500"}`}
+                  disabled={currentPage === totalPages}
+                  onClick={() => setCurrentPage(currentPage + 1)}
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
-        <div className="flex flex-col md:flex-row md:items-center space-y-2 md:space-y-0 md:space-x-2">
-          {showSearch && (
-            <input
-              type="text"
-              placeholder="Search Posting"
-              value={searchTerm}
-              onChange={handleSearch}
-              className="px-3 py-2 border rounded-md focus:outline-none focus:border-blue-500 w-full sm:w-auto"
-            />
-          )}
-          <button
-            onClick={() => setShowSearch(!showSearch)}
-            className="p-2 bg-blue-500 text-white rounded-md transition-transform transform hover:scale-110"
-            title="Search"
-          >
-            <FaSearch />
-          </button>
-          <button
-            onClick={() => {
-              setSearchTerm("");
-              setShowSearch(false);
-            }}
-            className="p-2 bg-blue-500 text-white rounded-md transition-transform transform hover:scale-110"
-            title="Reset"
-          >
-            <FaSyncAlt />
-          </button>
-        </div>
+        <AdminFooter />
       </div>
-
-      {/* Posting Form Section */}
-      <div className="bg-white rounded-lg shadow-md mb-6">
-        <div className="bg-blue-500 text-white px-6 py-3 rounded-t-lg">
-          <h3 className="text-xl font-semibold">Add Posting</h3>
-        </div>
-
-        <form onSubmit={handleAddPosting} className="p-6 grid grid-cols-3 gap-4">
-          <div className="flex flex-col">
-            <label className="mb-1 font-medium">Type</label>
-            <select
-              value={postingFormState.type}
-              onChange={(e) => setPostingFormState({ ...postingFormState, type: e.target.value })}
-              className="w-full p-2 border rounded"
-            >
-              <option value="">Select Type</option>
-              <option value="MCS">MCS</option>
-              <option value="AIS">AIS</option>
-              <option value="FIS">FIS</option>
-            </select>
-          </div>
-
-          <div className="flex flex-col">
-            <label className="mb-1 font-medium">Designation</label>
-            <select
-              value={postingFormState.designation}
-              onChange={(e) => setPostingFormState({ ...postingFormState, designation: e.target.value })}
-              className="w-full p-2 border rounded"
-            >
-              <option value="">Select Designation</option>
-              <option value="Deputy Collector">Deputy Collector</option>
-              <option value="District Collector">District Collector</option>
-              <option value="Palak">Palak</option>
-              <option value="ais">ais</option>
-              {designations.map((designation) => (
-                <option key={designation.id} value={designation.id}>
-                  {designation.designationName}  {/* Send the designation name as the value */}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="flex flex-col">
-            <label className="mb-1 font-medium">Posting Name</label>
-            <input
-              type="text"
-              placeholder="Posting Name"
-              value={postingFormState.postingName}
-              onChange={(e) => setPostingFormState({ ...postingFormState, postingName: e.target.value })}
-              className="w-full p-2 border rounded"
-            />
-          </div>
-        </form>
-
-        <div className="flex justify-center mt-5">
-          <button
-            type="submit"
-            onClick={handleAddPosting}
-            className="bg-blue-500 text-white p-3 rounded-lg w-40 hover:bg-blue-600 shadow-lg"
-          >
-            Submit
-          </button>
-        </div>
-      </div>
-
-      {/* Posting Table Section */}
-      <table className="w-full bg-white rounded-lg shadow-md mb-6">
-        <thead>
-          <tr className="bg-blue-500 text-white">
-            <th className="p-4">Sr No</th>
-            <th className="p-4">Type</th>
-            <th className="p-4">Designation</th>
-            <th className="p-4">Posting Name</th>
-            <th className="p-4">Status</th>
-            <th className="p-4">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {filteredPostings.map((posting, index) => (
-            <tr key={posting.id} className="border-b hover:bg-gray-100">
-              <td className="p-4">{index + 1}</td>
-              <td className="p-4">{posting.maintype}</td>
-              <td className="p-4">{posting.designation.designationName}</td>
-              <td className="p-4">{posting.post}</td>
-              <td className="p-4">
-                <button onClick={() => togglePostingStatus(posting.id)}>
-                  {posting.status === "Active" ? (
-                    <FaCheck className="text-green-500" />
-                  ) : (
-                    <FaTimes className="text-red-500" />
-                  )}
-                </button>
-              </td>
-              <td className="p-4">
-                <button onClick={() => handleEditPosting(posting.id)}>
-                  <FaEdit className="text-blue-500" />
-                </button>
-                <button onClick={() => handleDeletePosting(posting.id)}>
-                  <FaTrash className="text-red-500 ml-2" />
-                </button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
     </div>
   );
 };

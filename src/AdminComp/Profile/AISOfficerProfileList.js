@@ -1,79 +1,152 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { FaSyncAlt, FaEdit, FaTrash } from "react-icons/fa";
-import AdminHeader from "../AdminHeader"; // Import Header
-import AdminFooter from "../AdminFooter"; // Import Footer
-import AdminSidebar from "../AdminSidebar"; // Import Sidebar
+import DataTable from "react-data-table-component";
+import { FaSyncAlt, FaEye, FaEdit, FaTrash } from "react-icons/fa"; // Import necessary icons
+import AdminHeader from "../AdminHeader";
+import AdminFooter from "../AdminFooter";
+import AdminSidebar from "../AdminSidebar";
+import { ToastContainer } from "react-toastify";
+import 'react-toastify/dist/ReactToastify.css';
 
 const AISOfficerProfileList = () => {
   const [profiles, setProfiles] = useState([]);
+  const [filteredProfiles, setFilteredProfiles] = useState([]);
   const [formState, setFormState] = useState({
     name: "",
     designation: "",
-    postingDistrict: "",
+    cadre: "",
+    postingState: "",
+    postingDistrictLocation: "",
+    batchYearOfAppointment: "",
     homeState: "",
-    yearOfAppointment: "",
-    payScaleGroup: "",
+    payMatrixLevel: "",
     sourceOfRecruitment: "",
-    otherInfo: "",
-    phoneNumber: "",
-    email: "",
-    approvalStatus: "Pending",
   });
 
-  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState(formState);
+  const fetchProfiles = async () => {
+    try {
+      const response = await axios.get("http://localhost:8080/api/ais");
+      setProfiles(response.data);
+      setFilteredProfiles(response.data);
+    } catch (error) {
+      handleError(error);
+    }
+  };
 
   useEffect(() => {
-    const fetchProfiles = async () => {
-      try {
-        const response = await axios.get("http://localhost:8080/api/profiles", {
-          params: debouncedSearchTerm,
-        });
-        setProfiles(response.data);
-      } catch (error) {
-        handleError(error);
-      }
-    };
-
     fetchProfiles();
-  }, [debouncedSearchTerm]);
+  }, []);
 
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedSearchTerm(formState);
-    }, 300); // Adjust delay as needed
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormState((prevState) => ({
+      ...prevState,
+      [name]: value,
+    }));
 
-    return () => {
-      clearTimeout(handler);
-    };
-  }, [formState]);
+    filterProfiles({ ...formState, [name]: value });
+  };
+
+  const filterProfiles = (searchValues) => {
+    const filtered = profiles.filter((profile) => {
+      return Object.keys(searchValues).every((key) => {
+        if (!searchValues[key]) return true;
+        return profile[key]?.toString().toLowerCase().includes(searchValues[key].toLowerCase());
+      });
+    });
+    setFilteredProfiles(filtered);
+  };
 
   const resetForm = () => {
     setFormState({
       name: "",
       designation: "",
-      postingDistrict: "",
+      cadre: "",
+      postingState: "",
+      postingDistrictLocation: "",
+      batchYearOfAppointment: "",
       homeState: "",
-      yearOfAppointment: "",
-      payScaleGroup: "",
+      payMatrixLevel: "",
       sourceOfRecruitment: "",
-      otherInfo: "",
-      phoneNumber: "",
-      email: "",
-      approvalStatus: "Pending",
     });
+    fetchProfiles();
   };
 
   const handleError = (error) => {
     console.error("Error:", error);
-    if (error.response) {
-      alert(`Error: ${error.response.status} - ${error.response.data.message || "An error occurred."}`);
-    } else if (error.request) {
-      alert("No response received from the server. Please try again.");
-    } else {
-      alert("An unexpected error occurred. Please try again.");
-    }
+    const message = error.response
+      ? `Error: ${error.response.status} - ${error.response.data.message || "An error occurred."}`
+      : "An unexpected error occurred. Please try again.";
+    alert(message);
   };
+
+  const handleView = (id) => {
+    // Implement view functionality
+    console.log(`View profile with ID: ${id}`);
+  };
+
+  const handleEdit = (id) => {
+    // Implement edit functionality
+    console.log(`Edit profile with ID: ${id}`);
+  };
+
+  const handleDelete = (id) => {
+    // Implement delete functionality
+    console.log(`Delete profile with ID: ${id}`);
+  };
+
+  const columns = [
+    { name: "ID", selector: (row) => row.id, sortable: true },
+    { name: "Name", selector: (row) => row.name, sortable: true },
+    { name: "Designation", selector: (row) => row.designation, sortable: true },
+    { name: "ID Number", selector: (row) => row.idNumber, sortable: true },
+    { name: "Present Posting", selector: (row) => row.presentPosting, sortable: true },
+    { name: "Mobile Number 1", selector: (row) => row.mobileNumber1, sortable: true },
+    { name: "Mobile Number 2", selector: (row) => row.mobileNumber2, sortable: true },
+    { name: "Batch Year of Appointment", selector: (row) => row.batchYearOfAppointment, sortable: true },
+    { name: "Cadre State", selector: (row) => row.cadreState, sortable: true },
+    { name: "Posting State", selector: (row) => row.postingState, sortable: true },
+    { name: "Posting District Location", selector: (row) => row.postingDistrictLocation, sortable: true },
+    { name: "Date of Birth", selector: (row) => row.dateOfBirth, sortable: true },
+    { name: "Date of Appointment", selector: (row) => row.dateOfAppointment, sortable: true },
+    { name: "Date of Present Posting", selector: (row) => row.dateOfPresentPosting, sortable: true },
+    { name: "Home State", selector: (row) => row.homeState, sortable: true },
+    { name: "Source of Recruitment", selector: (row) => row.sourceOfRecruitment, sortable: true },
+    { name: "Pay Matrix Level", selector: (row) => row.payMatrixLevel, sortable: true },
+    { name: "Email ID", selector: (row) => row.emailId, sortable: true },
+    { name: "Educational Qualification", selector: (row) => row.educationalQualification, sortable: true },
+    { name: "Information Updated Date", selector: (row) => row.informationUpdatedDate, sortable: true },
+    { name: "Past Posting", selector: (row) => row.pastPosting, sortable: true },
+    { name: "Other Information", selector: (row) => row.otherInformation, sortable: true },
+    {
+      name: "Actions",
+      cell: (row) => (
+        <div className="flex space-x-2">
+          <button
+            onClick={() => handleView(row.id)}
+            className="p-1 bg-green-500 text-white rounded-md hover:bg-green-600 transition"
+            title="View"
+          >
+            <FaEye />
+          </button>
+          <button
+            onClick={() => handleEdit(row.id)}
+            className="p-1 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition"
+            title="Edit"
+          >
+            <FaEdit />
+          </button>
+          <button
+            onClick={() => handleDelete(row.id)}
+            className="p-1 bg-red-500 text-white rounded-md hover:bg-red-600 transition"
+            title="Delete"
+          >
+            <FaTrash />
+          </button>
+        </div>
+      ),
+    },
+  ];
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -81,136 +154,64 @@ const AISOfficerProfileList = () => {
         <AdminSidebar />
         <div className="flex-1 flex flex-col">
           <AdminHeader />
+          <div className="flex flex-col md:flex-row md:justify-between items-start md:items-center mb-6">
+              <h1 className="text-2xl sm:text-3xl font-bold">AIS Officers Profile List</h1>
+              <button
+                onClick={resetForm}
+                className="p-2 bg-blue-500 text-white rounded-md transition-transform transform hover:scale-110"
+                title="Reset"
+              >
+                <FaSyncAlt />
+              </button>
+            </div>
           <div className="p-6">
-            <div className="flex flex-col md:flex-row md:justify-between items-start md:items-center mb-6">
-              <div className="text-2xl sm:text-3xl font-bold">
-                <span className="mx-2">AIS Officers Profile List</span>
-              </div>
-              <div className="flex flex-col md:flex-row md:items-center space-y-2 md:space-y-0 md:space-x-2">
-                <button
-                  onClick={resetForm}
-                  className="p-2 bg-blue-500 text-white rounded-md transition-transform transform hover:scale-110"
-                  title="Reset"
-                >
-                  <FaSyncAlt />
-                </button>
-              </div>
-            </div>
-
-            {/* Search Profile Form */}
-            <div className="bg-white rounded-lg shadow-md mb-6">
-              <div className="bg-blue-500 text-white px-6 py-3 rounded-t-lg">
-                <h3 className="text-lg sm:text-xl font-semibold">Search Profile</h3>
-              </div>
-              <div className="p-6">
-                <form>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <div className="col-span-1">
-                      <label htmlFor="name" className="block text-gray-700"><strong>Name</strong></label>
-                      <input
-                        type="text"
-                        id="name"
-                        value={formState.name}
-                        onChange={(e) => setFormState({ ...formState, name: e.target.value })}
-                        placeholder="Name"
-                        className="p-2 border rounded w-full"
-                      />
-                    </div>
-                    <div className="col-span-1">
-                      <label htmlFor="designation" className="block text-gray-700"><strong>Designation</strong></label>
-                      <select
-                        id="designation"
-                        value={formState.designation}
-                        onChange={(e) => setFormState({ ...formState, designation: e.target.value })}
-                        className="p-2 border rounded w-full"
-                      >
-                        <option value="">Select Designation</option>
-                        <option value="IAS">IAS</option>
-                        <option value="IPS">IPS</option>
-                        <option value="IFS">IFS</option>
-                      </select>
-                    </div>
-                    <div className="col-span-1">
-                      <label htmlFor="postingDistrict" className="block text-gray-700"><strong>Posting District</strong></label>
-                      <select
-                        id="postingDistrict"
-                        value={formState.postingDistrict}
-                        onChange={(e) => setFormState({ ...formState, postingDistrict: e.target.value })}
-                        className="p-2 border rounded w-full"
-                      >
-                        <option value="">Select District</option>
-                        <option value="District A">District A</option>
-                        <option value="District B">District B</option>
-                        <option value="District C">District C</option>
-                      </select>
-                    </div>
+            {/* Search Fields */}
+            <div className="bg-white rounded-lg shadow-md mb-6 p-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {Object.keys(formState).map((key) => (
+                  <div key={key}>
+                    <label className="font-bold">{key.replace(/([A-Z])/g, ' $1')}</label>
+                    <input
+                      type="text"
+                      name={key}
+                      value={formState[key]}
+                      onChange={handleInputChange}
+                      className="border p-1 rounded-md w-full"
+                    />
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
-                    <div className="col-span-1">
-                      <label htmlFor="homeState" className="block text-gray-700"><strong>Home State</strong></label>
-                      <select
-                        id="homeState"
-                        value={formState.homeState}
-                        onChange={(e) => setFormState({ ...formState, homeState: e.target.value })}
-                        className="p-2 border rounded w-full"
-                      >
-                        <option value="">Select State</option>
-                        {/* Add more options as needed */}
-                      </select>
-                    </div>
-                    <div className="col-span-1">
-                      <label htmlFor="yearOfAppointment" className="block text-gray-700"><strong>Year of Appointment</strong></label>
-                      <select
-                        id="yearOfAppointment"
-                        value={formState.yearOfAppointment}
-                        onChange={(e) => setFormState({ ...formState, yearOfAppointment: e.target.value })}
-                        className="p-2 border rounded w-full"
-                      >
-                        <option value="">Select Year</option>
-                        {/* Add more options as needed */}
-                      </select>
-                    </div>
-                  </div>
-                </form>
+                ))}
               </div>
             </div>
+            </div>
+           
 
-            {/* Profiles List */}
-            <div className="bg-white rounded-lg shadow-md">
-              <div className="bg-blue-500 text-white px-6 py-3 rounded-t-lg">
-                <h3 className="text-lg sm:text-xl font-semibold">Profiles List</h3>
-              </div>
-              <div className="p-6">
-                {profiles.length === 0 ? (
-                  <p>No profiles available.</p>
-                ) : (
-                  <table className="min-w-full">
-                    <thead>
-                      <tr>
-                        <th className="border-b px-4 py-2">Name</th>
-                        <th className="border-b px-4 py-2">Designation</th>
-                        <th className="border-b px-4 py-2">Approval Status</th>
-                        <th className="border-b px-4 py-2">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {profiles.map((profile) => (
-                        <tr key={profile.id}>
-                          <td className="border-b px-4 py-2">{profile.name}</td>
-                          <td className="border-b px-4 py-2">{profile.designation}</td>
-                          <td className="border-b px-4 py-2">{profile.approvalStatus}</td>
-                          <td className="border-b px-4 py-2">
-                            <button className="text-blue-500 hover:underline" title="Edit"><FaEdit /></button>
-                            <button className="text-red-500 hover:underline ml-2" title="Delete"><FaTrash /></button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                )}
-              </div>
+           <div>
+            {/* DataTable for displaying profiles */}
+            <DataTable
+              columns={columns}
+              data={filteredProfiles}
+              pagination
+              striped
+              highlightOnHover
+              dense
+              customStyles={{
+                headRow: {
+                  style: {
+                    backgroundColor: '#1E90FF',
+                    color: 'white',
+                    fontWeight: 'bold',
+                  },
+                },
+                cells: {
+                  style: {
+                    fontSize: '14px',
+                  },
+                },
+              }}
+            />
             </div>
-          </div>
+            <ToastContainer />
+         
           <AdminFooter />
         </div>
       </div>

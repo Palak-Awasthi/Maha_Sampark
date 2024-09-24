@@ -1,46 +1,74 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { FaEdit, FaTrash, FaCheck, FaTimes, FaSyncAlt } from "react-icons/fa";
+import DataTable from "react-data-table-component";
+import { FaSyncAlt, FaCheck, FaTimes } from "react-icons/fa";
+import Swal from "sweetalert2"; 
+import { ToastContainer, toast } from "react-toastify"; 
+import 'react-toastify/dist/ReactToastify.css'; 
 import AdminHeader from "../AdminHeader";
 import AdminFooter from "../AdminFooter";
 import AdminSidebar from "../AdminSidebar";
 
 const MCSOfficerProfileList = () => {
   const [profiles, setProfiles] = useState([]);
-  const [formState, setFormState] = useState({
-    name: "",
-    designation: "",
-    presentPost: "",
-    postingDistrict: "",
-    postingTaluka: "",
-    homeDistrict: "",
-    homeTaluka: "",
-    yearOfPromotion: "",
-  });
+  const [filteredProfiles, setFilteredProfiles] = useState([]);
+  const [searchQuery, setSearchQuery] = useState({});
 
   useEffect(() => {
     fetchProfiles();
-  }, [formState]);
+  }, []);
 
   const fetchProfiles = async () => {
     try {
-      const response = await axios.get("http://localhost:8080/api/profiles", {
-        params: formState,
-      });
+      const response = await axios.get("http://localhost:8080/api/mcs");
       setProfiles(response.data);
+      setFilteredProfiles(response.data);
     } catch (error) {
-      handleError(error);
+      console.error("Error fetching profiles:", error);
+      toast.error("Failed to fetch profiles."); // Notify user of the error
     }
   };
 
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setSearchQuery((prevState) => ({
+      ...prevState,
+      [name]: value,
+    }));
+    filterProfiles({ ...searchQuery, [name]: value });
+  };
+
+  const filterProfiles = (searchValues) => {
+    const filtered = profiles.filter((profile) => {
+      return Object.keys(searchValues).every((key) => {
+        if (!searchValues[key]) return true;
+        return profile[key]?.toString().toLowerCase().includes(searchValues[key].toLowerCase());
+      });
+    });
+    setFilteredProfiles(filtered);
+  };
+
   const handleDeleteProfile = async (id) => {
-    if (window.confirm("Are you sure you want to delete this profile?")) {
+    const result = await Swal.fire({
+      title: "Are you sure?",
+      text: "You won't be able to revert this!",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#d33",
+      cancelButtonColor: "#3085d6",
+      confirmButtonText: "Delete",
+      cancelButtonText: "Cancel",
+    });
+
+    if (result.isConfirmed) {
       try {
         await axios.delete(`http://localhost:8080/api/profiles/${id}`);
         setProfiles(profiles.filter((p) => p.id !== id));
-        alert("Profile deleted successfully!");
+        setFilteredProfiles(filteredProfiles.filter((p) => p.id !== id));
+        Swal.fire("Deleted!", "Profile has been deleted.", "success");
       } catch (error) {
-        handleError(error);
+        console.error("Error deleting profile:", error);
+        toast.error("Failed to delete profile."); // Notify user of the error
       }
     }
   };
@@ -52,43 +80,71 @@ const MCSOfficerProfileList = () => {
         status: newStatus,
       });
       fetchProfiles();
-      alert(`Profile status updated to ${newStatus} successfully!`);
+      toast.success(`Profile status updated to ${newStatus} successfully!`);
     } catch (error) {
-      handleError(error);
+      console.error("Error updating profile status:", error);
+      toast.error("Failed to update status."); // Notify user of the error
     }
-  };
-
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormState((prevState) => ({
-      ...prevState,
-      [name]: value,
-    }));
   };
 
   const resetForm = () => {
-    setFormState({
-      name: "",
-      designation: "",
-      presentPost: "",
-      postingDistrict: "",
-      postingTaluka: "",
-      homeDistrict: "",
-      homeTaluka: "",
-      yearOfPromotion: "",
-    });
+    setSearchQuery({});
+    setFilteredProfiles(profiles);
   };
 
-  const handleError = (error) => {
-    console.error("Error:", error);
-    if (error.response) {
-      alert(`Error: ${error.response.status} - ${error.response.data.message || "An error occurred."}`);
-    } else if (error.request) {
-      alert("No response received from the server. Please try again.");
-    } else {
-      alert("An unexpected error occurred. Please try again.");
-    }
+  const customStyles = {
+    headRow: {
+      style: {
+        backgroundColor: '#007BFF', // Blue background for header
+        color: '#FFFFFF', // White text for header
+      },
+    },
+    headCells: {
+      style: {
+        fontWeight: 'bold',
+      },
+    },
   };
+
+  const columns = [
+    { name: "ID", selector: (row) => row.id, sortable: true },
+    { name: "Name", selector: (row) => row.name, sortable: true },
+    { name: "Designation", selector: (row) => row.designation, sortable: true },
+    { name: "Present Posting", selector: (row) => row.presentPosting, sortable: true },
+    { name: "Mobile Number 1", selector: (row) => row.mobileNumber1, sortable: true },
+    { name: "Mobile Number 2", selector: (row) => row.mobileNumber2, sortable: true },
+    { name: "Year of Joining", selector: (row) => row.yearOfJoiningPresentCadre, sortable: true },
+    { name: "Posting District", selector: (row) => row.postingDistrictLocation, sortable: true },
+    { name: "Posting Taluka", selector: (row) => row.postingTaluka, sortable: true },
+    { name: "Home District", selector: (row) => row.homeDistrict, sortable: true },
+    { name: "Home Taluka", selector: (row) => row.homeTaluka, sortable: true },
+    { name: "Date of Birth", selector: (row) => row.dateOfBirth, sortable: true },
+    { name: "Date of Joining Revenue Department", selector: (row) => row.dateOfJoiningRevenueDepartment, sortable: true },
+    { name: "Date of Joining Present Posting", selector: (row) => row.dateOfJoiningPresentPosting, sortable: true },
+    { name: "Information Data Updated Date", selector: (row) => row.informationDataUpdatedDate, sortable: true },
+    { name: "Past Posting", selector: (row) => row.pastPosting, sortable: true },
+    { name: "Other Information", selector: (row) => row.otherInformation, sortable: true },
+    { name: "Educational Qualification", selector: (row) => row.educationalQualification, sortable: true },
+    { name: "Email ID", selector: (row) => row.emailID, sortable: true },
+    { name: "Actions", cell: (row) => (
+      <>
+        <button
+          onClick={() => handleToggleStatus(row.id, row.status)}
+          className="text-blue-500 hover:underline"
+          title="Toggle Status"
+        >
+          <FaCheck className={`${row.status === "Approved" ? "text-green-500" : "text-red-500"}`} />
+        </button>
+        <button
+          onClick={() => handleDeleteProfile(row.id)}
+          className="text-red-500 hover:underline ml-2"
+          title="Delete"
+        >
+          <FaTimes />
+        </button>
+      </>
+    )},
+  ];
 
   return (
     <div className="flex">
@@ -96,161 +152,75 @@ const MCSOfficerProfileList = () => {
       <div className="flex-1">
         <AdminHeader />
         <div className="container mx-auto p-4">
-          {/* Header Section */}
           <div className="flex flex-col md:flex-row md:justify-between items-start md:items-center mb-6">
-            <div className="relative overflow-hidden whitespace-nowrap">
-              <div className="text-2xl sm:text-3xl font-bold">
-                <span className="mx-2">MCS</span>
-                <span className="mx-2">Officers</span>
-                <span className="mx-2">Profile</span>
-                <span className="mx-2">List</span>
-              </div>
-            </div>
-
-            {/* Reset Button */}
-            <div className="flex flex-col md:flex-row md:items-center space-y-2 md:space-y-0 md:space-x-2">
-              <button
-                onClick={resetForm}
-                className="p-2 bg-blue-500 text-white rounded-md transition-transform transform hover:scale-110"
-                title="Reset"
-              >
-                <FaSyncAlt />
-              </button>
-            </div>
+            <div className="text-2xl sm:text-3xl font-bold">MCS Officers Profile List</div>
+            <button
+              onClick={resetForm}
+              className="p-2 bg-blue-500 text-white rounded-md transition-transform transform hover:scale-110"
+              title="Reset"
+            >
+              <FaSyncAlt />
+            </button>
           </div>
 
-          {/* Search Fields for Real-time Filtering */}
+          {/* Search Fields */}
           <div className="bg-white rounded-lg shadow-md mb-6">
-            <div className="bg-blue-500 text-white px-6 py-3 rounded-t-lg">
-              <h3 className="text-lg sm:text-xl font-semibold">Search Profiles</h3>
+    <div className="bg-blue-500 text-white p-2 rounded-md">
+        <h3 className="text-lg font-semibold mb-2">Search Profiles</h3>
+    </div>
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-striped-pattern">
+        {["name", "designation", "presentPosting"].map((field) => (
+            <div key={field}>
+                <label className="font-bold">{field.charAt(0).toUpperCase() + field.slice(1)}</label>
+                <input
+                    type="text"
+                    name={field}
+                    value={searchQuery[field] || ""}
+                    onChange={handleInputChange}
+                    className="border p-1 rounded-md w-full" // Reduced padding
+                />
             </div>
-            <div className="p-6">
-              <form>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="font-bold">Name</label>
-                    <input
-                      type="text"
-                      name="name"
-                      value={formState.name}
-                      onChange={handleInputChange}
-                      className="p-2 border rounded w-full"
-                    />
-                  </div>
-                  <div>
-                    <label className="font-bold">Designation</label>
-                    <input
-                      type="text"
-                      name="designation"
-                      value={formState.designation}
-                      onChange={handleInputChange}
-                      className="p-2 border rounded w-full"
-                    />
-                  </div>
-                  <div>
-                    <label className="font-bold">Present Post</label>
-                    <input
-                      type="text"
-                      name="presentPost"
-                      value={formState.presentPost}
-                      onChange={handleInputChange}
-                      className="p-2 border rounded w-full"
-                    />
-                  </div>
-                  <div>
-                    <label className="font-bold">Posting District</label>
-                    <input
-                      type="text"
-                      name="postingDistrict"
-                      value={formState.postingDistrict}
-                      onChange={handleInputChange}
-                      className="p-2 border rounded w-full"
-                    />
-                  </div>
-                  <div>
-                    <label className="font-bold">Posting Taluka</label>
-                    <input
-                      type="text"
-                      name="postingTaluka"
-                      value={formState.postingTaluka}
-                      onChange={handleInputChange}
-                      className="p-2 border rounded w-full"
-                    />
-                  </div>
-                  <div>
-                    <label className="font-bold">Home District</label>
-                    <input
-                      type="text"
-                      name="homeDistrict"
-                      value={formState.homeDistrict}
-                      onChange={handleInputChange}
-                      className="p-2 border rounded w-full"
-                    />
-                  </div>
-                  <div>
-                    <label className="font-bold">Home Taluka</label>
-                    <input
-                      type="text"
-                      name="homeTaluka"
-                      value={formState.homeTaluka}
-                      onChange={handleInputChange}
-                      className="p-2 border rounded w-full"
-                    />
-                  </div>
-                  <div>
-                    <label className="font-bold">Year of Promotion</label>
-                    <input
-                      type="text"
-                      name="yearOfPromotion"
-                      value={formState.yearOfPromotion}
-                      onChange={handleInputChange}
-                      className="p-2 border rounded w-full"
-                    />
-                  </div>
-                </div>
-              </form>
+        ))}
+        {["postingDistrictLocation", "postingTaluka", "homeDistrict"].map((field) => (
+            <div key={field}>
+                <label className="font-bold">{field.charAt(0).toUpperCase() + field.slice(1)}</label>
+                <input
+                    type="text"
+                    name={field}
+                    value={searchQuery[field] || ""}
+                    onChange={handleInputChange}
+                    className="border p-1 rounded-md w-full" // Reduced padding
+                />
             </div>
-          </div>
+        ))}
+        {["homeTaluka", "yearOfJoiningPresentCadre", "dateOfJoiningRevenueDepartment"].map((field) => (
+            <div key={field}>
+                <label className="font-bold">{field.charAt(0).toUpperCase() + field.slice(1)}</label>
+                <input
+                    type="text"
+                    name={field}
+                    value={searchQuery[field] || ""}
+                    onChange={handleInputChange}
+                    className="border p-1 rounded-md w-full" // Reduced padding
+                />
+            </div>
+        ))}
+    </div>
+</div>
 
-          {/* Profile List Table */}
-          <div className="bg-white rounded-lg shadow-md">
-            <div className="bg-blue-500 text-white px-6 py-3 rounded-t-lg">
-              <h3 className="text-lg sm:text-xl font-semibold">Profiles List</h3>
-            </div>
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-blue-500 text-white">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Name</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Designation</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Status</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {profiles.map((profile) => (
-                  <tr key={profile.id}>
-                    <td className="px-6 py-4 whitespace-nowrap">{profile.name}</td>
-                    <td className="px-6 py-4 whitespace-nowrap">{profile.designation}</td>
-                    <td className="px-6 py-4 whitespace-nowrap">{profile.approvalStatus}</td>
-                    <td className="px-6 py-4 whitespace-nowrap flex space-x-2">
-                      <button onClick={() => handleDeleteProfile(profile.id)} className="text-red-500 hover:text-red-700">
-                        <FaTrash />
-                      </button>
-                      <button
-                        onClick={() => handleToggleStatus(profile.id, profile.approvalStatus)}
-                        className="text-yellow-500 hover:text-yellow-700"
-                      >
-                        {profile.approvalStatus === "Approved" ? <FaTimes /> : <FaCheck />}
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+
+          <DataTable
+            columns={columns}
+            data={filteredProfiles}
+            customStyles={customStyles}
+            pagination
+            highlightOnHover
+            striped
+          />
         </div>
         <AdminFooter />
       </div>
+      <ToastContainer />
     </div>
   );
 };

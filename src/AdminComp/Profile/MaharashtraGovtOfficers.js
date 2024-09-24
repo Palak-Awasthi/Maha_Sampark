@@ -1,316 +1,202 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { FaEdit, FaTrash, FaCheck, FaTimes, FaSyncAlt } from "react-icons/fa";
-import AdminSidebar from '../AdminSidebar'; // Adjust the import based on your file structure
-import AdminHeader from '../AdminHeader'; // Adjust the import based on your file structure
-import AdminFooter from '../AdminFooter'; // Adjust the import based on your file structure
+import DataTable from "react-data-table-component";
+import { FaSyncAlt, FaCheck, FaTimes } from "react-icons/fa";
+import Swal from "sweetalert2";
+import { ToastContainer, toast } from "react-toastify";
+import 'react-toastify/dist/ReactToastify.css';
+import AdminHeader from "../AdminHeader";
+import AdminFooter from "../AdminFooter";
+import AdminSidebar from "../AdminSidebar";
 
 const MaharashtraGovtOfficers = () => {
-  const [officers, setOfficers] = useState([]);
-  const [formState, setFormState] = useState({
+  const [profiles, setProfiles] = useState([]);
+  const [filteredProfiles, setFilteredProfiles] = useState([]);
+  const [searchQuery, setSearchQuery] = useState({
     name: "",
-    designation: "",
-    postingDistrict: "",
-    homeState: "",
-    yearOfAppointment: "",
-    payScaleGroup: "",
-    sourceOfRecruitment: "",
-    approvalStatus: "Pending"
+    officeName: "",
+    districtName: "",
+    talukaName: "",
+    stdCode: "",
+    landline: "",
   });
-  const [isEditing, setIsEditing] = useState(null);
-
-  const homeStateOptions = ["State A", "State B", "State C"];
-  const yearOfAppointmentOptions = ["2020", "2021", "2022", "2023", "2024"];
-  const payScaleGroupOptions = ["Group A", "Group B", "Group C"];
-  const sourceOfRecruitmentOptions = ["Exam", "Direct Recruitment", "Promotion"];
 
   useEffect(() => {
-    fetchOfficers();
+    fetchProfiles();
   }, []);
 
-  const fetchOfficers = async () => {
+  const fetchProfiles = async () => {
     try {
-      const response = await axios.get("http://localhost:8080/api/officers");
-      setOfficers(response.data);
+      const response = await axios.get("http://localhost:8080/api/gom");
+      setProfiles(response.data);
+      setFilteredProfiles(response.data);
     } catch (error) {
-      handleError(error);
+      console.error("Error fetching profiles:", error);
+      toast.error("Failed to fetch profiles.");
     }
   };
 
-  const handleAddOrUpdateOfficer = async () => {
-    if (!formState.name || !formState.designation) {
-      alert("Name and Designation fields are required!");
-      return;
-    }
-
-    try {
-      let response;
-
-      if (isEditing) {
-        response = await axios.put(`http://localhost:8080/api/officers/${isEditing}`, formState);
-        alert("Officer updated successfully!");
-      }
-
-      fetchOfficers();
-      resetForm();
-    } catch (error) {
-      handleError(error);
-    }
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setSearchQuery((prevState) => ({
+      ...prevState,
+      [name]: value,
+    }));
+    filterProfiles({ ...searchQuery, [name]: value });
   };
 
-  const handleEditOfficer = (id) => {
-    const officer = officers.find((o) => o.id === id);
-    setFormState({
-      name: officer.name,
-      designation: officer.designation,
-      postingDistrict: officer.postingDistrict,
-      homeState: officer.homeState,
-      yearOfAppointment: officer.yearOfAppointment,
-      payScaleGroup: officer.payScaleGroup,
-      sourceOfRecruitment: officer.sourceOfRecruitment,
-      approvalStatus: officer.approvalStatus
+  const filterProfiles = (searchValues) => {
+    const filtered = profiles.filter((profile) => {
+      return Object.keys(searchValues).every((key) => {
+        if (!searchValues[key]) return true;
+        return profile[key]?.toString().toLowerCase().includes(searchValues[key].toLowerCase());
+      });
     });
-    setIsEditing(id);
-  };
-
-  const handleDeleteOfficer = async (id) => {
-    if (window.confirm("Are you sure you want to delete this officer?")) {
-      try {
-        await axios.delete(`http://localhost:8080/api/officers/${id}`);
-        setOfficers(officers.filter((o) => o.id !== id));
-        alert("Officer deleted successfully!");
-      } catch (error) {
-        handleError(error);
-      }
-    }
-  };
-
-  const handleToggleStatus = async (id, currentStatus) => {
-    const newStatus = currentStatus === "Approved" ? "Pending" : "Approved";
-    try {
-      await axios.put(`http://localhost:8080/api/officers/${id}/status`, { status: newStatus });
-      fetchOfficers();
-      alert(`Officer status updated to ${newStatus} successfully!`);
-    } catch (error) {
-      handleError(error);
-    }
+    setFilteredProfiles(filtered);
   };
 
   const resetForm = () => {
-    setFormState({
+    setSearchQuery({
       name: "",
-      designation: "",
-      postingDistrict: "",
-      homeState: "",
-      yearOfAppointment: "",
-      payScaleGroup: "",
-      sourceOfRecruitment: "",
-      approvalStatus: "Pending"
+      officeName: "",
+      districtName: "",
+      talukaName: "",
+      stdCode: "",
+      landline: "",
     });
-    setIsEditing(null);
+    setFilteredProfiles(profiles);
   };
 
-  const handleError = (error) => {
-    console.error("Error:", error);
-    if (error.response) {
-      alert(`Error: ${error.response.status} - ${error.response.data.message || "An error occurred."}`);
-    } else if (error.request) {
-      alert("No response received from the server. Please try again.");
-    } else {
-      alert("An unexpected error occurred. Please try again.");
-    }
+  const customStyles = {
+    headRow: {
+      style: {
+        backgroundColor: '#007BFF',
+        color: '#FFFFFF',
+      },
+    },
+    headCells: {
+      style: {
+        fontWeight: 'bold',
+      },
+    },
   };
+
+  // Updated column names
+  const columns = [
+    { name: "ID", selector: (row) => row.id, sortable: true },
+    { name: "Name", selector: (row) => row.name, sortable: true },
+    { name: "Designation", selector: (row) => row.designation, sortable: true },
+    { name: "Mobile Number 1", selector: (row) => row.mobileNumber1, sortable: true },
+    { name: "Mobile Number 2", selector: (row) => row.mobileNumber2, sortable: true },
+    { name: "Posting District Location", selector: (row) => row.postingDistrictLocation, sortable: true },
+    { name: "Posting Taluka", selector: (row) => row.postingTaluka, sortable: true },
+    { name: "Date of Birth", selector: (row) => new Date(row.dateOfBirth).toLocaleDateString(), sortable: true },
+    { name: "Other Information", selector: (row) => row.otherInformation, sortable: true },
+    { name: "Department", selector: (row) => row.department, sortable: true }
+  ];
 
   return (
-    <div className="container mx-auto p-4">
-      <div className="flex flex-col md:flex-row">
-        <AdminSidebar />
-        <div className="flex-grow p-4">
-          <AdminHeader />
-          
-          {/* Officer Edit Form */}
+    <div className="flex">
+      <AdminSidebar />
+      <div className="flex-1">
+        <AdminHeader />
+        <div className="container mx-auto p-4">
+          <div className="flex flex-col md:flex-row md:justify-between items-start md:items-center mb-6">
+            <div className="text-2xl sm:text-3xl font-bold">Maharashtra Govt Officers Profile List</div>
+            <button
+              onClick={resetForm}
+              className="p-2 bg-blue-500 text-white rounded-md transition-transform transform hover:scale-110"
+              title="Reset"
+            >
+              <FaSyncAlt />
+            </button>
+          </div>
+
+          {/* Search Fields */}
           <div className="bg-white rounded-lg shadow-md mb-6">
-            <div className="bg-blue-500 text-white px-6 py-3 rounded-t-lg">
-              <h3 className="text-lg sm:text-xl font-semibold">
-                {isEditing ? "Edit Officer" : "Officer Details"}
-              </h3>
+            <div className="bg-blue-500 text-white p-2 rounded-md">
+              <h3 className="text-lg font-semibold mb-2">Search Profiles</h3>
             </div>
-            <div className="p-6">
-              <div className="flex flex-col md:flex-row md:items-center space-y-2 md:space-y-0 md:space-x-2 mb-4">
-                <button
-                  onClick={resetForm}
-                  className="p-2 bg-blue-500 text-white rounded-md transition-transform transform hover:scale-110"
-                  title="Reset"
-                >
-                  <FaSyncAlt />
-                </button>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-striped-pattern">
+              {/* First Row */}
+              <div>
+                <label className="font-bold">Name</label>
+                <input
+                  type="text"
+                  name="name"
+                  value={searchQuery.name}
+                  onChange={handleInputChange}
+                  className="border p-2 rounded-md w-full"
+                />
               </div>
-              <form onSubmit={(e) => { e.preventDefault(); handleAddOrUpdateOfficer(); }}>
-                {/* Form Fields */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="col-span-1">
-                    <label htmlFor="name" className="block text-gray-700"><strong>Name</strong></label>
-                    <input
-                      type="text"
-                      id="name"
-                      value={formState.name}
-                      onChange={(e) => setFormState({ ...formState, name: e.target.value })}
-                      placeholder="Name"
-                      className="p-2 border rounded w-full"
-                    />
-                  </div>
-                  <div className="col-span-1">
-                    <label htmlFor="designation" className="block text-gray-700"><strong>Designation</strong></label>
-                    <input
-                      type="text"
-                      id="designation"
-                      value={formState.designation}
-                      onChange={(e) => setFormState({ ...formState, designation: e.target.value })}
-                      placeholder="Designation"
-                      className="p-2 border rounded w-full"
-                    />
-                  </div>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
-                  <div className="col-span-1">
-                    <label htmlFor="postingDistrict" className="block text-gray-700"><strong>Posting District</strong></label>
-                    <input
-                      type="text"
-                      id="postingDistrict"
-                      value={formState.postingDistrict}
-                      onChange={(e) => setFormState({ ...formState, postingDistrict: e.target.value })}
-                      placeholder="Posting District"
-                      className="p-2 border rounded w-full"
-                    />
-                  </div>
-                  <div className="col-span-1">
-                    <label htmlFor="homeState" className="block text-gray-700"><strong>Home State</strong></label>
-                    <select
-                      id="homeState"
-                      value={formState.homeState}
-                      onChange={(e) => setFormState({ ...formState, homeState: e.target.value })}
-                      className="p-2 border rounded w-full"
-                    >
-                      <option value="">Select Home State</option>
-                      {homeStateOptions.map((state, index) => (
-                        <option key={index} value={state}>{state}</option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
-                  <div className="col-span-1">
-                    <label htmlFor="yearOfAppointment" className="block text-gray-700"><strong>Year of Appointment</strong></label>
-                    <select
-                      id="yearOfAppointment"
-                      value={formState.yearOfAppointment}
-                      onChange={(e) => setFormState({ ...formState, yearOfAppointment: e.target.value })}
-                      className="p-2 border rounded w-full"
-                    >
-                      <option value="">Select Year</option>
-                      {yearOfAppointmentOptions.map((year, index) => (
-                        <option key={index} value={year}>{year}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="col-span-1">
-                    <label htmlFor="payScaleGroup" className="block text-gray-700"><strong>Pay Scale Group</strong></label>
-                    <select
-                      id="payScaleGroup"
-                      value={formState.payScaleGroup}
-                      onChange={(e) => setFormState({ ...formState, payScaleGroup: e.target.value })}
-                      className="p-2 border rounded w-full"
-                    >
-                      <option value="">Select Pay Scale Group</option>
-                      {payScaleGroupOptions.map((group, index) => (
-                        <option key={index} value={group}>{group}</option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
-                  <div className="col-span-1">
-                    <label htmlFor="sourceOfRecruitment" className="block text-gray-700"><strong>Source of Recruitment</strong></label>
-                    <select
-                      id="sourceOfRecruitment"
-                      value={formState.sourceOfRecruitment}
-                      onChange={(e) => setFormState({ ...formState, sourceOfRecruitment: e.target.value })}
-                      className="p-2 border rounded w-full"
-                    >
-                      <option value="">Select Source</option>
-                      {sourceOfRecruitmentOptions.map((source, index) => (
-                        <option key={index} value={source}>{source}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="col-span-1">
-                    <label htmlFor="approvalStatus" className="block text-gray-700"><strong>Approval Status</strong></label>
-                    <select
-                      id="approvalStatus"
-                      value={formState.approvalStatus}
-                      onChange={(e) => setFormState({ ...formState, approvalStatus: e.target.value })}
-                      className="p-2 border rounded w-full"
-                    >
-                      <option value="Pending">Pending</option>
-                      <option value="Approved">Approved</option>
-                    </select>
-                  </div>
-                </div>
-              </form>
+              <div>
+                <label className="font-bold">Office Name</label>
+                <input
+                  type="text"
+                  name="officeName"
+                  value={searchQuery.officeName}
+                  onChange={handleInputChange}
+                  className="border p-2 rounded-md w-full"
+                />
+              </div>
+              <div>
+                <label className="font-bold">District Name</label>
+                <input
+                  type="text"
+                  name="districtName"
+                  value={searchQuery.districtName}
+                  onChange={handleInputChange}
+                  className="border p-2 rounded-md w-full"
+                />
+              </div>
+
+              {/* Second Row */}
+              <div>
+                <label className="font-bold">Taluka Name</label>
+                <input
+                  type="text"
+                  name="talukaName"
+                  value={searchQuery.talukaName}
+                  onChange={handleInputChange}
+                  className="border p-2 rounded-md w-full"
+                />
+              </div>
+              <div>
+                <label className="font-bold">STD Code</label>
+                <input
+                  type="text"
+                  name="stdCode"
+                  value={searchQuery.stdCode}
+                  onChange={handleInputChange}
+                  className="border p-2 rounded-md w-full"
+                />
+              </div>
+              <div>
+                <label className="font-bold">Landline</label>
+                <input
+                  type="text"
+                  name="landline"
+                  value={searchQuery.landline}
+                  onChange={handleInputChange}
+                  className="border p-2 rounded-md w-full"
+                />
+              </div>
             </div>
           </div>
 
-          {/* Officers List */}
-          <div className="bg-white rounded-lg shadow-md">
-            <div className="bg-blue-500 text-white px-6 py-3 rounded-t-lg">
-              <h3 className="text-lg sm:text-xl font-semibold">Officers List</h3>
-            </div>
-            <div className="p-6">
-              <table className="min-w-full border border-gray-300">
-                <thead>
-                  <tr>
-                    <th className="border border-gray-300 px-4 py-2">Name</th>
-                    <th className="border border-gray-300 px-4 py-2">Designation</th>
-                    <th className="border border-gray-300 px-4 py-2">Posting District</th>
-                    <th className="border border-gray-300 px-4 py-2">Home State</th>
-                    <th className="border border-gray-300 px-4 py-2">Year of Appointment</th>
-                    <th className="border border-gray-300 px-4 py-2">Pay Scale Group</th>
-                    <th className="border border-gray-300 px-4 py-2">Source of Recruitment</th>
-                    <th className="border border-gray-300 px-4 py-2">Approval Status</th>
-                    <th className="border border-gray-300 px-4 py-2">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {officers.map((officer) => (
-                    <tr key={officer.id}>
-                      <td className="border border-gray-300 px-4 py-2">{officer.name}</td>
-                      <td className="border border-gray-300 px-4 py-2">{officer.designation}</td>
-                      <td className="border border-gray-300 px-4 py-2">{officer.postingDistrict}</td>
-                      <td className="border border-gray-300 px-4 py-2">{officer.homeState}</td>
-                      <td className="border border-gray-300 px-4 py-2">{officer.yearOfAppointment}</td>
-                      <td className="border border-gray-300 px-4 py-2">{officer.payScaleGroup}</td>
-                      <td className="border border-gray-300 px-4 py-2">{officer.sourceOfRecruitment}</td>
-                      <td className="border border-gray-300 px-4 py-2">{officer.approvalStatus}</td>
-                      <td className="border border-gray-300 px-4 py-2">
-                        <button onClick={() => handleEditOfficer(officer.id)} className="text-blue-600">
-                          <FaEdit />
-                        </button>
-                        <button onClick={() => handleDeleteOfficer(officer.id)} className="text-red-600 ml-2">
-                          <FaTrash />
-                        </button>
-                        <button onClick={() => handleToggleStatus(officer.id, officer.approvalStatus)} className="ml-2">
-                          {officer.approvalStatus === "Approved" ? <FaTimes className="text-red-600" /> : <FaCheck className="text-green-600" />}
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
+          {/* Data Table */}
+          <DataTable
+            columns={columns}
+            data={filteredProfiles}
+            customStyles={customStyles}
+            pagination
+            highlightOnHover
+            striped
+          />
         </div>
+        <AdminFooter />
       </div>
-      <AdminFooter />
+      <ToastContainer />
     </div>
   );
 };

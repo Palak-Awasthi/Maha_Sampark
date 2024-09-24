@@ -3,9 +3,10 @@ import AdminHeader from './AdminHeader'; // Import Header
 import AdminFooter from './AdminFooter'; // Import Footer
 
 import React, { useState } from 'react';
+import AdminContent from './AdminContent';
 
 function AdminDashboard() {
-  const [selectedSection, setSelectedSection] = useState('adminCnt');
+  const [ setSelectedSection] = useState('adminCnt');
 
   // Handle section change based on Sidebar selection
   const handleSectionChange = (section) => {
@@ -13,18 +14,6 @@ function AdminDashboard() {
   };
 
   // Define the content based on the selected section
-  const renderContent = () => {
-    switch (selectedSection) {
-      case 'profile':
-        return <h2 className="text-2xl font-semibold">Profile Section</h2>;
-      case 'reports':
-        return <h2 className="text-2xl font-semibold">Reports Section</h2>;
-      case 'settings':
-        return <h2 className="text-2xl font-semibold">Settings Section</h2>;
-      default:
-        return <h2 className="text-2xl font-semibold">Admin Content Section</h2>;
-    }
-  };
 
   return (
     <div className="flex h-screen">
@@ -42,7 +31,7 @@ function AdminDashboard() {
           <h1 className="text-3xl font-bold mb-6 text-gray-800">Admin Dashboard</h1>
           
           {/* Render dynamic content */}
-          {renderContent()}
+          <AdminContent></AdminContent>
           
         </main>
 
