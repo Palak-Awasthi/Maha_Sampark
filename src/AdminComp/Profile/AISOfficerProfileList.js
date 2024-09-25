@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import DataTable from "react-data-table-component";
 import { FaSyncAlt, FaEye, FaEdit, FaTrash } from "react-icons/fa"; // Import necessary icons
 import AdminHeader from "../AdminHeader";
 import AdminFooter from "../AdminFooter";
@@ -81,72 +80,16 @@ const AISOfficerProfileList = () => {
   };
 
   const handleView = (id) => {
-    // Implement view functionality
     console.log(`View profile with ID: ${id}`);
   };
 
   const handleEdit = (id) => {
-    // Implement edit functionality
     console.log(`Edit profile with ID: ${id}`);
   };
 
   const handleDelete = (id) => {
-    // Implement delete functionality
     console.log(`Delete profile with ID: ${id}`);
   };
-
-  const columns = [
-    { name: "ID", selector: (row) => row.id, sortable: true },
-    { name: "Name", selector: (row) => row.name, sortable: true },
-    { name: "Designation", selector: (row) => row.designation, sortable: true },
-    { name: "ID Number", selector: (row) => row.idNumber, sortable: true },
-    { name: "Present Posting", selector: (row) => row.presentPosting, sortable: true },
-    { name: "Mobile Number 1", selector: (row) => row.mobileNumber1, sortable: true },
-    { name: "Mobile Number 2", selector: (row) => row.mobileNumber2, sortable: true },
-    { name: "Batch Year of Appointment", selector: (row) => row.batchYearOfAppointment, sortable: true },
-    { name: "Cadre State", selector: (row) => row.cadreState, sortable: true },
-    { name: "Posting State", selector: (row) => row.postingState, sortable: true },
-    { name: "Posting District Location", selector: (row) => row.postingDistrictLocation, sortable: true },
-    { name: "Date of Birth", selector: (row) => row.dateOfBirth, sortable: true },
-    { name: "Date of Appointment", selector: (row) => row.dateOfAppointment, sortable: true },
-    { name: "Date of Present Posting", selector: (row) => row.dateOfPresentPosting, sortable: true },
-    { name: "Home State", selector: (row) => row.homeState, sortable: true },
-    { name: "Source of Recruitment", selector: (row) => row.sourceOfRecruitment, sortable: true },
-    { name: "Pay Matrix Level", selector: (row) => row.payMatrixLevel, sortable: true },
-    { name: "Email ID", selector: (row) => row.emailId, sortable: true },
-    { name: "Educational Qualification", selector: (row) => row.educationalQualification, sortable: true },
-    { name: "Information Updated Date", selector: (row) => row.informationUpdatedDate, sortable: true },
-    { name: "Past Posting", selector: (row) => row.pastPosting, sortable: true },
-    { name: "Other Information", selector: (row) => row.otherInformation, sortable: true },
-    {
-      name: "Actions",
-      cell: (row) => (
-        <div className="flex space-x-2">
-          <button
-            onClick={() => handleView(row.id)}
-            className="p-1 bg-green-500 text-white rounded-md hover:bg-green-600 transition"
-            title="View"
-          >
-            <FaEye />
-          </button>
-          <button
-            onClick={() => handleEdit(row.id)}
-            className="p-1 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition"
-            title="Edit"
-          >
-            <FaEdit />
-          </button>
-          <button
-            onClick={() => handleDelete(row.id)}
-            className="p-1 bg-red-500 text-white rounded-md hover:bg-red-600 transition"
-            title="Delete"
-          >
-            <FaTrash />
-          </button>
-        </div>
-      ),
-    },
-  ];
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -155,15 +98,15 @@ const AISOfficerProfileList = () => {
         <div className="flex-1 flex flex-col">
           <AdminHeader />
           <div className="flex flex-col md:flex-row md:justify-between items-start md:items-center mb-6">
-              <h1 className="text-2xl sm:text-3xl font-bold">AIS Officers Profile List</h1>
-              <button
-                onClick={resetForm}
-                className="p-2 bg-blue-500 text-white rounded-md transition-transform transform hover:scale-110"
-                title="Reset"
-              >
-                <FaSyncAlt />
-              </button>
-            </div>
+            <h1 className="text-2xl sm:text-3xl font-bold">AIS Officers Profile List</h1>
+            <button
+              onClick={resetForm}
+              className="p-2 bg-blue-500 text-white rounded-md transition-transform transform hover:scale-110"
+              title="Reset"
+            >
+              <FaSyncAlt />
+            </button>
+          </div>
           <div className="p-6">
             {/* Search Fields */}
             <div className="bg-white rounded-lg shadow-md mb-6 p-4">
@@ -182,39 +125,94 @@ const AISOfficerProfileList = () => {
                 ))}
               </div>
             </div>
-            </div>
-           
 
-           <div>
-            {/* DataTable for displaying profiles */}
-            <DataTable
-              columns={columns}
-              data={filteredProfiles}
-              pagination
-              striped
-              highlightOnHover
-              dense
-              customStyles={{
-                headRow: {
-                  style: {
-                    backgroundColor: '#1E90FF',
-                    color: 'white',
-                    fontWeight: 'bold',
-                  },
-                },
-                cells: {
-                  style: {
-                    fontSize: '14px',
-                  },
-                },
-              }}
-            />
+            {/* Responsive Table */}
+            <div className="overflow-x-auto">
+              <table className="min-w-full bg-white border table-auto">
+                <thead>
+                  <tr className="bg-blue-500 text-white">
+                    <th className="py-2 px-4 border">ID</th>
+                    <th className="py-2 px-4 border">Name</th>
+                    <th className="py-2 px-4 border">Designation</th>
+                    <th className="py-2 px-4 border">ID Number</th>
+                    <th className="py-2 px-4 border">Present Posting</th>
+                    <th className="py-2 px-4 border">Mobile Number 1</th>
+                    <th className="py-2 px-4 border">Mobile Number 2</th>
+                    <th className="py-2 px-4 border">Batch Year of Appointment</th>
+                    <th className="py-2 px-4 border">Cadre State</th>
+                    <th className="py-2 px-4 border">Posting State</th>
+                    <th className="py-2 px-4 border">Posting District Location</th>
+                    <th className="py-2 px-4 border">Date of Birth</th>
+                    <th className="py-2 px-4 border">Date of Appointment</th>
+                    <th className="py-2 px-4 border">Date of Present Posting</th>
+                    <th className="py-2 px-4 border">Home State</th>
+                    <th className="py-2 px-4 border">Source of Recruitment</th>
+                    <th className="py-2 px-4 border">Pay Matrix Level</th>
+                    <th className="py-2 px-4 border">Email ID</th>
+                    <th className="py-2 px-4 border">Educational Qualification</th>
+                    <th className="py-2 px-4 border">Information Updated Date</th>
+                    <th className="py-2 px-4 border">Past Posting</th>
+                    <th className="py-2 px-4 border">Other Information</th>
+                    <th className="py-2 px-4 border">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredProfiles.map((profile) => (
+                    <tr key={profile.id} className="border">
+                      <td className="py-2 px-4 border">{profile.id}</td>
+                      <td className="py-2 px-4 border">{profile.name}</td>
+                      <td className="py-2 px-4 border">{profile.designation}</td>
+                      <td className="py-2 px-4 border">{profile.idNumber}</td>
+                      <td className="py-2 px-4 border">{profile.presentPosting}</td>
+                      <td className="py-2 px-4 border">{profile.mobileNumber1}</td>
+                      <td className="py-2 px-4 border">{profile.mobileNumber2}</td>
+                      <td className="py-2 px-4 border">{profile.batchYearOfAppointment}</td>
+                      <td className="py-2 px-4 border">{profile.cadreState}</td>
+                      <td className="py-2 px-4 border">{profile.postingState}</td>
+                      <td className="py-2 px-4 border">{profile.postingDistrictLocation}</td>
+                      <td className="py-2 px-4 border">{profile.dateOfBirth}</td>
+                      <td className="py-2 px-4 border">{profile.dateOfAppointment}</td>
+                      <td className="py-2 px-4 border">{profile.dateOfPresentPosting}</td>
+                      <td className="py-2 px-4 border">{profile.homeState}</td>
+                      <td className="py-2 px-4 border">{profile.sourceOfRecruitment}</td>
+                      <td className="py-2 px-4 border">{profile.payMatrixLevel}</td>
+                      <td className="py-2 px-4 border">{profile.emailId}</td>
+                      <td className="py-2 px-4 border">{profile.educationalQualification}</td>
+                      <td className="py-2 px-4 border">{profile.informationUpdatedDate}</td>
+                      <td className="py-2 px-4 border">{profile.pastPosting}</td>
+                      <td className="py-2 px-4 border">{profile.otherInformation}</td>
+                      <td className="py-2 px-4 border text-center">
+                        <div className="flex justify-center gap-2">
+                          <button
+                            onClick={() => handleView(profile.id)}
+                            className="p-1 bg-green-500 text-white rounded-md hover:bg-green-600 transition-transform transform hover:scale-105"
+                          >
+                            <FaEye />
+                          </button>
+                          <button
+                            onClick={() => handleEdit(profile.id)}
+                            className="p-1 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-transform transform hover:scale-105"
+                          >
+                            <FaEdit />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(profile.id)}
+                            className="p-1 bg-red-500 text-white rounded-md hover:bg-red-600 transition-transform transform hover:scale-105"
+                          >
+                            <FaTrash />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
-            <ToastContainer />
-         
+          </div>
           <AdminFooter />
         </div>
       </div>
+      <ToastContainer />
     </div>
   );
 };
