@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import DataTable from "react-data-table-component";
-import { FaSyncAlt, FaCheck, FaTimes } from "react-icons/fa";
-import Swal from "sweetalert2";
+import { FaSyncAlt } from "react-icons/fa";
 import { ToastContainer, toast } from "react-toastify";
 import 'react-toastify/dist/ReactToastify.css';
 import AdminHeader from "../AdminHeader";
@@ -20,6 +18,8 @@ const MaharashtraGovtOfficers = () => {
     stdCode: "",
     landline: "",
   });
+
+  const [debounceTimeout, setDebounceTimeout] = useState(null);
 
   useEffect(() => {
     fetchProfiles();
@@ -42,7 +42,16 @@ const MaharashtraGovtOfficers = () => {
       ...prevState,
       [name]: value,
     }));
-    filterProfiles({ ...searchQuery, [name]: value });
+
+    if (debounceTimeout) {
+      clearTimeout(debounceTimeout); // Clear previous debounce
+    }
+
+    const newTimeout = setTimeout(() => {
+      filterProfiles({ ...searchQuery, [name]: value });
+    }, 300); // 300ms debounce delay
+
+    setDebounceTimeout(newTimeout);
   };
 
   const filterProfiles = (searchValues) => {
@@ -66,34 +75,6 @@ const MaharashtraGovtOfficers = () => {
     });
     setFilteredProfiles(profiles);
   };
-
-  const customStyles = {
-    headRow: {
-      style: {
-        backgroundColor: '#007BFF',
-        color: '#FFFFFF',
-      },
-    },
-    headCells: {
-      style: {
-        fontWeight: 'bold',
-      },
-    },
-  };
-
-  // Updated column names
-  const columns = [
-    { name: "ID", selector: (row) => row.id, sortable: true },
-    { name: "Name", selector: (row) => row.name, sortable: true },
-    { name: "Designation", selector: (row) => row.designation, sortable: true },
-    { name: "Mobile Number 1", selector: (row) => row.mobileNumber1, sortable: true },
-    { name: "Mobile Number 2", selector: (row) => row.mobileNumber2, sortable: true },
-    { name: "Posting District Location", selector: (row) => row.postingDistrictLocation, sortable: true },
-    { name: "Posting Taluka", selector: (row) => row.postingTaluka, sortable: true },
-    { name: "Date of Birth", selector: (row) => new Date(row.dateOfBirth).toLocaleDateString(), sortable: true },
-    { name: "Other Information", selector: (row) => row.otherInformation, sortable: true },
-    { name: "Department", selector: (row) => row.department, sortable: true }
-  ];
 
   return (
     <div className="flex">
@@ -184,15 +165,57 @@ const MaharashtraGovtOfficers = () => {
             </div>
           </div>
 
-          {/* Data Table */}
-          <DataTable
-            columns={columns}
-            data={filteredProfiles}
-            customStyles={customStyles}
-            pagination
-            highlightOnHover
-            striped
-          />
+          {/* HTML Table */}
+          {/* HTML Table */}
+          <div className="overflow-x-auto max-h-96">
+            <table className="min-w-full bg-white">
+              <thead>
+                <tr className="bg-blue-500 text-white">
+                  <th className="w-1/12 py-2">ID</th>
+                  <th className="w-2/12 py-2">Name</th>
+                  <th className="w-2/12 py-2">Designation</th>
+                  <th className="w-2/12 py-2">Mobile Number 1</th>
+                  <th className="w-2/12 py-2">Mobile Number 2</th>
+                  <th className="w-2/12 py-2">Posting District Location</th>
+                  <th className="w-2/12 py-2">Posting Taluka</th>
+                  <th className="w-2/12 py-2">Office Name</th>
+                  <th className="w-2/12 py-2">STD Code</th>
+                  <th className="w-2/12 py-2">Landline</th>
+                  <th className="w-2/12 py-2">Date of Birth</th>
+                  <th className="w-2/12 py-2">Other Information</th>
+                  <th className="w-2/12 py-2">Department</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredProfiles.length > 0 ? (
+                  filteredProfiles.map((profile) => (
+                    <tr key={profile.id} className="border-b">
+                      <td className="text-center py-2">{profile.id}</td>
+                      <td className="text-center py-2">{profile.name}</td>
+                      <td className="text-center py-2">{profile.designation}</td>
+                      <td className="text-center py-2">{profile.mobileNumber1}</td>
+                      <td className="text-center py-2">{profile.mobileNumber2}</td>
+                      <td className="text-center py-2">{profile.postingDistrictLocation}</td>
+                      <td className="text-center py-2">{profile.postingTaluka}</td>
+                      <td className="text-center py-2">{profile.officeName}</td>
+                      <td className="text-center py-2">{profile.stdCode}</td>
+                      <td className="text-center py-2">{profile.landline}</td>
+                      <td className="text-center py-2">{new Date(profile.dateOfBirth).toLocaleDateString()}</td>
+                      <td className="text-center py-2">{profile.otherInformation}</td>
+                      <td className="text-center py-2">{profile.department}</td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="13" className="text-center py-4">
+                      No profiles found.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+
         </div>
         <AdminFooter />
       </div>

@@ -59,7 +59,7 @@ function AdminSidebar() {
                       <Link to="/maindeptmaster">Main Department</Link>
                     </li>
                     <li className="p-2 hover:bg-blue-700 transition">
-                      <Link to="/subbranch">Sub-Branch</Link>
+                      <Link to="/officename">Office Name</Link>
                     </li>
                     <li className="p-2 hover:bg-blue-700 transition">
                       <Link to="/state">State</Link>
