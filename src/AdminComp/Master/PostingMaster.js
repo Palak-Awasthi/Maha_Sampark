@@ -1,15 +1,15 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { FaSearch, FaSyncAlt, FaEdit, FaTrash, FaCheck, FaTimes } from "react-icons/fa";
+import { FaSearch, FaSyncAlt, FaEdit, FaTrash } from "react-icons/fa";
 import { toast } from "react-toastify";
-import Swal from 'sweetalert2'; // Import SweetAlert
+import Swal from 'sweetalert2'; 
 import AdminHeader from "../AdminHeader";
 import AdminSidebar from "../AdminSidebar";
 import AdminFooter from "../AdminFooter";
 
 const PostingMaster = () => {
   const [postings, setPostings] = useState([]);
-  const [formState, setFormState] = useState({ postingName: "", type: "", designation: "", post: "", status: "Active" });
+  const [formState, setFormState] = useState({ maintype: "", designation: "", post: "", status: "Active" });
   const [isEditing, setIsEditing] = useState(null);
   const [showSearch, setShowSearch] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -34,10 +34,9 @@ const PostingMaster = () => {
   };
 
   const handleAddOrUpdatePosting = async () => {
-    const trimmedPostingName = formState.postingName.trim();
-
-    if (!trimmedPostingName) {
-      toast.error("Posting Name is required!");
+    const trimmedMaintype = formState.maintype.trim();
+    if (!trimmedMaintype) {
+      toast.error("Maintype is required!");
       return;
     }
 
@@ -45,10 +44,10 @@ const PostingMaster = () => {
     try {
       let response;
       if (isEditing) {
-        response = await axios.put(`http://localhost:8080/api/posting-master/${isEditing}`, { ...formState, postingName: trimmedPostingName });
+        response = await axios.put(`http://localhost:8080/api/posting-master/${isEditing}`, formState);
         toast.success("Posting updated successfully!");
       } else {
-        response = await axios.post("http://localhost:8080/api/posting-master", { ...formState, postingName: trimmedPostingName });
+        response = await axios.post("http://localhost:8080/api/posting-master", formState);
         toast.success("Posting added successfully!");
       }
 
@@ -70,7 +69,7 @@ const PostingMaster = () => {
 
   const handleEditPosting = (id) => {
     const posting = postings.find((p) => p.id === id);
-    setFormState({ postingName: posting.postingName, type: posting.type, designation: posting.designation, post: posting.post, status: posting.status });
+    setFormState({ maintype: posting.maintype, designation: posting.designation, post: posting.post, status: posting.status });
     setIsEditing(id);
   };
 
@@ -99,13 +98,20 @@ const PostingMaster = () => {
     }
   };
 
-  const handleToggleStatus = async (id, currentStatus) => {
-    const newStatus = currentStatus === "Active" ? "Inactive" : "Active";
+  const handleToggleStatus = async (id) => {
     setLoading(true);
     try {
-      await axios.put(`http://localhost:8080/api/posting-master/${id}/status`, { status: newStatus });
-      fetchPostings();
-      toast.success(`Posting status updated to ${newStatus} successfully!`);
+      // Update the status in the API
+      await axios.put(`http://localhost:8080/api/posting-master/toggle-status/${id}`);
+      
+      // Update the status in local state to reflect the change
+      setPostings((prevPostings) =>
+        prevPostings.map((posting) =>
+          posting.id === id ? { ...posting, status: posting.status === "Active" ? "Inactive" : "Active" } : posting
+        )
+      );
+
+      toast.success("Posting status updated successfully!");
     } catch (error) {
       handleError(error);
     } finally {
@@ -118,7 +124,7 @@ const PostingMaster = () => {
   };
 
   const resetForm = () => {
-    setFormState({ postingName: "", type: "", designation: "", post: "", status: "Active" });
+    setFormState({ maintype: "", designation: "", post: "", status: "Active" });
     setIsEditing(null);
   };
 
@@ -134,7 +140,7 @@ const PostingMaster = () => {
   };
 
   const filteredPostings = postings.filter((p) =>
-    p.postingName?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false
+    p.maintype?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false
   );
 
   const totalPages = Math.ceil(filteredPostings.length / itemsPerPage);
@@ -153,7 +159,7 @@ const PostingMaster = () => {
               {showSearch && (
                 <input
                   type="text"
-                  placeholder="Search Posting"
+                  placeholder="Search Maintype"
                   value={searchTerm}
                   onChange={handleSearch}
                   className="px-3 py-2 border rounded-md focus:outline-none focus:border-blue-500 w-full sm:w-auto"
@@ -192,14 +198,15 @@ const PostingMaster = () => {
                     <div className="flex flex-col w-full">
                       <label className="mb-1 font-medium">Type</label>
                       <select
-                        value={formState.type}
-                        onChange={(e) => setFormState({ ...formState, type: e.target.value })}
-                        className="p-2 border rounded hover:scale-105 transition duration-300 w-full"
+                        value={formState.maintype}
+                        onChange={(e) => setFormState({ ...formState, maintype: e.target.value })}
+                        className="p-2 border rounded hover:scale-105 transition-transform"
                         required
                       >
-                        <option value="">Select Type</option>
-                        <option value="AIS">AIS</option>
-                        <option value="MCS">MCS</option>
+                        <option value="" disabled>Select Type</option>
+                        <option value="Type 1">Type 1</option>
+                        <option value="Type 2">Type 2</option>
+                        <option value="Type 3">Type 3</option>
                       </select>
                     </div>
 
@@ -209,45 +216,43 @@ const PostingMaster = () => {
                       <select
                         value={formState.designation}
                         onChange={(e) => setFormState({ ...formState, designation: e.target.value })}
-                        className="p-2 border rounded hover:scale-105 transition duration-300 w-full"
+                        className="p-2 border rounded hover:scale-105 transition-transform"
                         required
                       >
-                        <option value="">Select Designation</option>
+                        <option value="" disabled>Select Designation</option>
                         <option value="Designation 1">Designation 1</option>
                         <option value="Designation 2">Designation 2</option>
-                        {/* Add more designation options as needed */}
+                        <option value="Designation 3">Designation 3</option>
                       </select>
                     </div>
-
-                    {/* Post Input Field */}
-                    <div className="flex flex-col w-full">
-                      <label className="mb-1 font-medium">Post</label>
-                      <input
-                        type="text"
-                        value={formState.post}
-                        onChange={(e) => setFormState({ ...formState, post: e.target.value })}
-                        className="p-2 border rounded hover:scale-105 transition duration-300 w-full"
-                        required
-                      />
-                    </div>
                   </div>
-                </div>
-                <div className="flex justify-center mt-4">
+
+                  {/* Post Input */}
+                  <div className="flex flex-col">
+                    <label className="mb-1 font-medium">Post</label>
+                    <input
+                      type="text"
+                      value={formState.post}
+                      onChange={(e) => setFormState({ ...formState, post: e.target.value })}
+                      className="p-2 border rounded hover:scale-105 transition-transform"
+                      required
+                    />
+                  </div>
+
+                  {/* Submit Button */}
                   <button
                     type="submit"
-                    className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition duration-300"
+                    className="p-2 bg-green-500 text-white rounded-md transition-transform transform hover:scale-110"
                   >
-                    {isEditing ? "Update Posting" : "Submit"}
+                    {isEditing ? "Update Posting" : "Add Posting"}
                   </button>
-                  {isEditing && (
-                    <button
-                      type="button"
-                      onClick={resetForm}
-                      className="ml-4 px-4 py-2 border border-red-500 text-red-500 rounded-lg hover:bg-red-500 hover:text-white transition duration-300"
-                    >
-                      Cancel
-                    </button>
-                  )}
+                  <button
+                    type="button"
+                    onClick={resetForm}
+                    className="p-2 bg-red-500 text-white rounded-md transition-transform transform hover:scale-110"
+                  >
+                    Reset
+                  </button>
                 </div>
               </form>
             </div>
@@ -255,86 +260,96 @@ const PostingMaster = () => {
 
           {/* Postings Table */}
           <div className="bg-white rounded-lg shadow-md">
+            <div className="bg-blue-500 text-white px-6 py-3 rounded-t-lg">
+              <h3 className="text-lg sm:text-xl font-semibold">Postings List</h3>
+            </div>
             <div className="p-6">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead>
-                  <tr className="bg-blue-500 text-white">
-                    <th className="px-4 py-2 text-left text-sm font-medium text-gray-600">Posting Name</th>
-                    <th className="px-4 py-2 text-left text-sm font-medium text-gray-600">Type</th>
-                    <th className="px-4 py-2 text-left text-sm font-medium text-gray-600">Designation</th>
-                    <th className="px-4 py-2 text-left text-sm font-medium text-gray-600">Post</th>
-                    <th className="px-4 py-2 text-left text-sm font-medium text-gray-600">Status</th>
-                    <th className="px-4 py-2 text-left text-sm font-medium text-gray-600">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {loading ? (
+              {loading ? (
+                <div>Loading...</div>
+              ) : (
+                <table className="min-w-full border-collapse border border-gray-200">
+                  <thead>
                     <tr>
-                      <td colSpan="6" className="text-center py-4">Loading...</td>
+                      <th className="border border-gray-300 p-2">Maintype</th>
+                      <th className="border border-gray-300 p-2">Designation</th>
+                      <th className="border border-gray-300 p-2">Post</th>
+                      <th className="border border-gray-300 p-2">Status</th>
+                      <th className="border border-gray-300 p-2">Actions</th>
                     </tr>
-                  ) : currentPostings.length > 0 ? (
-                    currentPostings.map((posting) => (
-                      <tr key={posting.id}>
-                        <td className="px-4 py-2">{posting.postingName}</td>
-                        <td className="px-4 py-2">{posting.type}</td>
-                        <td className="px-4 py-2">{posting.designation}</td>
-                        <td className="px-4 py-2">{posting.post}</td>
-                        <td className="px-4 py-2">
-                          <button
-                            onClick={() => handleToggleStatus(posting.id, posting.status)}
-                            className={`px-2 py-1 rounded ${posting.status === "Active" ? "bg-green-500 text-white" : "bg-red-500 text-white"}`}
-                          >
-                            {posting.status === "Active" ? <FaCheck /> : <FaTimes />}
-                          </button>
-                        </td>
-                        <td className="px-4 py-2 flex space-x-2">
-                          <button
-                            onClick={() => handleEditPosting(posting.id)}
-                            className="p-2 bg-yellow-500 text-white rounded hover:bg-yellow-600 transition duration-300"
-                          >
-                            <FaEdit />
-                          </button>
-                          <button
-                            onClick={() => handleDeletePosting(posting.id)}
-                            className="p-2 bg-red-500 text-white rounded hover:bg-red-600 transition duration-300"
-                          >
-                            <FaTrash />
-                          </button>
+                  </thead>
+                  <tbody>
+                    {currentPostings.length > 0 ? (
+                      currentPostings.map((posting) => (
+                        <tr key={posting.id}>
+                          <td className="border border-gray-300 p-2">{posting.maintype}</td>
+                          <td className="border border-gray-300 p-2">{posting.designation}</td>
+                          <td className="border border-gray-300 p-2">{posting.post}</td>
+                          <td className="border border-gray-300 p-2">
+                            <span
+                              onClick={() => handleToggleStatus(posting.id)}
+                              className={`cursor-pointer ${
+                                posting.status === "Active" ? "text-green-500" : "text-red-500"
+                              }`}
+                            >
+                              {posting.status}
+                            </span>
+                          </td>
+                          <td className="border border-gray-300 p-2 flex space-x-2">
+                            <button
+                              onClick={() => handleEditPosting(posting.id)}
+                              className="text-yellow-500 hover:text-yellow-600"
+                              title="Edit"
+                            >
+                              <FaEdit />
+                            </button>
+                            <button
+                              onClick={() => handleDeletePosting(posting.id)}
+                              className="text-red-500 hover:text-red-600"
+                              title="Delete"
+                            >
+                              <FaTrash />
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan="5" className="border border-gray-300 p-2 text-center">
+                          No postings found.
                         </td>
                       </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan="6" className="text-center py-4">No postings found.</td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
+                    )}
+                  </tbody>
+                </table>
+              )}
               {/* Pagination */}
-              <div className="mt-4 flex justify-center">
+              <div className="mt-4 flex justify-between">
                 <button
+                  onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
                   disabled={currentPage === 1}
-                  onClick={() => setCurrentPage(currentPage - 1)}
-                  className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition duration-300"
+                  className="p-2 bg-gray-300 rounded-md disabled:opacity-50"
                 >
                   Previous
                 </button>
-                <span className="px-4 py-2">Page {currentPage} of {totalPages}</span>
+                <span>
+                  Page {currentPage} of {totalPages}
+                </span>
                 <button
-                  disabled={currentPage === totalPages}
-                  onClick={() => setCurrentPage(currentPage + 1)}
-                  className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition duration-300"
-                >
-                  Next
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-        <AdminFooter />
-      </div>
-    </div>
-  );
-};
-
-export default PostingMaster;
+                                    onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))} 
+                                    disabled={currentPage === totalPages}
+                                    className="p-2 bg-gray-300 rounded-md disabled:opacity-50"
+                                  >
+                                    Next
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                          <AdminFooter />
+                        </div>
+                      </div>
+                    );
+                  };
+                  
+                  export default PostingMaster;
+                  

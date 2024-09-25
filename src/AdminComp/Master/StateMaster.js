@@ -8,13 +8,11 @@ import AdminFooter from "../AdminFooter";
 
 const StateMaster = () => {
   const [states, setStates] = useState([]);
-  const [formState, setFormState] = useState({ stateName: "", status: "Active" });
+  const [formState, setFormState] = useState({ state: "", status: "Inactive" });
   const [isEditing, setIsEditing] = useState(null);
   const [showSearch, setShowSearch] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
 
   useEffect(() => {
     fetchStates();
@@ -33,9 +31,9 @@ const StateMaster = () => {
   };
 
   const handleAddOrUpdateState = async () => {
-    const trimmedStateName = formState.stateName.trim();
+    const trimmedState = formState.state.trim();
 
-    if (!trimmedStateName) {
+    if (!trimmedState) {
       toast.error("State Name is required!");
       return;
     }
@@ -46,13 +44,13 @@ const StateMaster = () => {
       if (isEditing) {
         response = await axios.put(`http://localhost:8080/api/states/${isEditing}`, {
           ...formState,
-          stateName: trimmedStateName,
+          state: trimmedState,
         });
         toast.success("State updated successfully!");
       } else {
         response = await axios.post("http://localhost:8080/api/states", {
           ...formState,
-          stateName: trimmedStateName,
+          state: trimmedState,
         });
         toast.success("State added successfully!");
       }
@@ -75,7 +73,7 @@ const StateMaster = () => {
 
   const handleEditState = (id) => {
     const state = states.find((st) => st.id === id);
-    setFormState({ stateName: state.stateName, status: state.status });
+    setFormState({ state: state.state, status: state.status });
     setIsEditing(id);
   };
 
@@ -95,12 +93,11 @@ const StateMaster = () => {
   };
 
   const handleToggleStatus = async (id, currentStatus) => {
-    const newStatus = currentStatus === "Active" ? "Inactive" : "Active";
     setLoading(true);
     try {
-      await axios.put(`http://localhost:8080/api/states/${id}/status`, { status: newStatus });
+      await axios.put(`http://localhost:8080/api/states/${id}/status`);
       fetchStates();
-      toast.success(`State status updated to ${newStatus} successfully!`);
+      toast.success(`State status updated to ${currentStatus === "Active" ? "Inactive" : "Active"} successfully!`);
     } catch (error) {
       handleError(error);
     } finally {
@@ -113,7 +110,7 @@ const StateMaster = () => {
   };
 
   const resetForm = () => {
-    setFormState({ stateName: "", status: "Active" });
+    setFormState({ state: "", status: "Inactive" });
     setIsEditing(null);
   };
 
@@ -121,19 +118,14 @@ const StateMaster = () => {
     console.error("Error:", error);
     if (error.response) {
       toast.error(`Error: ${error.response.status} - ${error.response.data.message || "An error occurred."}`);
-    } else if (error.request) {
-      toast.error("No response received from the server. Please try again.");
     } else {
       toast.error("An unexpected error occurred. Please try again.");
     }
   };
 
   const filteredStates = states.filter((st) =>
-    st.stateName?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false
+    st.state ? st.state.toLowerCase().includes(searchTerm.toLowerCase()) : false
   );
-
-  const totalPages = Math.ceil(filteredStates.length / itemsPerPage);
-  const currentStates = filteredStates.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   return (
     <div className="flex">
@@ -142,7 +134,7 @@ const StateMaster = () => {
         <AdminHeader />
         <div className="container mx-auto p-4">
           <div className="flex justify-between items-center mb-6">
-            <div className="text-2xl font-bold">State Master</div>
+            <h2 className="text-2xl font-bold">State Master</h2>
             <div className="flex flex-col md:flex-row md:items-center space-y-2 md:space-y-0 md:space-x-2">
               {showSearch && (
                 <input
@@ -150,133 +142,67 @@ const StateMaster = () => {
                   placeholder="Search State"
                   value={searchTerm}
                   onChange={handleSearch}
-                  className="px-3 py-2 border rounded-md focus:outline-none focus:border-blue-500 w-full sm:w-auto"
+                  className="px-3 py-2 border rounded-md"
                 />
               )}
-              <button
-                onClick={() => setShowSearch(!showSearch)}
-                className="p-2 bg-blue-500 text-white rounded-md transition-transform transform hover:scale-110"
-                title="Search"
-              >
+              <button onClick={() => setShowSearch(!showSearch)} className="p-2 bg-blue-500 text-white rounded-md">
                 <FaSearch />
               </button>
-              <button
-                onClick={() => {
-                  setSearchTerm("");
-                  setShowSearch(false);
-                }}
-                className="p-2 bg-blue-500 text-white rounded-md transition-transform transform hover:scale-110"
-                title="Reset"
-              >
+              <button onClick={() => { setSearchTerm(""); setShowSearch(false); }} className="p-2 bg-blue-500 text-white rounded-md">
                 <FaSyncAlt />
               </button>
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow-md mb-6">
-            <div className="bg-blue-500 text-white px-6 py-3 rounded-t-lg">
-              <h3 className="text-lg sm:text-xl font-semibold">{isEditing ? "Edit State" : "Add State"}</h3>
+          <form onSubmit={handleSubmit}>
+            <div className="mb-4">
+              <label className="block mb-1">State Name</label>
+              <input
+                type="text"
+                value={formState.state}
+                onChange={(e) => setFormState({ ...formState, state: e.target.value })}
+                className="border p-2 rounded w-full"
+                required
+              />
             </div>
-            <div className="p-6">
-              <form onSubmit={handleSubmit}>
-                <div className="grid grid-cols-1 gap-2">
-                  <div className="flex flex-col">
-                    <label className="mb-1 font-medium">State Name</label>
-                    <input
-                      type="text"
-                      value={formState.stateName}
-                      onChange={(e) => setFormState({ ...formState, stateName: e.target.value })}
-                      className="p-2 border rounded hover:scale-105 transition duration-300 w-full sm:w-1/2"
-                      required
-                    />
-                  </div>
-                </div>
-                <div className="flex justify-center mt-4">
-                  <button
-                    type="submit"
-                    className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition duration-300"
-                    disabled={loading}
-                  >
-                    {isEditing ? "Update" : "Submit"}
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-
-          {loading && <div className="text-center">Loading...</div>}
-
-          <div className="bg-white rounded-lg shadow-md mb-6 overflow-x-auto">
-            <div className="px-6 py-4">
-              <table className="w-full bg-white rounded-lg shadow-md">
-                <thead>
-                  <tr className="bg-blue-500 text-white">
-                    <th className="px-4 py-2">Sr No</th>
-                    <th className="px-4 py-2">State</th>
-                    <th className="px-4 py-2">Status</th>
-                    <th className="px-4 py-2">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {currentStates.length === 0 ? (
-                    <tr>
-                      <td colSpan="4" className="text-center py-4">No records found.</td>
-                    </tr>
-                  ) : (
-                    currentStates.map((state, index) => (
-                      <tr key={state.id}>
-                        <td className="border px-4 py-2">{(currentPage - 1) * itemsPerPage + index + 1}</td>
-                        <td className="border px-4 py-2">{state.stateName}</td>
-                        <td className="border px-4 py-2 text-center">
-                          {state.status === "Active" ? (
-                            <FaCheck
-                              className="text-green-500 cursor-pointer"
-                              onClick={() => handleToggleStatus(state.id, state.status)}
-                            />
-                          ) : (
-                            <FaTimes
-                              className="text-red-500 cursor-pointer"
-                              onClick={() => handleToggleStatus(state.id, state.status)}
-                            />
-                          )}
-                        </td>
-                        <td className="border px-4 py-2 text-center">
-                          <FaEdit
-                            className="text-blue-500 cursor-pointer mx-2"
-                            onClick={() => handleEditState(state.id)}
-                          />
-                          <FaTrash
-                            className="text-red-500 cursor-pointer mx-2"
-                            onClick={() => handleDeleteState(state.id)}
-                          />
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          <div className="flex justify-center mb-6">
-            <button
-              onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-              disabled={currentPage === 1}
-              className="px-4 py-2 bg-blue-500 text-white rounded-md mr-2 disabled:opacity-50"
-            >
-              Previous
+            <button type="submit" className="px-4 py-2 bg-blue-500 text-white rounded-md">
+              {isEditing ? "Update" : "Submit"}
             </button>
-            <button
-              onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-              disabled={currentPage === totalPages}
-              className="px-4 py-2 bg-blue-500 text-white rounded-md disabled:opacity-50"
-            >
-              Next
-            </button>
-          </div>
+          </form>
+
+          {loading && <div>Loading...</div>}
+
+          <table className="min-w-full bg-white border border-gray-200 mt-6">
+            <thead>
+              <tr>
+                <th className="py-2 border-b">State</th>
+                <th className="py-2 border-b">Status</th>
+                <th className="py-2 border-b">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredStates.map((state) => (
+                <tr key={state.id}>
+                  <td className="py-2 border-b">{state.state}</td>
+                  <td className="py-2 border-b">{state.status}</td>
+                  <td className="py-2 border-b">
+                    <button onClick={() => handleEditState(state.id)} className="text-blue-500">
+                      <FaEdit />
+                    </button>
+                    <button onClick={() => handleToggleStatus(state.id, state.status)} className="text-green-500 mx-2">
+                      {state.status === "Active" ? <FaCheck /> : <FaTimes />}
+                    </button>
+                    <button onClick={() => handleDeleteState(state.id)} className="text-red-500">
+                      <FaTrash />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
+        <AdminFooter />
       </div>
-      <AdminFooter />
     </div>
   );
 };

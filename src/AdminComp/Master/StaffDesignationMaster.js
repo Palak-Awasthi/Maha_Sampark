@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { FaSearch, FaSyncAlt, FaEdit, FaTrash, FaCheck, FaTimes } from "react-icons/fa";
+import { FaSearch, FaSyncAlt, FaEdit, FaTrash, FaCheck } from "react-icons/fa";
 import { toast } from "react-toastify";
 import AdminHeader from "../AdminHeader";
 import AdminSidebar from "../AdminSidebar";
@@ -8,7 +8,7 @@ import AdminFooter from "../AdminFooter";
 
 const StaffDesignationMaster = () => {
   const [designations, setDesignations] = useState([]);
-  const [formState, setFormState] = useState({ designationName: "", status: "Active" });
+  const [formState, setFormState] = useState({ designation: "", status: "Active" });
   const [isEditing, setIsEditing] = useState(null);
   const [showSearch, setShowSearch] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -23,7 +23,7 @@ const StaffDesignationMaster = () => {
   const fetchDesignations = async () => {
     setLoading(true);
     try {
-      const response = await axios.get("http://localhost:8080/api/staff/designations");
+      const response = await axios.get("http://localhost:8080/api/staff");
       setDesignations(response.data);
     } catch (error) {
       handleError(error);
@@ -33,10 +33,10 @@ const StaffDesignationMaster = () => {
   };
 
   const handleAddOrUpdateDesignation = async () => {
-    const trimmedDesignationName = formState.designationName.trim();
+    const trimmedDesignation = formState.designation.trim();
 
-    if (!trimmedDesignationName) {
-      toast.error("Designation Name is required!");
+    if (!trimmedDesignation) {
+      toast.error("Designation is required!");
       return;
     }
 
@@ -44,10 +44,10 @@ const StaffDesignationMaster = () => {
     try {
       let response;
       if (isEditing) {
-        response = await axios.put(`http://localhost:8080/api/staff/designations/${isEditing}`, { ...formState, designationName: trimmedDesignationName });
+        response = await axios.put(`http://localhost:8080/api/staff/${isEditing}`, { ...formState, designation: trimmedDesignation });
         toast.success("Designation updated successfully!");
       } else {
-        response = await axios.post("http://localhost:8080/api/staff/designations", { ...formState, designationName: trimmedDesignationName });
+        response = await axios.post("http://localhost:8080/api/staff", { ...formState, designation: trimmedDesignation });
         toast.success("Designation added successfully!");
       }
 
@@ -69,7 +69,7 @@ const StaffDesignationMaster = () => {
 
   const handleEditDesignation = (id) => {
     const designation = designations.find((des) => des.id === id);
-    setFormState({ designationName: designation.designationName, status: designation.status });
+    setFormState({ designation: designation.designation, status: designation.status });
     setIsEditing(id);
   };
 
@@ -77,7 +77,7 @@ const StaffDesignationMaster = () => {
     if (window.confirm("Are you sure you want to delete this designation?")) {
       setLoading(true);
       try {
-        await axios.delete(`http://localhost:8080/api/staff/designations/${id}`);
+        await axios.delete(`http://localhost:8080/api/staff/${id}`);
         setDesignations(designations.filter((des) => des.id !== id));
         toast.success("Designation deleted successfully!");
       } catch (error) {
@@ -92,7 +92,7 @@ const StaffDesignationMaster = () => {
     const newStatus = currentStatus === "Active" ? "Inactive" : "Active";
     setLoading(true);
     try {
-      await axios.put(`http://localhost:8080/api/staff/designations/${id}/status`, { status: newStatus });
+      await axios.put(`http://localhost:8080/api/staff/${id}/status`, { status: newStatus });
       fetchDesignations();
       toast.success(`Designation status updated to ${newStatus} successfully!`);
     } catch (error) {
@@ -107,7 +107,7 @@ const StaffDesignationMaster = () => {
   };
 
   const resetForm = () => {
-    setFormState({ designationName: "", status: "Active" });
+    setFormState({ designation: "", status: "Active" });
     setIsEditing(null);
   };
 
@@ -123,7 +123,7 @@ const StaffDesignationMaster = () => {
   };
 
   const filteredDesignations = designations.filter((des) =>
-    des.designationName?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false
+    des.designation?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false
   );
 
   const totalPages = Math.ceil(filteredDesignations.length / itemsPerPage);
@@ -177,11 +177,11 @@ const StaffDesignationMaster = () => {
               <form onSubmit={handleSubmit}>
                 <div className="grid grid-cols-1 gap-2">
                   <div className="flex flex-col w-full">
-                    <label className="mb-1 font-medium">Designation Name</label>
+                    <label className="mb-1 font-medium">Designation</label>
                     <input
                       type="text"
-                      value={formState.designationName}
-                      onChange={(e) => setFormState({ ...formState, designationName: e.target.value })}
+                      value={formState.designation}
+                      onChange={(e) => setFormState({ ...formState, designation: e.target.value })}
                       className="p-2 border rounded hover:scale-105 transition duration-300 w-full sm:w-1/2"
                       required
                     />
@@ -210,15 +210,16 @@ const StaffDesignationMaster = () => {
                 <thead>
                   <tr className="bg-blue-500 text-white">
                     <th className="px-4 py-2">Sr No</th>
-                    <th className="px-4 py-2">Designation Name</th>
+                    <th className="px-4 py-2">Designation</th>
                     <th className="px-4 py-2">Status</th>
                     <th className="px-4 py-2">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {currentDesignations.map((designation) => (
+                  {currentDesignations.map((designation, index) => (
                     <tr key={designation.id}>
-                      <td className="border px-4 py-2">{designation.designationName}</td>
+                      <td className="border px-4 py-2">{(currentPage - 1) * itemsPerPage + index + 1}</td>
+                      <td className="border px-4 py-2">{designation.designation}</td>
                       <td className="border px-4 py-2">
                         <span className={`text-${designation.status === "Active" ? "green" : "red"}-500`}>
                           {designation.status}
@@ -237,14 +238,12 @@ const StaffDesignationMaster = () => {
                           title="Delete"
                           aria-label="Delete designation"
                         />
-                        <span
-                          className="cursor-pointer"
+                        <FaCheck
+                          className="cursor-pointer text-green-500 hover:text-green-600"
                           onClick={() => handleToggleStatus(designation.id, designation.status)}
                           title="Toggle Status"
-                          aria-label="Toggle designation status"
-                        >
-                          {designation.status === "Active" ? <FaTimes className="text-red-500" /> : <FaCheck className="text-green-500" />}
-                        </span>
+                          aria-label="Toggle status"
+                        />
                       </td>
                     </tr>
                   ))}
@@ -253,29 +252,15 @@ const StaffDesignationMaster = () => {
 
               {/* Pagination */}
               <div className="flex justify-center mt-4">
-                <button
-                  className={`px-3 py-1 mx-1 ${currentPage === 1 ? "text-gray-400" : "text-blue-500"}`}
-                  disabled={currentPage === 1}
-                  onClick={() => setCurrentPage(currentPage - 1)}
-                >
-                  Previous
-                </button>
-                {[...Array(totalPages).keys()].map((page) => (
+                {Array.from({ length: totalPages }, (_, index) => (
                   <button
-                    key={page}
-                    className={`px-3 py-1 mx-1 ${page + 1 === currentPage ? "bg-blue-500 text-white" : "text-blue-500"}`}
-                    onClick={() => setCurrentPage(page + 1)}
+                    key={index}
+                    onClick={() => setCurrentPage(index + 1)}
+                    className={`px-4 py-2 mx-1 ${currentPage === index + 1 ? "bg-blue-500 text-white" : "bg-white text-blue-500 border"} rounded-md`}
                   >
-                    {page + 1}
+                    {index + 1}
                   </button>
                 ))}
-                <button
-                  className={`px-3 py-1 mx-1 ${currentPage === totalPages ? "text-gray-400" : "text-blue-500"}`}
-                  disabled={currentPage === totalPages}
-                  onClick={() => setCurrentPage(currentPage + 1)}
-                >
-                  Next
-                </button>
               </div>
             </div>
           </div>

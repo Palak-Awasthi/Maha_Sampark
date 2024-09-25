@@ -25,7 +25,7 @@ const NonOfficialTypeMaster = () => {
   const fetchTypes = async () => {
     setLoading(true);
     try {
-      const response = await axios.get("http://localhost:8080/api/nonOfficialTypes");
+      const response = await axios.get("http://localhost:8080/api/nonOfficialTypes/all");
       setTypes(response.data);
     } catch (error) {
       handleError(error);
@@ -54,13 +54,11 @@ const NonOfficialTypeMaster = () => {
 
     setLoading(true);
     try {
-      if (editingId) {
-        await axios.put(`http://localhost:8080/api/nonOfficialTypes/${editingId}`, form);
-        toast.success("Type updated successfully!");
-      } else {
-        await axios.post("http://localhost:8080/api/nonOfficialTypes", form);
-        toast.success("Type added successfully!");
-      }
+      await axios.post("http://localhost:8080/api/nonOfficialTypes/save", {
+        ...form,
+        // Remove 'id' as it's generated in the backend
+      });
+      toast.success(editingId ? "Type updated successfully!" : "Type added successfully!");
       fetchTypes();
       resetForm();
     } catch (error) {
@@ -70,17 +68,22 @@ const NonOfficialTypeMaster = () => {
     }
   };
 
-  const handleEdit = (id) => {
-    const typeToEdit = types.find((type) => type.id === id);
-    setForm({ mainType: typeToEdit.mainType, subType: typeToEdit.subType, status: typeToEdit.status });
-    setEditingId(id);
+  const handleEdit = async (id) => {
+    try {
+      const response = await axios.get(`http://localhost:8080/api/nonOfficialTypes/${id}`);
+      const typeToEdit = response.data;
+      setForm({ mainType: typeToEdit.mainType, subType: typeToEdit.subType, status: typeToEdit.status });
+      setEditingId(id);
+    } catch (error) {
+      handleError(error);
+    }
   };
 
   const handleDelete = async (id) => {
     if (window.confirm("Are you sure you want to delete this type?")) {
       setLoading(true);
       try {
-        await axios.delete(`http://localhost:8080/api/nonOfficialTypes/${id}`);
+        await axios.delete(`http://localhost:8080/api/nonOfficialTypes/delete/${id}`);
         fetchTypes();
         toast.success("Type deleted successfully!");
       } catch (error) {
@@ -95,7 +98,7 @@ const NonOfficialTypeMaster = () => {
     const newStatus = currentStatus === "Active" ? "Inactive" : "Active";
     setLoading(true);
     try {
-      await axios.put(`http://localhost:8080/api/nonOfficialTypes/${id}/status`, { status: newStatus });
+      await axios.put(`http://localhost:8080/api/nonOfficialTypes/toggle-status/${id}`);
       fetchTypes();
       toast.success(`Type status updated to ${newStatus} successfully!`);
     } catch (error) {
@@ -238,36 +241,39 @@ const NonOfficialTypeMaster = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredTypes.map((type, index) => (
-                    <tr key={type.id} className="border-b">
-                      <td className="px-6 py-3 text-center">{index + 1}</td>
-                      <td className="px-6 py-3 text-center">{type.mainType}</td>
-                      <td className="px-6 py-3 text-center">{type.subType}</td>
-                      <td className="px-6 py-3 text-center">
-                        <span className={`font-bold ${type.status === "Active" ? "text-green-500" : "text-red-500"}`}>
-                          {type.status}
-                        </span>
-                      </td>
-                      <td className="px-6 py-3 text-center">
-                        <div className="flex justify-center space-x-4">
-                          <span onClick={() => handleEdit(type.id)} className="cursor-pointer text-blue-500" title="Edit">
-                            <FaEdit />
-                          </span>
-                          <span onClick={() => handleToggleStatus(type.id, type.status)} className="cursor-pointer" title="Toggle Status">
-                            {type.status === "Active" ? <FaTimes className="text-red-500" /> : <FaCheck className="text-green-500" />}
-                          </span>
-                          <span onClick={() => handleDelete(type.id)} className="cursor-pointer text-red-500" title="Delete">
-                            <FaTrash />
-                          </span>
-                        </div>
-                      </td>
+                  {loading ? (
+                    <tr>
+                      <td colSpan="5" className="text-center py-4">Loading...</td>
                     </tr>
-                  ))}
+                  ) : filteredTypes.length > 0 ? (
+                    filteredTypes.map((type, index) => (
+                      <tr key={type.id} className="hover:bg-gray-100">
+                        <td className="px-6 py-4 text-center">{index + 1}</td>
+                        <td className="px-6 py-4 text-center">{type.mainType}</td>
+                        <td className="px-6 py-4 text-center">{type.subType}</td>
+                        <td className="px-6 py-4 text-center">{type.status}</td>
+                        <td className="px-6 py-4 text-center">
+                          <button onClick={() => handleEdit(type.id)} className="text-blue-500">
+                            <FaEdit />
+                          </button>
+                          <button onClick={() => handleDelete(type.id)} className="text-red-500 ml-2">
+                            <FaTrash />
+                          </button>
+                          <button onClick={() => handleToggleStatus(type.id, type.status)} className="text-green-500 ml-2">
+                            {type.status === "Active" ? <FaTimes /> : <FaCheck />}
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan="5" className="text-center py-4">No records found</td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>
           </div>
-
         </div>
         <AdminFooter />
       </div>

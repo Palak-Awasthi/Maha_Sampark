@@ -24,7 +24,7 @@ const GovernmentOfficeDepartmentMaster = () => {
   const fetchDepartments = async () => {
     setLoading(true);
     try {
-      const response = await axios.get("http://localhost:8080/api/government-offices/departments");
+      const response = await axios.get("http://localhost:8080/api/departments");
       setDepartments(response.data);
     } catch (error) {
       handleError(error);
@@ -45,10 +45,10 @@ const GovernmentOfficeDepartmentMaster = () => {
     try {
       let response;
       if (isEditing) {
-        response = await axios.put(`http://localhost:8080/api/government-offices/departments/${isEditing}`, { ...formState, departmentName: trimmedDepartmentName });
+        response = await axios.put(`http://localhost:8080/api/departments/${isEditing}`, { ...formState, departmentName: trimmedDepartmentName });
         toast.success("Department updated successfully!");
       } else {
-        response = await axios.post("http://localhost:8080/api/government-offices/departments", { ...formState, departmentName: trimmedDepartmentName });
+        response = await axios.post("http://localhost:8080/api/departments", { ...formState, departmentName: trimmedDepartmentName });
         toast.success("Department added successfully!");
       }
 
@@ -89,7 +89,7 @@ const GovernmentOfficeDepartmentMaster = () => {
     if (result.isConfirmed) {
       setLoading(true);
       try {
-        await axios.delete(`http://localhost:8080/api/government-offices/departments/${id}`);
+        await axios.delete(`http://localhost:8080/api/departments/${id}`);
         setDepartments(departments.filter((dep) => dep.id !== id));
         toast.success("Department deleted successfully!");
       } catch (error) {
@@ -104,7 +104,7 @@ const GovernmentOfficeDepartmentMaster = () => {
     const newStatus = currentStatus === "Active" ? "Inactive" : "Active";
     setLoading(true);
     try {
-      await axios.put(`http://localhost:8080/api/government-offices/departments/${id}/status`, { status: newStatus });
+      await axios.put(`http://localhost:8080/api/departments/${id}/status`, { status: newStatus });
       fetchDepartments();
       toast.success(`Department status updated to ${newStatus} successfully!`);
     } catch (error) {
@@ -240,19 +240,11 @@ const GovernmentOfficeDepartmentMaster = () => {
                           {department.status === "Active" ? <FaCheck /> : <FaTimes />}
                         </button>
                       </td>
-                      <td className="border px-4 py-2">
-                        <button
-                          onClick={() => handleEditDepartment(department.id)}
-                          className="text-blue-600 hover:text-blue-800 mr-2"
-                          title="Edit"
-                        >
+                      <td className="border px-4 py-2 flex space-x-2">
+                        <button onClick={() => handleEditDepartment(department.id)} className="text-blue-500">
                           <FaEdit />
                         </button>
-                        <button
-                          onClick={() => handleDeleteDepartment(department.id)}
-                          className="text-red-600 hover:text-red-800"
-                          title="Delete"
-                        >
+                        <button onClick={() => handleDeleteDepartment(department.id)} className="text-red-500">
                           <FaTrash />
                         </button>
                       </td>
@@ -263,17 +255,25 @@ const GovernmentOfficeDepartmentMaster = () => {
             </div>
           </div>
 
-          {/* Pagination Controls */}
-          <div className="flex justify-center space-x-2 mb-6">
-            {Array.from({ length: totalPages }, (_, index) => (
-              <button
-                key={index + 1}
-                onClick={() => setCurrentPage(index + 1)}
-                className={`px-3 py-1 rounded-md ${currentPage === index + 1 ? "bg-blue-500 text-white" : "bg-gray-200"}`}
-              >
-                {index + 1}
-              </button>
-            ))}
+          {/* Pagination */}
+          <div className="flex justify-between items-center">
+            <button
+              onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+              disabled={currentPage === 1}
+              className="px-4 py-2 bg-blue-500 text-white rounded-md"
+            >
+              Previous
+            </button>
+            <span>
+              Page {currentPage} of {totalPages}
+            </span>
+            <button
+              onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+              disabled={currentPage === totalPages}
+              className="px-4 py-2 bg-blue-500 text-white rounded-md"
+            >
+              Next
+            </button>
           </div>
         </div>
         <AdminFooter />

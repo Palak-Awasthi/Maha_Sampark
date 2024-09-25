@@ -8,7 +8,7 @@ import AdminFooter from "../AdminFooter";
 
 const TalukaMaster = () => {
   const [talukas, setTalukas] = useState([]);
-  const [formState, setFormState] = useState({ talukaName: "", district: "", state: "", status: "Active" });
+  const [formState, setFormState] = useState({ talukaName: "", district: "", state: "", status: "" });
   const [isEditing, setIsEditing] = useState(null);
   const [showSearch, setShowSearch] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -23,7 +23,7 @@ const TalukaMaster = () => {
   const fetchTalukas = async () => {
     setLoading(true);
     try {
-      const response = await axios.get("http://localhost:8080/api/talukas");
+      const response = await axios.get("http://localhost:8080/api/taluka-master");
       setTalukas(response.data);
     } catch (error) {
       handleError(error);
@@ -34,9 +34,11 @@ const TalukaMaster = () => {
 
   const handleAddOrUpdateTaluka = async () => {
     const trimmedTalukaName = formState.talukaName.trim();
+    const trimmedDistrict = formState.district.trim();
+    const trimmedState = formState.state.trim();
 
-    if (!trimmedTalukaName) {
-      toast.error("Taluka Name is required!");
+    if (!trimmedTalukaName || !trimmedDistrict || !trimmedState) {
+      toast.error("Taluka Name, District, and State are required!");
       return;
     }
 
@@ -44,10 +46,10 @@ const TalukaMaster = () => {
     try {
       let response;
       if (isEditing) {
-        response = await axios.put(`http://localhost:8080/api/talukas/${isEditing}`, { ...formState, talukaName: trimmedTalukaName });
+        response = await axios.put(`http://localhost:8080/api/taluka-master/${isEditing}`, { ...formState, talukaName: trimmedTalukaName });
         toast.success("Taluka updated successfully!");
       } else {
-        response = await axios.post("http://localhost:8080/api/talukas", { ...formState, talukaName: trimmedTalukaName });
+        response = await axios.post("http://localhost:8080/api/taluka-master", { ...formState, talukaName: trimmedTalukaName });
         toast.success("Taluka added successfully!");
       }
 
@@ -77,7 +79,7 @@ const TalukaMaster = () => {
     if (window.confirm("Are you sure you want to delete this taluka?")) {
       setLoading(true);
       try {
-        await axios.delete(`http://localhost:8080/api/talukas/${id}`);
+        await axios.delete(`http://localhost:8080/api/taluka-master/${id}`);
         setTalukas(talukas.filter((tk) => tk.id !== id));
         toast.success("Taluka deleted successfully!");
       } catch (error) {
@@ -92,7 +94,7 @@ const TalukaMaster = () => {
     const newStatus = currentStatus === "Active" ? "Inactive" : "Active";
     setLoading(true);
     try {
-      await axios.put(`http://localhost:8080/api/talukas/${id}/status`, { status: newStatus });
+      await axios.put(`http://localhost:8080/api/taluka-master/${id}/status`, { status: newStatus });
       fetchTalukas();
       toast.success(`Taluka status updated to ${newStatus} successfully!`);
     } catch (error) {
@@ -107,7 +109,7 @@ const TalukaMaster = () => {
   };
 
   const resetForm = () => {
-    setFormState({ talukaName: "", status: "Active", district: "", state: "" });
+    setFormState({ talukaName: "", district: "", state: "", status: "" }); // Reset fields
     setIsEditing(null);
   };
 
@@ -228,31 +230,48 @@ const TalukaMaster = () => {
             <div className="px-6 py-4">
               <table className="w-full bg-white rounded-lg shadow-md">
                 <thead>
-                  <tr className="bg-blue-500 text-white">
-                    <th className="px-4 py-3">Sr No</th>
-                    <th className="px-4 py-2">State</th>
-                    <th className="px-4 py-2">District</th>
-                    <th className="px-4 py-2">Taluka</th>
-                    <th className="px-4 py-2">Status</th>
-                    <th className="px-4 py-2">Actions</th>
+                  <tr>
+                    <th className="p-2 border-b text-left">ID</th>
+                    <th className="p-2 border-b text-left">Taluka Name</th>
+                    <th className="p-2 border-b text-left">District</th>
+                    <th className="p-2 border-b text-left">State</th>
+                    <th className="p-2 border-b text-left">Status</th>
+                    <th className="p-2 border-b text-left">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {currentTalukas.map((taluka) => (
-                    <tr key={taluka.id} className="border-b hover:bg-gray-100">
-                      <td className="px-4 py-2">{taluka.state}</td>
-                      <td className="px-4 py-2">{taluka.district}</td>
-                      <td className="px-4 py-2">{taluka.talukaName}</td>
-                      <td className="px-4 py-2">
-                        <button onClick={() => handleToggleStatus(taluka.id, taluka.status)}>
-                          {taluka.status === "Active" ? <FaCheck className="text-green-500" /> : <FaTimes className="text-red-500" />}
-                        </button>
+                    <tr key={taluka.id}>
+                      <td className="p-2 border-b">{taluka.id}</td>
+                      <td className="p-2 border-b">{taluka.talukaName}</td>
+                      <td className="p-2 border-b">{taluka.district}</td>
+                      <td className="p-2 border-b">{taluka.state}</td>
+                      <td className="p-2 border-b">
+                        <span
+                          className={`inline-block px-2 py-1 rounded text-white ${
+                            taluka.status === "Active" ? "bg-green-500" : "bg-red-500"
+                          }`}
+                        >
+                          {taluka.status}
+                        </span>
                       </td>
-                      <td className="px-4 py-2 flex space-x-2">
-                        <button onClick={() => handleEditTaluka(taluka.id)} className="text-blue-500">
+                      <td className="p-2 border-b">
+                        <button
+                          onClick={() => handleEditTaluka(taluka.id)}
+                          className="px-2 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600 transition duration-300"
+                        >
                           <FaEdit />
                         </button>
-                        <button onClick={() => handleDeleteTaluka(taluka.id)} className="text-red-500">
+                        <button
+                          onClick={() => handleToggleStatus(taluka.id, taluka.status)}
+                          className="px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 transition duration-300 ml-2"
+                        >
+                          {taluka.status === "Active" ? <FaTimes /> : <FaCheck />}
+                        </button>
+                        <button
+                          onClick={() => handleDeleteTaluka(taluka.id)}
+                          className="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition duration-300 ml-2"
+                        >
                           <FaTrash />
                         </button>
                       </td>
@@ -260,19 +279,23 @@ const TalukaMaster = () => {
                   ))}
                 </tbody>
               </table>
-              {/* Pagination Logic */}
-              <div className="flex justify-between mt-4">
+
+              {/* Pagination */}
+              <div className="flex justify-between items-center mt-4">
                 <button
+                  onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
                   disabled={currentPage === 1}
-                  onClick={() => setCurrentPage(currentPage - 1)}
-                  className="bg-blue-500 text-white rounded-md px-4 py-2 disabled:opacity-50"
+                  className="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 transition duration-300"
                 >
                   Previous
                 </button>
+                <span>
+                  Page {currentPage} of {totalPages}
+                </span>
                 <button
+                  onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
                   disabled={currentPage === totalPages}
-                  onClick={() => setCurrentPage(currentPage + 1)}
-                  className="bg-blue-500 text-white rounded-md px-4 py-2 disabled:opacity-50"
+                  className="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 transition duration-300"
                 >
                   Next
                 </button>
