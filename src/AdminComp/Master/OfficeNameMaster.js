@@ -7,8 +7,8 @@ import AdminSidebar from "../AdminSidebar";
 import AdminFooter from "../AdminFooter";
 
 const OfficeNameMaster = () => {
-  const [subBranches, setSubBranches] = useState([]);
-  const [formState, setFormState] = useState({ subBranchName: "", status: "Active" });
+  const [officeNames, setOfficeNames] = useState([]);
+  const [formState, setFormState] = useState({ officeName: "", status: "Active" });
   const [isEditing, setIsEditing] = useState(null);
   const [showSearch, setShowSearch] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -17,14 +17,14 @@ const OfficeNameMaster = () => {
   const itemsPerPage = 10;
 
   useEffect(() => {
-    fetchSubBranches();
+    fetchOfficeNames();
   }, []);
 
-  const fetchSubBranches = async () => {
+  const fetchOfficeNames = async () => {
     setLoading(true);
     try {
-      const response = await axios.get("http://localhost:8080/api/sub-branches");
-      setSubBranches(response.data);
+      const response = await axios.get("http://localhost:8080/api/office-names");
+      setOfficeNames(response.data);
     } catch (error) {
       handleError(error);
     } finally {
@@ -32,11 +32,11 @@ const OfficeNameMaster = () => {
     }
   };
 
-  const handleAddOrUpdateSubBranch = async () => {
-    const trimmedSubBranchName = formState.subBranchName.trim();
+  const handleAddOrUpdateOfficeName = async () => {
+    const trimmedOfficeName = formState.officeName.trim();
 
-    if (!trimmedSubBranchName) {
-      toast.error("Sub Branch Name is required!");
+    if (!trimmedOfficeName) {
+      toast.error("Office Name is required!");
       return;
     }
 
@@ -44,15 +44,15 @@ const OfficeNameMaster = () => {
     try {
       let response;
       if (isEditing) {
-        response = await axios.put(`http://localhost:8080/api/sub-branches/${isEditing}`, { ...formState, subBranchName: trimmedSubBranchName });
-        toast.success("Sub Branch updated successfully!");
+        response = await axios.put(`http://localhost:8080/api/office-names/${isEditing}`, { ...formState, officeName: trimmedOfficeName });
+        toast.success("Office Name updated successfully!");
       } else {
-        response = await axios.post("http://localhost:8080/api/sub-branches", { ...formState, subBranchName: trimmedSubBranchName });
-        toast.success("Sub Branch added successfully!");
+        response = await axios.post("http://localhost:8080/api/office-names", { ...formState, officeName: trimmedOfficeName });
+        toast.success("Office Name added successfully!");
       }
 
       if (response.status === 200 || response.status === 201) {
-        fetchSubBranches();
+        fetchOfficeNames();
         resetForm();
       }
     } catch (error) {
@@ -64,22 +64,22 @@ const OfficeNameMaster = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    handleAddOrUpdateSubBranch();
+    handleAddOrUpdateOfficeName();
   };
 
-  const handleEditSubBranch = (id) => {
-    const subBranch = subBranches.find((sb) => sb.id === id);
-    setFormState({ subBranchName: subBranch.subBranchName, status: subBranch.status });
+  const handleEditOfficeName = (id) => {
+    const officeName = officeNames.find((on) => on.id === id);
+    setFormState({ officeName: officeName.officeName, status: officeName.status });
     setIsEditing(id);
   };
 
-  const handleDeleteSubBranch = async (id) => {
-    if (window.confirm("Are you sure you want to delete this sub branch?")) {
+  const handleDeleteOfficeName = async (id) => {
+    if (window.confirm("Are you sure you want to delete this office name?")) {
       setLoading(true);
       try {
-        await axios.delete(`http://localhost:8080/api/sub-branches/${id}`);
-        setSubBranches(subBranches.filter((sb) => sb.id !== id));
-        toast.success("Sub Branch deleted successfully!");
+        await axios.delete(`http://localhost:8080/api/office-names/${id}`);
+        setOfficeNames(officeNames.filter((on) => on.id !== id));
+        toast.success("Office Name deleted successfully!");
       } catch (error) {
         handleError(error);
       } finally {
@@ -92,22 +92,24 @@ const OfficeNameMaster = () => {
     const newStatus = currentStatus === "Active" ? "Inactive" : "Active";
     setLoading(true);
     try {
-      await axios.put(`http://localhost:8080/api/sub-branches/${id}/status`, { status: newStatus });
-      fetchSubBranches();
-      toast.success(`Sub Branch status updated to ${newStatus} successfully!`);
+        // Sending the current status as a payload to toggle status
+        await axios.patch(`http://localhost:8080/api/office-names/${id}/toggle-status`, { status: newStatus });
+        fetchOfficeNames(); // Refresh the list
+        toast.success(`Office Name status updated to ${newStatus}!`);
     } catch (error) {
-      handleError(error);
+        handleError(error);
     } finally {
-      setLoading(false);
+        setLoading(false);
     }
-  };
+};
+
 
   const handleSearch = (event) => {
     setSearchTerm(event.target.value);
   };
 
   const resetForm = () => {
-    setFormState({ subBranchName: "", status: "Active" });
+    setFormState({ officeName: "", status: "Active" });
     setIsEditing(null);
   };
 
@@ -122,12 +124,12 @@ const OfficeNameMaster = () => {
     }
   };
 
-  const filteredSubBranches = subBranches.filter((sb) =>
-    sb.subBranchName?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false
+  const filteredOfficeNames = officeNames.filter((on) =>
+    on.officeName?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false
   );
 
-  const totalPages = Math.ceil(filteredSubBranches.length / itemsPerPage);
-  const currentSubBranches = filteredSubBranches.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+  const totalPages = Math.ceil(filteredOfficeNames.length / itemsPerPage);
+  const currentOfficeNames = filteredOfficeNames.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   return (
     <div className="flex">
@@ -142,7 +144,7 @@ const OfficeNameMaster = () => {
               {showSearch && (
                 <input
                   type="text"
-                  placeholder="Search Sub Branch"
+                  placeholder="Search Office Name"
                   value={searchTerm}
                   onChange={handleSearch}
                   className="px-3 py-2 border rounded-md focus:outline-none focus:border-blue-500 w-full sm:w-auto"
@@ -168,7 +170,7 @@ const OfficeNameMaster = () => {
             </div>
           </div>
 
-          {/* Add/Update Sub Branch Form */}
+          {/* Add/Update Office Name Form */}
           <div className="bg-white rounded-lg shadow-md mb-6">
             <div className="bg-blue-500 text-white px-6 py-3 rounded-t-lg">
               <h3 className="text-lg sm:text-xl font-semibold">{isEditing ? "Edit Office Name" : "Add Office Name"}</h3>
@@ -180,8 +182,8 @@ const OfficeNameMaster = () => {
                     <label className="mb-1 font-medium">Office Name</label>
                     <input
                       type="text"
-                      value={formState.subBranchName}
-                      onChange={(e) => setFormState({ ...formState, subBranchName: e.target.value })}
+                      value={formState.officeName}
+                      onChange={(e) => setFormState({ ...formState, officeName: e.target.value })}
                       className="p-2 border rounded hover:scale-105 transition duration-300 w-full"
                       required
                     />
@@ -203,81 +205,66 @@ const OfficeNameMaster = () => {
           {/* Loader UI */}
           {loading && <div className="text-center">Loading...</div>}
 
-          {/* Sub Branch List Table */}
+          {/* Office Name List Table */}
           <div className="bg-white rounded-lg shadow-md mb-6 overflow-x-auto">
             <div className="px-6 py-4">
               <table className="w-full bg-white rounded-lg shadow-md">
                 <thead>
                   <tr className="bg-blue-500 text-white">
-                  <th className="px-4 py-2">Sr No</th>
+                    <th className="px-4 py-2">Sr No</th>
                     <th className="px-4 py-2">Office Name</th>
                     <th className="px-4 py-2">Status</th>
                     <th className="px-4 py-2">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {currentSubBranches.map((subBranch) => (
-                    <tr key={subBranch.id}>
-                      <td className="border px-4 py-2">{subBranch.subBranchName}</td>
+                  {currentOfficeNames.map((officeName, index) => (
+                    <tr key={officeName.id}>
+                      <td className="border px-4 py-2">{(currentPage - 1) * itemsPerPage + index + 1}</td>
+                      <td className="border px-4 py-2">{officeName.officeName}</td>
                       <td className="border px-4 py-2">
-                        <span className={`text-${subBranch.status === "Active" ? "green" : "red"}-500`}>
-                          {subBranch.status}
+                        <span className={`text-${officeName.status === "Active" ? "green" : "red"}-500`}>
+                          {officeName.status}
                         </span>
                       </td>
                       <td className="border px-4 py-2 flex items-center space-x-2">
                         <FaEdit
                           className="cursor-pointer text-blue-500 hover:text-blue-600"
-                          onClick={() => handleEditSubBranch(subBranch.id)}
+                          onClick={() => handleEditOfficeName(officeName.id)}
                           title="Edit"
-                          aria-label="Edit sub branch"
+                          aria-label="Edit office name"
                         />
                         <FaTrash
                           className="cursor-pointer text-red-500 hover:text-red-600"
-                          onClick={() => handleDeleteSubBranch(subBranch.id)}
+                          onClick={() => handleDeleteOfficeName(officeName.id)}
                           title="Delete"
-                          aria-label="Delete sub branch"
+                          aria-label="Delete office name"
                         />
-                        <span
-                          onClick={() => handleToggleStatus(subBranch.id, subBranch.status)}
-                          title="Toggle Status"
-                          aria-label="Toggle sub branch status"
+                        <button
+                          onClick={() => handleToggleStatus(officeName.id, officeName.status)}
+                          className={`px-2 py-1 rounded ${officeName.status === "Active" ? "bg-red-500 text-white" : "bg-green-500 text-white"}`}
                         >
-                          {subBranch.status === "Active" ? <FaTimes /> : <FaCheck />}
-                        </span>
+                          {officeName.status === "Active" ? <FaTimes /> : <FaCheck />}
+                        </button>
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
-
-              {/* Pagination */}
-              <div className="flex justify-center mt-4">
-                <button
-                  className={`px-3 py-1 mx-1 ${currentPage === 1 ? "text-gray-400" : "text-blue-500"}`}
-                  disabled={currentPage === 1}
-                  onClick={() => setCurrentPage(currentPage - 1)}
-                >
-                  Previous
-                </button>
-                {[...Array(totalPages).keys()].map((page) => (
-                  <button
-                    key={page}
-                    className={`px-3 py-1 mx-1 ${page + 1 === currentPage ? "bg-blue-500 text-white" : "text-blue-500"}`}
-                    onClick={() => setCurrentPage(page + 1)}
-                  >
-                    {page + 1}
-                  </button>
-                ))}
-                <button
-                  className={`px-3 py-1 mx-1 ${currentPage === totalPages ? "text-gray-400" : "text-blue-500"}`}
-                  disabled={currentPage === totalPages}
-                  onClick={() => setCurrentPage(currentPage + 1)}
-                >
-                  Next
-                </button>
-              </div>
             </div>
           </div>
+
+          {/* Pagination */}
+          <div className="flex justify-between items-center mb-6">
+            <button onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))} disabled={currentPage === 1}>
+              Previous
+            </button>
+            <div>Page {currentPage} of {totalPages}</div>
+            <button onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages}>
+              Next
+            </button>
+          </div>
+
         </div>
         <AdminFooter />
       </div>
