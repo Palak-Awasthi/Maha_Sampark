@@ -10,7 +10,7 @@ import AdminFooter from "../AdminFooter"; // Adjust path as necessary
 
 const MainDepartmentMaster = () => {
   const [mainDepartments, setMainDepartments] = useState([]);
-  const [formState, setFormState] = useState({ mainDepartment: "", status: "Active" }); // Changed mainDepartmentName to mainDepartment
+  const [formState, setFormState] = useState({ mainDepartment: "", status: "Active" });
   const [isEditing, setIsEditing] = useState(null);
   const [showSearch, setShowSearch] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -44,7 +44,7 @@ const MainDepartmentMaster = () => {
 
       if (isEditing) {
         const departmentId = isEditing;
-        const updatedDepartment = { ...formState }; // Include formState for editing
+        const updatedDepartment = { ...formState };
         response = await axios.put(`http://localhost:8080/api/main-departments/${departmentId}`, updatedDepartment);
         toast.success("Main Department updated successfully!");
       } else {
@@ -73,7 +73,7 @@ const MainDepartmentMaster = () => {
     try {
       const response = await axios.get(`http://localhost:8080/api/main-departments/${id}`);
       const department = response.data;
-      setFormState({ mainDepartment: department.mainDepartment, status: department.status }); // Changed mainDepartmentName to mainDepartment
+      setFormState({ mainDepartment: department.mainDepartment, status: department.status });
       setIsEditing(id);
     } catch (error) {
       handleError(error);
@@ -88,8 +88,8 @@ const MainDepartmentMaster = () => {
       text: "You won't be able to revert this!",
       icon: "warning",
       showCancelButton: true,
-      confirmButtonColor: "#3085d6",
-      cancelButtonColor: "#d33",
+      confirmButtonColor: "#d33",
+      cancelButtonColor: "#3085d6",
       confirmButtonText: "Yes, delete it!",
     });
 
@@ -98,7 +98,7 @@ const MainDepartmentMaster = () => {
       try {
         await axios.delete(`http://localhost:8080/api/main-departments/${id}`);
         setMainDepartments(mainDepartments.filter((d) => d.id !== id));
-        Swal.fire("Deleted!", "Main Department has been deleted.", "success");
+        toast.success("Main Department deleted successfully!");
       } catch (error) {
         handleError(error);
       } finally {
@@ -107,24 +107,23 @@ const MainDepartmentMaster = () => {
     }
   };
 
-  const handleToggleStatus = async (id, currentStatus) => {
-    const newStatus = currentStatus === "Active" ? "Inactive" : "Active";
-    const result = await Swal.fire({
-      title: "Are you sure?",
-      text: `Change status to ${newStatus}?`,
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonColor: "#3085d6",
-      cancelButtonColor: "#d33",
-      confirmButtonText: `Yes, change to ${newStatus}!`,
-    });
-
-    if (result.isConfirmed) {
+  const handleToggleStatus = async (id) => {
+    const department = mainDepartments.find((d) => d.id === id);
+    if (department) {
+      const newStatus = department.status === "Active" ? "Inactive" : "Active";
       setLoading(true);
       try {
-        await axios.patch(`http://localhost:8080/api/main-departments/${id}/status`, { status: newStatus });
-        fetchMainDepartments();
-        Swal.fire("Updated!", `Main Department status updated to ${newStatus}.`, "success");
+        // New API format for status change
+        await axios.put(`http://localhost:8080/api/main-departments/${id}/status`, newStatus, {
+          headers: {
+            'Content-Type': 'text/plain', // Sending the status as plain text
+          },
+        });
+
+        setMainDepartments((prevDepartments) =>
+          prevDepartments.map((d) => (d.id === id ? { ...d, status: newStatus } : d))
+        );
+        toast.success(`Main Department status updated to ${newStatus}`);
       } catch (error) {
         handleError(error);
       } finally {
@@ -137,12 +136,8 @@ const MainDepartmentMaster = () => {
     setSearchTerm(event.target.value);
   };
 
-  const filteredMainDepartments = mainDepartments.filter((d) =>
-    d.mainDepartment?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false // Changed mainDepartmentName to mainDepartment
-  );
-
   const resetForm = () => {
-    setFormState({ mainDepartment: "", status: "Active" }); // Changed mainDepartmentName to mainDepartment
+    setFormState({ mainDepartment: "", status: "Active" });
     setIsEditing(null);
   };
 
@@ -150,146 +145,111 @@ const MainDepartmentMaster = () => {
     console.error("Error:", error);
     if (error.response) {
       toast.error(`Error: ${error.response.status} - ${error.response.data.message || "An error occurred."}`);
-    } else if (error.request) {
-      toast.error("No response received from the server. Please try again.");
     } else {
       toast.error("An unexpected error occurred. Please try again.");
     }
   };
 
+  const filteredDepartments = mainDepartments.filter((d) =>
+    d.mainDepartment && d.mainDepartment.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   return (
     <div className="flex">
       <AdminSidebar />
-      <div className="flex-1">
+      <div className="flex-grow">
         <AdminHeader />
         <div className="container mx-auto p-4">
           {/* Header Section */}
           <div className="flex justify-between items-center mb-6">
-            <div className="relative overflow-hidden whitespace-nowrap">
-              <div className="text-2xl font-bold">Main Department Master</div>
-            </div>
-            <div className="flex flex-col md:flex-row md:items-center space-y-2 md:space-y-0 md:space-x-2">
-              {showSearch && (
-                <input
-                  type="text"
-                  placeholder="Search Main Department"
-                  value={searchTerm}
-                  onChange={handleSearch}
-                  className="px-3 py-2 border rounded-md focus:outline-none focus:border-blue-500 w-full sm:w-auto"
-                />
-              )}
+            <div className="text-2xl font-bold text-black">Main Department Master</div>
+            <div className="flex items-center">
               <button
+                className="bg-blue-500 text-white px-4 py-2 rounded mr-2 transition-all hover:bg-blue-600"
                 onClick={() => setShowSearch(!showSearch)}
-                className="p-2 bg-blue-500 text-white rounded-md transition-transform transform hover:scale-110"
-                title="Search"
               >
-                <FaSearch />
+                <FaSearch className="inline" /> {showSearch ? "Hide Search" : "Show Search"}
               </button>
               <button
-                onClick={() => {
-                  setSearchTerm("");
-                  setShowSearch(false);
-                }}
-                className="p-2 bg-blue-500 text-white rounded-md transition-transform transform hover:scale-110"
-                title="Reset"
+                className="bg-gray-500 text-white px-4 py-2 rounded flex items-center transition-all hover:bg-gray-600"
+                onClick={resetForm}
               >
-                <FaSyncAlt />
+                <FaSyncAlt className="mr-1" /> Reset
               </button>
             </div>
           </div>
-
-          {/* Add/Update Main Department Form */}
-          <div className="bg-white rounded-lg shadow-md mb-6">
-            <div className="bg-blue-500 text-white px-6 py-3 rounded-t-lg">
-              <h3 className="text-lg sm:text-xl font-semibold hover:text-black cursor-pointer">
-                {isEditing ? "Edit Main Department" : "Add Main Department"}
-              </h3>
+          {/* Search Bar */}
+          {showSearch && (
+            <div className="mb-4">
+              <input
+                type="text"
+                placeholder="Search Departments..."
+                value={searchTerm}
+                onChange={handleSearch}
+                className="border border-gray-300 rounded p-2 w-full"
+              />
             </div>
-            <div className="p-6">
-              <form onSubmit={handleSubmit}>
-                <div className="grid grid-cols-1 gap-2">
-                  <div className="flex flex-col">
-                    <label className="mb-1 font-medium">Main Department</label>
-                    <input
-                      type="text"
-                      value={formState.mainDepartment} // Changed to mainDepartment
-                      onChange={(e) => setFormState({ ...formState, mainDepartment: e.target.value })} // Changed to mainDepartment
-                      className="p-2 border rounded hover:scale-105 transition duration-300 w-full sm:w-1/2"
-                      required
-                    />
-                  </div>
-                  <div className="flex flex-col">
-                    <label className="mb-1 font-medium">Status</label>
-                    <select
-                      value={formState.status}
-                      onChange={(e) => setFormState({ ...formState, status: e.target.value })}
-                      className="p-2 border rounded hover:scale-105 transition duration-300 w-full sm:w-1/2"
-                    >
-                      <option value="Active">Active</option>
-                      <option value="Inactive">Inactive</option>
-                    </select>
-                  </div>
-                </div>
-                <div className="flex justify-center mt-4">
-                  <button
-                    type="submit"
-                    className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition duration-300"
-                  >
-                    {isEditing ? "Update" : "Add"}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={resetForm}
-                    className="ml-4 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition duration-300"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </form>
+          )}
+          {/* Form Section */}
+          <form onSubmit={handleSubmit} className="mb-4">
+            <div className="flex gap-4">
+              <input
+                type="text"
+                placeholder="Main Department Name"
+                value={formState.mainDepartment}
+                onChange={(e) => setFormState({ ...formState, mainDepartment: e.target.value })}
+                className="border border-gray-300 rounded p-2 flex-grow"
+              />
+              <button type="submit" className="bg-green-500 text-white px-4 py-2 rounded transition-all hover:bg-green-600">
+                {isEditing ? "Update" : "Submit"}
+              </button>
             </div>
-          </div>
-
-          {/* Main Departments Table */}
-          <div className="overflow-auto rounded-lg shadow-md">
-            <table className="min-w-full bg-white border border-gray-200">
-              <thead>
-                <tr className="bg-gray-200">
-                  <th className="py-2 px-4 border">#</th>
-                  <th className="py-2 px-4 border">Main Department</th>
-                  <th className="py-2 px-4 border">Status</th>
-                  <th className="py-2 px-4 border">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredMainDepartments.map((department, index) => (
-                  <tr key={department.id} className="hover:bg-gray-100">
-                    <td className="py-2 px-4 border">{index + 1}</td>
-                    <td className="py-2 px-4 border">{department.mainDepartment}</td>
-                    <td className="py-2 px-4 border">{department.status}</td>
-                    <td className="py-2 px-4 border">
-                      <button
-                        onClick={() => handleEditMainDepartment(department.id)}
-                        className="text-blue-500 hover:underline"
-                      >
-                        <FaEdit />
-                      </button>
-                      <button
-                        onClick={() => handleDeleteMainDepartment(department.id)}
-                        className="text-red-500 hover:underline ml-2"
-                      >
-                        <FaTrash />
-                      </button>
-                      <button
-                        onClick={() => handleToggleStatus(department.id, department.status)}
-                        className="text-green-500 hover:underline ml-2"
-                      >
-                        {department.status === "Active" ? <FaTimes /> : <FaCheck />}
-                      </button>
-                    </td>
+          </form>
+          {/* Main Department Table */}
+          <div className="overflow-x-auto">
+            {loading ? (
+              <div>Loading...</div>
+            ) : (
+              <table className="min-w-full border border-gray-300 rounded-lg overflow-hidden">
+                <thead className="bg-blue-500 text-white">
+                  <tr>
+                    <th className="border border-gray-300 p-2">Sr. No.</th>
+                    <th className="border border-gray-300 p-2">Main Department Name</th>
+                    <th className="border border-gray-300 p-2">Status</th>
+                    <th className="border border-gray-300 p-2">Actions</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {filteredDepartments.map((department, index) => (
+                    <tr key={department.id}>
+                      <td className="border border-gray-300 p-2">{index + 1}</td>
+                      <td className="border border-gray-300 p-2">{department.mainDepartment}</td>
+                      <td className="border border-gray-300 p-2">{department.status}</td>
+                      <td className="border border-gray-300 p-2 flex gap-2">
+                        <button
+                          className="text-yellow-500 hover:text-yellow-700 transition-all"
+                          onClick={() => handleEditMainDepartment(department.id)}
+                        >
+                          <FaEdit />
+                        </button>
+                        <button
+                          className="text-red-500 hover:text-red-700 transition-all"
+                          onClick={() => handleDeleteMainDepartment(department.id)}
+                        >
+                          <FaTrash />
+                        </button>
+                        <button
+                          className={`text-${department.status === "Active" ? "green" : "gray"}-500 hover:text-${department.status === "Active" ? "green" : "gray"}-700 transition-all`}
+                          onClick={() => handleToggleStatus(department.id)}
+                        >
+                          {department.status === "Active" ? <FaCheck /> : <FaTimes />}
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
           </div>
         </div>
         <AdminFooter />

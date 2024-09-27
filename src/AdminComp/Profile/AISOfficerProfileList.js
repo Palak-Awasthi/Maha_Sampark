@@ -21,38 +21,48 @@ const AISOfficerProfileList = () => {
     payMatrixLevel: "",
     sourceOfRecruitment: "",
   });
-
-  const fetchProfiles = async () => {
-    try {
-      const response = await axios.get("http://localhost:8080/api/ais");
-      setProfiles(response.data);
-      setFilteredProfiles(response.data);
-    } catch (error) {
-      handleError(error);
-    }
-  };
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     fetchProfiles();
   }, []);
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-
-    // Update form state
-    setFormState((prevState) => ({
-      ...prevState,
-      [name]: value,
-    }));
-
-    // Filter profiles immediately based on the updated form state
-    filterProfiles({ ...formState, [name]: value });
+  const debounce = (func, delay) => {
+    let timeoutId;
+    return (...args) => {
+      if (timeoutId) clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => {
+        func.apply(null, args);
+      }, delay);
+    };
   };
+
+  const fetchProfiles = async () => {
+    setLoading(true);
+    try {
+      const response = await axios.get("http://localhost:8080/api/ais");
+      setProfiles(response.data);
+      setFilteredProfiles(response.data);
+      setError(null);
+    } catch (error) {
+      handleError(error);
+      setError(error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleInputChange = debounce((e) => {
+    const { name, value } = e.target;
+    setFormState((prevState) => ({ ...prevState, [name]: value }));
+    filterProfiles({ ...formState, [name]: value });
+  }, 300);
 
   const filterProfiles = (searchValues) => {
     const filtered = profiles.filter((profile) => {
       return Object.keys(searchValues).every((key) => {
-        if (!searchValues[key]) return true; // If the input is empty, do not filter
+        if (!searchValues[key]) return true;
         return profile[key]?.toString().toLowerCase().includes(searchValues[key].toLowerCase());
       });
     });
@@ -79,20 +89,21 @@ const AISOfficerProfileList = () => {
     const message = error.response
       ? `Error: ${error.response.status} - ${error.response.data.message || "An error occurred."}`
       : "An unexpected error occurred. Please try again.";
-    toast.error(message); // Use toast instead of alert
+    toast.error(message);
   };
 
   const handleView = (id) => {
     console.log(`View profile with ID: ${id}`);
-    // Implement view functionality (e.g., navigate to a profile detail page)
   };
 
   const handleEdit = (id) => {
     console.log(`Edit profile with ID: ${id}`);
-    // Implement edit functionality (e.g., open a modal or navigate to an edit page)
   };
 
   const handleDelete = async (id) => {
+    const confirmDelete = window.confirm("Are you sure you want to delete this profile?");
+    if (!confirmDelete) return;
+
     try {
       await axios.delete(`http://localhost:8080/api/ais/${id}`);
       toast.success("Profile deleted successfully.");
@@ -103,15 +114,15 @@ const AISOfficerProfileList = () => {
   };
 
   return (
-    <div className="flex flex-col min-h-screen overflow-hidden"> {/* Main page structure, remove vertical scroll */}
+    <div className="flex flex-col min-h-screen">
       <ToastContainer />
-      <div className="flex flex-1">
+      <div className="flex flex-1 overflow-hidden">
         <AdminSidebar />
         <div className="flex-1 flex flex-col max-w-7xl mx-auto">
           <AdminHeader />
-          <div className="p-6">
-            <div className="flex justify-between items-center mb-4">
-              <h1 className="text-2xl font-bold">AIS Officers Profile List</h1>
+          <div className="container mx-auto p-4 max-w-7xl">
+            <div className="flex flex-col md:flex-row md:justify-between items-start md:items-center mb-6">
+              <div className="text-2xl sm:text-3xl font-bold">AIS Officers Profile List</div>
               <button
                 onClick={resetForm}
                 className="p-2 bg-blue-500 text-white rounded-md transition-transform transform hover:scale-110"
@@ -120,32 +131,100 @@ const AISOfficerProfileList = () => {
                 <FaSyncAlt />
               </button>
             </div>
-
-            {/* Search Fields */}
-            <div className="bg-white rounded-lg shadow-md mb-6 p-4">
-              <div className="bg-blue-500 text-white p-2 rounded-md">
-                <h3 className="text-lg font-semibold mb-2">Search Profiles</h3>
+          
+            {/* Main Content */}
+            <div className="flex-1 flex flex-col p-6 overflow-hidden">
+              
+              {/* Search Profile Section */}
+              <div className="bg-white rounded-lg shadow-md mb-4 p-4">
+                <div className="bg-blue-500 text-white p-2 rounded-md">
+                  <h3 className="text-lg font-semibold">Search Profiles</h3>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2">
+                  {Object.keys(formState).map((key) => (
+                    <div className="flex flex-col" key={key}>
+                      <label className="font-bold">{key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}</label>
+                      {key === "name" ? (
+                        <input
+                          type="text"
+                          name={key}
+                          value={formState[key]}
+                          onChange={handleInputChange}
+                          className="p-2 border rounded-md"
+                          placeholder={`Enter ${key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}`}
+                        />
+                      ) : (
+                        <select
+                          name={key}
+                          value={formState[key]}
+                          onChange={handleInputChange}
+                          className="p-2 border rounded-md"
+                        >
+                          <option value="">Select {key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}</option>
+                          {/* Add options here for each field */}
+                          {key === "designation" && (
+                            <>
+                              <option value="Officer">Officer</option>
+                              <option value="Assistant">Assistant</option>
+                              <option value="Director">Director</option>
+                            </>
+                          )}
+                          {key === "cadre" && (
+                            <>
+                              <option value="Cadre 1">Cadre 1</option>
+                              <option value="Cadre 2">Cadre 2</option>
+                            </>
+                          )}
+                          {key === "postingState" && (
+                            <>
+                              <option value="State 1">State 1</option>
+                              <option value="State 2">State 2</option>
+                            </>
+                          )}
+                          {key === "postingDistrictLocation" && (
+                            <>
+                              <option value="District 1">District 1</option>
+                              <option value="District 2">District 2</option>
+                            </>
+                          )}
+                          {key === "batchYearOfAppointment" && (
+                            <>
+                              <option value="2020">2020</option>
+                              <option value="2021">2021</option>
+                              <option value="2022">2022</option>
+                              <option value="2023">2023</option>
+                            </>
+                          )}
+                          {key === "homeState" && (
+                            <>
+                              <option value="Home State 1">Home State 1</option>
+                              <option value="Home State 2">Home State 2</option>
+                            </>
+                          )}
+                          {key === "payMatrixLevel" && (
+                            <>
+                              <option value="Level 1">Level 1</option>
+                              <option value="Level 2">Level 2</option>
+                              <option value="Level 3">Level 3</option>
+                              <option value="Level 4">Level 4</option>
+                            </>
+                          )}
+                          {key === "sourceOfRecruitment" && (
+                            <>
+                              <option value="Source 1">Source 1</option>
+                              <option value="Source 2">Source 2</option>
+                            </>
+                          )}
+                        </select>
+                      )}
+                    </div>
+                  ))}
+                </div>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {Object.keys(formState).map((key) => (
-                  <div className="flex flex-col" key={key}>
-                    <label className="font-bold">{key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}</label>
-                    <input
-                      type="text"
-                      name={key}
-                      value={formState[key]}
-                      onChange={handleInputChange}
-                      className="p-2 border rounded hover:scale-105 transition duration-300 w-full"
-                    />
-                  </div>
-                ))}
-              </div>
-            </div>
 
-            {/* Table with only Horizontal and Vertical Scrolling */}
-            <div className="overflow-x-auto"> {/* Horizontal scroll */}
-              <div className="overflow-y-auto max-h-96"> {/* Vertical scroll only for table */}
-                <table className="min-w-full bg-white border border-gray-200">
+              {/* Table Section */}
+              <div className="flex-grow overflow-auto">
+                <table className="min-w-full bg-white border border-gray-200 overflow-y-auto">
                   <thead>
                     <tr className="bg-blue-500 text-white">
                       {["ID", "Name", "Designation", "ID Number", "Present Posting", "Mobile Number 1", "Mobile Number 2", "Batch Year of Appointment", "Cadre State", "Posting State", "Posting District Location", "Date of Birth", "Date of Appointment", "Date of Present Posting", "Home State", "Source of Recruitment", "Pay Matrix Level", "Email ID", "Educational Qualification", "Information Updated Date", "Past Posting", "Other Information", "Actions"].map((header) => (
@@ -179,20 +258,16 @@ const AISOfficerProfileList = () => {
                         <td className="py-2 px-4 border-b">{profile.pastPosting}</td>
                         <td className="py-2 px-4 border-b">{profile.otherInformation}</td>
                         <td className="py-2 px-4 border-b flex space-x-2">
-                          <button onClick={() => handleView(profile.id)} title="View">
-                            <FaEye className="text-green-500" />
-                          </button>
-                          <button onClick={() => handleEdit(profile.id)} title="Edit">
-                            <FaEdit className="text-blue-500" />
-                          </button>
-                          <button onClick={() => handleDelete(profile.id)} title="Delete">
-                            <FaTrash className="text-red-500" />
-                          </button>
+                          <button onClick={() => handleView(profile.id)} className="text-blue-500"><FaEye /></button>
+                          <button onClick={() => handleEdit(profile.id)} className="text-yellow-500"><FaEdit /></button>
+                          <button onClick={() => handleDelete(profile.id)} className="text-red-500"><FaTrash /></button>
                         </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
+                {loading && <p className="text-center">Loading profiles...</p>}
+                {error && <p className="text-red-500 text-center">{error}</p>}
               </div>
             </div>
           </div>

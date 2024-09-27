@@ -14,8 +14,6 @@ const GovernmentOfficeDepartmentMaster = () => {
   const [showSearch, setShowSearch] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
 
   useEffect(() => {
     fetchDepartments();
@@ -75,14 +73,13 @@ const GovernmentOfficeDepartmentMaster = () => {
   };
 
   const handleDeleteDepartment = async (id) => {
-    // Use SweetAlert2 for confirmation
     const result = await Swal.fire({
       title: 'Are you sure?',
       text: "You won't be able to revert this!",
       icon: 'warning',
       showCancelButton: true,
-      confirmButtonColor: '#3085d6',
-      cancelButtonColor: '#d33',
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
       confirmButtonText: 'Yes, delete it!'
     });
 
@@ -105,8 +102,10 @@ const GovernmentOfficeDepartmentMaster = () => {
     setLoading(true);
     try {
       await axios.put(`http://localhost:8080/api/departments/${id}/status`, { status: newStatus });
-      fetchDepartments();
-      toast.success(`Department status updated to ${newStatus} successfully!`);
+      setDepartments((prevDepartments) =>
+        prevDepartments.map((dep) => (dep.id === id ? { ...dep, status: newStatus } : dep))
+      );
+      toast.success(`Department status updated to ${newStatus}`);
     } catch (error) {
       handleError(error);
     } finally {
@@ -127,19 +126,14 @@ const GovernmentOfficeDepartmentMaster = () => {
     console.error("Error:", error);
     if (error.response) {
       toast.error(`Error: ${error.response.status} - ${error.response.data.message || "An error occurred."}`);
-    } else if (error.request) {
-      toast.error("No response received from the server. Please try again.");
     } else {
       toast.error("An unexpected error occurred. Please try again.");
     }
   };
 
   const filteredDepartments = departments.filter((dep) =>
-    dep.departmentName?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false
+    dep.departmentName && dep.departmentName.toLowerCase().includes(searchTerm.toLowerCase())
   );
-
-  const totalPages = Math.ceil(filteredDepartments.length / itemsPerPage);
-  const currentDepartments = filteredDepartments.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   return (
     <div className="flex">
@@ -149,131 +143,97 @@ const GovernmentOfficeDepartmentMaster = () => {
         <div className="container mx-auto p-4">
           {/* Header Section */}
           <div className="flex justify-between items-center mb-6">
-            <div className="text-2xl font-bold">Government Office Department Master</div>
-            <div className="flex flex-col md:flex-row md:items-center space-y-2 md:space-y-0 md:space-x-2">
-              {showSearch && (
-                <input
-                  type="text"
-                  placeholder="Search Department"
-                  value={searchTerm}
-                  onChange={handleSearch}
-                  className="px-3 py-2 border rounded-md focus:outline-none focus:border-blue-500 w-full sm:w-auto"
-                />
-              )}
+            <div className="text-2xl font-bold text-black">Government Office Department Master
+
+
+</div>
+            <div className="flex items-center">
               <button
+                className="bg-blue-500 text-white px-4 py-2 rounded mr-2 transition-all hover:bg-blue-600"
                 onClick={() => setShowSearch(!showSearch)}
-                className="p-2 bg-blue-500 text-white rounded-md transition-transform transform hover:scale-110"
-                title="Search"
               >
-                <FaSearch />
+                <FaSearch className="inline" /> {showSearch ? "Hide Search" : "Show Search"}
               </button>
               <button
-                onClick={() => {
-                  setSearchTerm("");
-                  setShowSearch(false);
-                }}
-                className="p-2 bg-blue-500 text-white rounded-md transition-transform transform hover:scale-110"
-                title="Reset"
+                className="bg-gray-500 text-white px-4 py-2 rounded flex items-center transition-all hover:bg-gray-600"
+                onClick={() => resetForm()}
               >
-                <FaSyncAlt />
+                <FaSyncAlt className="mr-1" /> Reset
               </button>
             </div>
           </div>
-
-          {/* Add/Update Department Form */}
-          <div className="bg-white rounded-lg shadow-md mb-6">
-            <div className="bg-blue-500 text-white px-6 py-3 rounded-t-lg">
-              <h3 className="text-lg sm:text-xl font-semibold">{isEditing ? "Edit Department" : "Add Department"}</h3>
+          {/* Search Bar */}
+          {showSearch && (
+            <div className="mb-4">
+              <input
+                type="text"
+                placeholder="Search Departments..."
+                value={searchTerm}
+                onChange={handleSearch}
+                className="border border-gray-300 rounded p-2 w-full"
+              />
             </div>
-            <div className="p-6">
-              <form onSubmit={handleSubmit}>
-                <div className="grid grid-cols-1 gap-2">
-                  <div className="flex flex-col w-full">
-                    <label className="mb-1 font-medium">Department Name</label>
-                    <input
-                      type="text"
-                      value={formState.departmentName}
-                      onChange={(e) => setFormState({ ...formState, departmentName: e.target.value })}
-                      className="p-2 border rounded hover:scale-105 transition duration-300 w-full sm:w-1/2"
-                      required
-                    />
-                  </div>
-                </div>
-                <div className="flex justify-center mt-4">
-                  <button
-                    type="submit"
-                    className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition duration-300"
-                    disabled={loading}
-                  >
-                    {isEditing ? "Update" : "Submit"}
-                  </button>
-                </div>
-              </form>
+          )}
+          {/* Form Section */}
+          <form onSubmit={handleSubmit} className="mb-4">
+            <div className="flex gap-4">
+              <input
+                type="text"
+                placeholder="Department Name"
+                value={formState.departmentName}
+                onChange={(e) => setFormState({ ...formState, departmentName: e.target.value })}
+                className="border border-gray-300 rounded p-2 flex-grow"
+              />
+              <button type="submit" className="bg-green-500 text-white px-4 py-2 rounded transition-all hover:bg-green-600">
+                {isEditing ? "Update" : "Submit"}
+              </button>
             </div>
-          </div>
-
-          {/* Loader UI */}
-          {loading && <div className="text-center">Loading...</div>}
-
-          {/* Department List Table */}
-          <div className="bg-white rounded-lg shadow-md mb-6 overflow-x-auto">
-            <div className="px-6 py-4">
-              <table className="w-full bg-white rounded-lg shadow-md">
-                <thead>
-                  <tr className="bg-blue-500 text-white">
-                    <th className="px-4 py-2">Sr No</th>
-                    <th className="px-4 py-2">Department Name</th>
-                    <th className="px-4 py-2">Status</th>
-                    <th className="px-4 py-2">Actions</th>
+          </form>
+          {/* Department Table */}
+          <div className="overflow-x-auto">
+            {loading ? (
+              <div>Loading...</div>
+            ) : (
+              <table className="min-w-full border border-gray-300 rounded-lg overflow-hidden">
+                <thead className="bg-blue-500 text-white">
+                  <tr>
+                    <th className="border border-gray-300 p-2">Sr. No.</th>
+                    <th className="border border-gray-300 p-2">Department Name</th>
+                    <th className="border border-gray-300 p-2">Status</th>
+                    <th className="border border-gray-300 p-2">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {currentDepartments.map((department) => (
+                  {filteredDepartments.map((department, index) => (
                     <tr key={department.id}>
-                      <td className="border px-4 py-2">{department.departmentName}</td>
-                      <td className="border px-4 py-2">{department.status}</td>
-                      <td className="border px-4 py-2">
+                      <td className="border border-gray-300 p-2">{index + 1}</td>
+                      <td className="border border-gray-300 p-2">{department.departmentName}</td>
+                      <td className="border border-gray-300 p-2">{department.status}</td>
+                      <td className="border border-gray-300 p-2 flex gap-2">
                         <button
-                          onClick={() => handleToggleStatus(department.id, department.status)}
-                          className={`px-2 py-1 rounded text-white ${department.status === "Active" ? "bg-green-500" : "bg-red-500"}`}
+                          className="text-yellow-500 hover:text-yellow-700 transition-all"
+                          onClick={() => handleEditDepartment(department.id)}
                         >
-                          {department.status === "Active" ? <FaCheck /> : <FaTimes />}
-                        </button>
-                      </td>
-                      <td className="border px-4 py-2 flex space-x-2">
-                        <button onClick={() => handleEditDepartment(department.id)} className="text-blue-500">
                           <FaEdit />
                         </button>
-                        <button onClick={() => handleDeleteDepartment(department.id)} className="text-red-500">
+                        <button
+                          className="text-red-500 hover:text-red-700 transition-all"
+                          onClick={() => handleDeleteDepartment(department.id)}
+                        >
                           <FaTrash />
+                        </button>
+                        <button
+                          className={`text-${department.status === "Active" ? "green" : "gray"}-500 hover:text-${department.status === "Active" ? "green" : "gray"}-700 transition-all`}
+                          onClick={() => handleToggleStatus(department.id, department.status)}
+                        >
+                          {department.status === "Active" ? <FaCheck /> : <FaTimes />}
                         </button>
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
-            </div>
-          </div>
-
-          {/* Pagination */}
-          <div className="flex justify-between items-center">
-            <button
-              onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-              disabled={currentPage === 1}
-              className="px-4 py-2 bg-blue-500 text-white rounded-md"
-            >
-              Previous
-            </button>
-            <span>
-              Page {currentPage} of {totalPages}
-            </span>
-            <button
-              onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-              disabled={currentPage === totalPages}
-              className="px-4 py-2 bg-blue-500 text-white rounded-md"
-            >
-              Next
-            </button>
+            )}
           </div>
         </div>
         <AdminFooter />

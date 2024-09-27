@@ -21,6 +21,13 @@ const MaharashtraGovtOfficers = () => {
 
   const [debounceTimeout, setDebounceTimeout] = useState(null);
 
+  // Sample dropdown data
+  const officeNames = ["Office A", "Office B", "Office C"];
+  const districtNames = ["District 1", "District 2", "District 3"];
+  const talukaNames = ["Taluka 1", "Taluka 2", "Taluka 3"];
+  const stdCodes = ["021", "022", "023"];
+  const landlines = ["123456", "234567", "345678"];
+
   useEffect(() => {
     fetchProfiles();
   }, []);
@@ -110,62 +117,100 @@ const MaharashtraGovtOfficers = () => {
                   className="border p-2 rounded-md w-full"
                 />
               </div>
+              
+              {/* Office Name Dropdown */}
               <div>
                 <label className="font-bold">Office Name</label>
-                <input
-                  type="text"
+                <select
                   name="officeName"
                   value={searchQuery.officeName}
                   onChange={handleInputChange}
                   className="border p-2 rounded-md w-full"
-                />
+                >
+                  <option value="">Select Office</option>
+                  {officeNames.map((office) => (
+                    <option key={office} value={office}>
+                      {office}
+                    </option>
+                  ))}
+                </select>
               </div>
+              
+              {/* District Name Dropdown */}
               <div>
                 <label className="font-bold">District Name</label>
-                <input
-                  type="text"
+                <select
                   name="districtName"
                   value={searchQuery.districtName}
                   onChange={handleInputChange}
                   className="border p-2 rounded-md w-full"
-                />
+                >
+                  <option value="">Select District</option>
+                  {districtNames.map((district) => (
+                    <option key={district} value={district}>
+                      {district}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               {/* Second Row */}
+              {/* Taluka Name Dropdown */}
               <div>
                 <label className="font-bold">Taluka Name</label>
-                <input
-                  type="text"
+                <select
                   name="talukaName"
                   value={searchQuery.talukaName}
                   onChange={handleInputChange}
                   className="border p-2 rounded-md w-full"
-                />
+                >
+                  <option value="">Select Taluka</option>
+                  {talukaNames.map((taluka) => (
+                    <option key={taluka} value={taluka}>
+                      {taluka}
+                    </option>
+                  ))}
+                </select>
               </div>
+              
+              {/* STD Code Dropdown */}
               <div>
                 <label className="font-bold">STD Code</label>
-                <input
-                  type="text"
+                <select
                   name="stdCode"
                   value={searchQuery.stdCode}
                   onChange={handleInputChange}
                   className="border p-2 rounded-md w-full"
-                />
+                >
+                  <option value="">Select STD Code</option>
+                  {stdCodes.map((code) => (
+                    <option key={code} value={code}>
+                      {code}
+                    </option>
+                  ))}
+                </select>
               </div>
+              
+              {/* Landline Dropdown */}
               <div>
                 <label className="font-bold">Landline</label>
-                <input
-                  type="text"
+                <select
                   name="landline"
                   value={searchQuery.landline}
                   onChange={handleInputChange}
                   className="border p-2 rounded-md w-full"
-                />
+                >
+                  <option value="">Select Landline</option>
+                  {landlines.map((line) => (
+                    <option key={line} value={line}>
+                      {line}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
           </div>
 
-          {/* HTML Table */}
           {/* HTML Table */}
           <div className="overflow-x-auto max-h-96">
             <table className="min-w-full bg-white">
@@ -200,26 +245,25 @@ const MaharashtraGovtOfficers = () => {
                       <td className="text-center py-2">{profile.officeName}</td>
                       <td className="text-center py-2">{profile.stdCode}</td>
                       <td className="text-center py-2">{profile.landline}</td>
-                      <td className="text-center py-2">{new Date(profile.dateOfBirth).toLocaleDateString()}</td>
+                      <td className="text-center py-2">{profile.dateOfBirth}</td>
                       <td className="text-center py-2">{profile.otherInformation}</td>
                       <td className="text-center py-2">{profile.department}</td>
                     </tr>
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="13" className="text-center py-4">
-                      No profiles found.
+                    <td colSpan="12" className="text-center py-2">
+                      No records found.
                     </td>
                   </tr>
                 )}
               </tbody>
             </table>
           </div>
-
+          <ToastContainer />
         </div>
         <AdminFooter />
       </div>
-      <ToastContainer />
     </div>
   );
 };

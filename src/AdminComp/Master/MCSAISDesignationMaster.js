@@ -5,273 +5,281 @@ import { toast } from "react-toastify";
 import AdminHeader from "../AdminHeader";
 import AdminSidebar from "../AdminSidebar";
 import AdminFooter from "../AdminFooter";
+import Swal from "sweetalert2"; // Import SweetAlert
 
 const MCSAISDesignationMaster = () => {
-  const [designations, setDesignations] = useState([]);
-  const [formState, setFormState] = useState({ type: "", designation: "", status: "Active" });
-  const [isEditing, setIsEditing] = useState(null);
-  const [errors, setErrors] = useState({ designation: "" });
-  const [showSearch, setShowSearch] = useState(false);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [loading, setLoading] = useState(false);
-  
-  useEffect(() => {
-    fetchDesignations();
-  }, []);
+    const [designations, setDesignations] = useState([]);
+    const [staffDesignations, setStaffDesignations] = useState([]); // For storing fetched staff designations
+    const [formState, setFormState] = useState({ type: "", designation: "", status: "Active" });
+    const [isEditing, setIsEditing] = useState(null);
+    const [errors, setErrors] = useState({ designation: "" });
+    const [showSearch, setShowSearch] = useState(false);
+    const [searchTerm, setSearchTerm] = useState("");
+    const [loading, setLoading] = useState(false);
 
-  const fetchDesignations = async () => {
-    setLoading(true);
-    try {
-      const response = await axios.get("http://localhost:8080/api/designations");
-      setDesignations(response.data);
-    } catch (error) {
-      handleError(error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleAddOrUpdateDesignation = async () => {
-    const trimmedDesignation = formState.designation.trim();
-
-    if (!trimmedDesignation) {
-      setErrors((prevErrors) => ({ ...prevErrors, designation: "Designation is required." }));
-      return;
-    } else {
-      setErrors((prevErrors) => ({ ...prevErrors, designation: "" }));
-    }
-
-    setLoading(true);
-    try {
-      let response;
-      if (isEditing) {
-        response = await axios.put(`http://localhost:8080/api/designations/${isEditing}`, formState);
-        toast.success("Designation updated successfully!");
-      } else {
-        response = await axios.post("http://localhost:8080/api/designations", formState);
-        toast.success("Designation added successfully!");
-      }
-
-      if (response.status === 200 || response.status === 201) {
+    useEffect(() => {
         fetchDesignations();
-        resetForm();
-      }
-    } catch (error) {
-      handleError(error);
-    } finally {
-      setLoading(false);
-    }
-  };
+        fetchStaffDesignations(); // Fetch staff designations on load
+    }, []);
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    handleAddOrUpdateDesignation();
-  };
+    const fetchDesignations = async () => {
+        setLoading(true);
+        try {
+            const response = await axios.get("http://localhost:8080/api/designations");
+            setDesignations(response.data);
+        } catch (error) {
+            handleError(error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
-  const handleEditDesignation = (id) => {
-    const designation = designations.find((d) => d.id === id);
-    setFormState({ type: designation.type, designation: designation.designation, status: designation.status });
-    setIsEditing(id);
-  };
+    const fetchStaffDesignations = async () => {
+        try {
+            const response = await axios.get("http://localhost:8080/api/staff");
+            setStaffDesignations(response.data); // Update state with fetched staff designations
+        } catch (error) {
+            handleError(error);
+        }
+    };
 
-  const handleDeleteDesignation = async (id) => {
-    if (window.confirm("Are you sure you want to delete this designation?")) {
-      setLoading(true);
-      try {
-        await axios.delete(`http://localhost:8080/api/designations/${id}`);
-        setDesignations(designations.filter((d) => d.id !== id));
-        toast.success("Designation deleted successfully!");
-      } catch (error) {
-        handleError(error);
-      } finally {
-        setLoading(false);
-      }
-    }
-  };
+    const handleAddOrUpdateDesignation = async () => {
+        const trimmedDesignation = formState.designation.trim();
+        const trimmedType = formState.type.trim();
 
-  const handleToggleStatus = async (id, currentStatus) => {
-    const newStatus = currentStatus === "Active" ? "Inactive" : "Active";
-    setLoading(true);
-    try {
-      await axios.put(`http://localhost:8080/api/designations/${id}`, { ...formState, status: newStatus });
-      toast.success(`Designation status updated to ${newStatus} successfully!`);
-      fetchDesignations(); // Fetch updated designations
-    } catch (error) {
-      handleError(error);
-    } finally {
-      setLoading(false);
-    }
-  };
+        if (!trimmedDesignation) {
+            setErrors((prevErrors) => ({ ...prevErrors, designation: "Designation is required." }));
+            return;
+        } else {
+            setErrors((prevErrors) => ({ ...prevErrors, designation: "" }));
+        }
 
-  const handleSearch = (event) => {
-    setSearchTerm(event.target.value);
-  };
+        setLoading(true);
+        try {
+            let response;
+            if (isEditing) {
+                response = await axios.put(`http://localhost:8080/api/designations/${isEditing}`, formState);
+                toast.success("Designation updated successfully!");
+            } else {
+                response = await axios.post("http://localhost:8080/api/designations", formState);
+                toast.success("Designation added successfully!");
+            }
 
-  const resetSearch = () => {
-    setSearchTerm("");
-    setShowSearch(false);
-  };
+            if (response.status === 200 || response.status === 201) {
+                fetchDesignations();
+                resetForm();
+            }
+        } catch (error) {
+            handleError(error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
-  const resetForm = () => {
-    setFormState({ type: "", designation: "", status: "Active" });
-    setIsEditing(null);
-  };
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        handleAddOrUpdateDesignation();
+    };
 
-  const handleError = (error) => {
-    console.error("Error:", error);
-    if (error.response) {
-      toast.error(`Error: ${error.response.status} - ${error.response.data.message || "An error occurred."}`);
-    } else if (error.request) {
-      toast.error("No response received from the server. Please try again.");
-    } else {
-      toast.error("An unexpected error occurred. Please try again.");
-    }
-  };
+    const handleEditDesignation = (id) => {
+        const designation = designations.find((d) => d.id === id);
+        setFormState({ type: designation.type, designation: designation.designation, status: designation.status });
+        setIsEditing(id);
+    };
 
-  const filteredDesignations = designations.filter((d) =>
-    d.designation?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false
-  );
+    const handleDeleteDesignation = async (id) => {
+        const result = await Swal.fire({
+            title: "Are you sure?",
+            text: "You won't be able to revert this!",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#d33",
+            cancelButtonColor: "#3085d6",
+            confirmButtonText: "Yes, delete it!",
+        });
 
-  return (
-    <div className="flex">
-      <AdminSidebar />
-      <div className="flex-grow">
-        <AdminHeader />
-        <div className="container mx-auto p-4">
-          {/* Header Section */}
-          <div className="flex justify-between items-center mb-6">
-            <div className="text-2xl font-bold">MCS & AIS Designation Master</div>
-            <div className="flex flex-col md:flex-row md:items-center space-y-2 md:space-y-0 md:space-x-2">
-              {showSearch && (
-                <input
-                  type="text"
-                  placeholder="Search Designation"
-                  value={searchTerm}
-                  onChange={handleSearch}
-                  className="px-3 py-2 border rounded-md focus:outline-none focus:border-blue-500 w-full sm:w-auto"
-                />
-              )}
-              <button
-                onClick={() => setShowSearch(!showSearch)}
-                className="p-2 bg-blue-500 text-white rounded-md transition-transform transform hover:scale-110"
-                title="Search"
-              >
-                <FaSearch />
-              </button>
-              <button
-                onClick={resetSearch}
-                className="p-2 bg-blue-500 text-white rounded-md transition-transform transform hover:scale-110"
-                title="Reset"
-              >
-                <FaSyncAlt />
-              </button>
-            </div>
-          </div>
+        if (result.isConfirmed) {
+            setLoading(true);
+            try {
+                await axios.delete(`http://localhost:8080/api/designations/${id}`);
+                setDesignations(designations.filter((d) => d.id !== id));
+                toast.success("Designation deleted successfully!");
+            } catch (error) {
+                handleError(error);
+            } finally {
+                setLoading(false);
+            }
+        }
+    };
 
-          {/* Add/Update Designation Form */}
-          <div className="bg-white rounded-lg shadow-md mb-6">
-            <div className="bg-blue-500 text-white px-6 py-3 rounded-t-lg">
-              <h3 className="text-lg sm:text-xl font-semibold">{isEditing ? "Edit Designation" : "Add Designation"}</h3>
-            </div>
-            <div className="p-6">
-              <form onSubmit={handleSubmit}>
-                <div className="grid grid-cols-3 gap-2">
-                  {/* Type Dropdown */}
-                  <div className="flex flex-col">
-                    <label className="mb-1 font-medium">Type</label>
-                    <select
-                      value={formState.type}
-                      onChange={(e) => setFormState({ ...formState, type: e.target.value })}
-                      className="p-1 border rounded hover:scale-105 transition duration-300 w-full"
-                      required
-                    >
-                      <option value="">Select Type</option>
-                      <option value="AIS">AIS</option>
-                      <option value="MCS">MCS</option>
-                    </select>
-                  </div>
+    const handleToggleStatus = async (id) => {
+        const designation = designations.find((d) => d.id === id);
+        if (designation) {
+            const newStatus = designation.status === "Active" ? "Inactive" : "Active";
+            setLoading(true);
+            try {
+                // Ensure the status is sent correctly
+                await axios.put(`http://localhost:8080/api/designations/${id}/status`, { status: newStatus });
+                setDesignations((prevDesignations) =>
+                    prevDesignations.map((d) =>
+                        d.id === id ? { ...d, status: newStatus } : d
+                    )
+                );
+                toast.success(`Designation status updated to ${newStatus}`);
+            } catch (error) {
+                handleError(error);
+            } finally {
+                setLoading(false);
+            }
+        }
+    };
 
-                  {/* Designation Input Field */}
-                  <div className="flex flex-col">
-                    <label className="mb-1 font-medium">Designation</label>
-                    <input
-                      type="text"
-                      value={formState.designation}
-                      onChange={(e) => {
-                        setFormState({ ...formState, designation: e.target.value });
-                        if (e.target.value.trim() === "") {
-                          setErrors((prevErrors) => ({ ...prevErrors, designation: "Designation is required." }));
-                        } else {
-                          setErrors((prevErrors) => ({ ...prevErrors, designation: "" }));
-                        }
-                      }}
-                      className={`p-1 border rounded hover:scale-105 transition duration-300 w-full ${errors.designation ? "border-red-500" : ""}`}
-                      required
-                    />
-                    {errors.designation && <p className="text-red-500">{errors.designation}</p>}
-                  </div>
+    const handleSearch = (event) => {
+        setSearchTerm(event.target.value);
+    };
+
+    const resetForm = () => {
+        setFormState({ type: "", designation: "", status: "Active" });
+        setIsEditing(null);
+    };
+
+    const handleError = (error) => {
+        console.error("Error:", error);
+        if (error.response) {
+            toast.error(`Error: ${error.response.status} - ${error.response.data.message || "An error occurred."}`);
+        } else {
+            toast.error("An unexpected error occurred. Please try again.");
+        }
+    };
+
+    const filteredDesignations = designations.filter((d) =>
+        d.designation && d.designation.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
+    return (
+        <div className="flex">
+            <AdminSidebar />
+            <div className="flex-grow">
+                <AdminHeader />
+                <div className="container mx-auto p-4">
+                    {/* Header Section */}
+                    <div className="flex justify-between items-center mb-6">
+                        <div className="text-2xl font-bold text-black">MCS & AIS Designation Master</div>
+                        <div className="flex items-center">
+                            <button
+                                className="bg-blue-500 text-white px-4 py-2 rounded mr-2 transition-all hover:bg-blue-600"
+                                onClick={() => setShowSearch(!showSearch)}
+                            >
+                                <FaSearch className="inline" /> {showSearch ? "Hide Search" : "Show Search"}
+                            </button>
+                            <button
+                                className="bg-gray-500 text-white px-4 py-2 rounded flex items-center transition-all hover:bg-gray-600"
+                                onClick={() => {
+                                    resetForm(); // Reset form fields when resetting search
+                                }}
+                            >
+                                <FaSyncAlt className="mr-1" /> Reset
+                            </button>
+                        </div>
+                    </div>
+                    {/* Search Bar */}
+                    {showSearch && (
+                        <div className="mb-4">
+                            <input
+                                type="text"
+                                placeholder="Search Designations..."
+                                value={searchTerm}
+                                onChange={handleSearch}
+                                className="border border-gray-300 rounded p-2 w-full"
+                            />
+                        </div>
+                    )}
+                    {/* Form Section */}
+                    <form onSubmit={handleSubmit} className="mb-4">
+                        <div className="flex gap-4">
+                            <select
+                                value={formState.type}
+                                onChange={(e) => setFormState({ ...formState, type: e.target.value })}
+                                className="border border-gray-300 rounded p-2 flex-grow"
+                                required
+                            >
+                                <option value="" disabled>Select Type</option>
+                                <option value="AIS">AIS</option>
+                                <option value="MCS">MCS</option>
+                            </select>
+                            {/* Dropdown for staff designations */}
+                            <select
+                                value={formState.designation}
+                                onChange={(e) => setFormState({ ...formState, designation: e.target.value })}
+                                className="border border-gray-300 rounded p-2 flex-grow"
+                                required
+                            >
+                                <option value="" disabled>Select Designation</option>
+                                {staffDesignations.map((staff) => (
+                                    <option key={staff.id} value={staff.designation}>
+                                        {staff.designation}
+                                    </option>
+                                ))}
+                            </select>
+                            <button type="submit" className="bg-green-500 text-white px-4 py-2 rounded transition-all hover:bg-green-600">
+                                {isEditing ? "Update" : "Submit"}
+                            </button>
+                        </div>
+                        {errors.designation && <div className="text-red-500">{errors.designation}</div>}
+                    </form>
+                    {/* Designation Table */}
+                    <div className="overflow-x-auto">
+                        {loading ? (
+                            <div>Loading...</div>
+                        ) : (
+                            <table className="min-w-full border border-gray-300 rounded-lg overflow-hidden">
+                                <thead className="bg-blue-500 text-white">
+                                    <tr>
+                                        <th className="border border-gray-300 p-2">Sr. No.</th>
+                                        <th className="border border-gray-300 p-2">Type</th>
+                                        <th className="border border-gray-300 p-2">Designation Name</th>
+                                        <th className="border border-gray-300 p-2">Status</th>
+                                        <th className="border border-gray-300 p-2">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {filteredDesignations.map((designation, index) => (
+                                        <tr key={designation.id}>
+                                            <td className="border border-gray-300 p-2">{index + 1}</td>
+                                            <td className="border border-gray-300 p-2">{designation.type}</td>
+                                            <td className="border border-gray-300 p-2">{designation.designation}</td>
+                                            <td className="border border-gray-300 p-2">{designation.status}</td>
+                                            <td className="border border-gray-300 p-2">
+                                                <button
+                                                    className="text-blue-500 hover:text-blue-700 mr-2"
+                                                    onClick={() => handleEditDesignation(designation.id)}
+                                                >
+                                                    <FaEdit />
+                                                </button>
+                                                <button
+                                                    className="text-red-500 hover:text-red-700 mr-2"
+                                                    onClick={() => handleDeleteDesignation(designation.id)}
+                                                >
+                                                    <FaTrash />
+                                                </button>
+                                                <button
+                                                    className="text-green-500 hover:text-green-700"
+                                                    onClick={() => handleToggleStatus(designation.id)}
+                                                >
+                                                    {designation.status === "Active" ? <FaCheck /> : <FaTimes />}
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        )}
+                    </div>
                 </div>
-
-                {/* Submit Button */}
-                <button type="submit" className="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition duration-300">
-                  {isEditing ? "Update Designation" : "Add Designation"}
-                </button>
-              </form>
+                <AdminFooter />
             </div>
-          </div>
-
-          {/* Designation Table */}
-          <div className="bg-white rounded-lg shadow-md">
-            <div className="p-6 overflow-auto">
-              {loading ? (
-                <p>Loading...</p>
-              ) : (
-                <table className="min-w-full">
-                  <thead>
-                    <tr className="bg-blue-500 text-white">
-                      <th className="text-left border-b p-2">Sr No</th>
-                      <th className="text-left border-b p-2">Type</th>
-                      <th className="text-left border-b p-2">Designation</th>
-                      <th className="text-left border-b p-2">Status</th>
-                      <th className="text-left border-b p-2">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredDesignations.map((designation, index) => (
-                      <tr key={designation.id}>
-                        <td className="border-b p-2">{index + 1}</td>
-                        <td className="border-b p-2">{designation.type}</td>
-                        <td className="border-b p-2">{designation.designation}</td>
-                        <td className="border-b p-2">
-                          <span
-                            className={`font-bold ${designation.status === "Active" ? "text-green-500" : "text-red-500"}`}
-                          >
-                            {designation.status}
-                          </span>
-                        </td>
-                        <td className="border-b p-2 flex space-x-2">
-                          <button onClick={() => handleToggleStatus(designation.id, designation.status)}>
-                            {designation.status === "Active" ? <FaTimes className="text-red-500" /> : <FaCheck className="text-green-500" />}
-                          </button>
-                          <button onClick={() => handleEditDesignation(designation.id)}>
-                            <FaEdit className="text-blue-500" />
-                          </button>
-                          <button onClick={() => handleDeleteDesignation(designation.id)}>
-                            <FaTrash className="text-red-500" />
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
-            </div>
-          </div>
         </div>
-        <AdminFooter />
-      </div>
-    </div>
-  );
+    );
 };
 
 export default MCSAISDesignationMaster;
