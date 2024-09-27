@@ -20,7 +20,7 @@ function AdminSidebar() {
   const isActive = (path) => (location.pathname === path ? 'bg-blue-600 text-white' : '');
 
   return (
-    <div className="bg-blue-800 text-white h-screen w-64 p-4 shadow-md rounded-md">
+    <div className="bg-blue-800 text-white h-screen w-64 p-4 shadow-md ">
       <h2 className="text-3xl font-bold mb-8">Admin Dashboard</h2>
       <ul className="space-y-4">
         <li>

@@ -5,6 +5,7 @@ import { toast } from "react-toastify";
 import AdminHeader from "../AdminHeader";
 import AdminSidebar from "../AdminSidebar";
 import AdminFooter from "../AdminFooter";
+import Swal from "sweetalert2"; // Import SweetAlert
 
 const OfficeNameMaster = () => {
   const [officeNames, setOfficeNames] = useState([]);
@@ -13,8 +14,6 @@ const OfficeNameMaster = () => {
   const [showSearch, setShowSearch] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
 
   useEffect(() => {
     fetchOfficeNames();
@@ -69,12 +68,24 @@ const OfficeNameMaster = () => {
 
   const handleEditOfficeName = (id) => {
     const officeName = officeNames.find((on) => on.id === id);
-    setFormState({ officeName: officeName.officeName, status: officeName.status });
-    setIsEditing(id);
+    if (officeName) {
+      setFormState({ officeName: officeName.officeName, status: officeName.status });
+      setIsEditing(id);
+    }
   };
 
   const handleDeleteOfficeName = async (id) => {
-    if (window.confirm("Are you sure you want to delete this office name?")) {
+    const result = await Swal.fire({
+      title: "Are you sure?",
+      text: "You won't be able to revert this!",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#d33",
+      cancelButtonColor: "#3085d6",
+      confirmButtonText: "Yes, delete it!",
+    });
+
+    if (result.isConfirmed) {
       setLoading(true);
       try {
         await axios.delete(`http://localhost:8080/api/office-names/${id}`);
@@ -88,21 +99,29 @@ const OfficeNameMaster = () => {
     }
   };
 
-  const handleToggleStatus = async (id, currentStatus) => {
-    const newStatus = currentStatus === "Active" ? "Inactive" : "Active";
-    setLoading(true);
-    try {
-        // Sending the current status as a payload to toggle status
-        await axios.patch(`http://localhost:8080/api/office-names/${id}/toggle-status`, { status: newStatus });
-        fetchOfficeNames(); // Refresh the list
-        toast.success(`Office Name status updated to ${newStatus}!`);
-    } catch (error) {
+  const handleToggleStatus = async (id) => {
+    const officeName = officeNames.find((on) => on.id === id);
+    if (officeName) {
+      const newStatus = officeName.status === "Active" ? "Inactive" : "Active";
+      setLoading(true);
+      try {
+        // Update the status on the backend
+        await axios.put(`http://localhost:8080/api/office-names/${id}/status`, { status: newStatus });
+  
+        // Optimistically update the status in the frontend
+        setOfficeNames((prev) =>
+          prev.map((on) => (on.id === id ? { ...on, status: newStatus } : on))
+        );
+  
+        toast.success(`Office Name status updated to ${newStatus}`);
+      } catch (error) {
         handleError(error);
-    } finally {
+      } finally {
         setLoading(false);
+      }
     }
-};
-
+  };
+  
 
   const handleSearch = (event) => {
     setSearchTerm(event.target.value);
@@ -117,19 +136,14 @@ const OfficeNameMaster = () => {
     console.error("Error:", error);
     if (error.response) {
       toast.error(`Error: ${error.response.status} - ${error.response.data.message || "An error occurred."}`);
-    } else if (error.request) {
-      toast.error("No response received from the server. Please try again.");
     } else {
       toast.error("An unexpected error occurred. Please try again.");
     }
   };
 
   const filteredOfficeNames = officeNames.filter((on) =>
-    on.officeName?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false
+    on.officeName && on.officeName.toLowerCase().includes(searchTerm.toLowerCase())
   );
-
-  const totalPages = Math.ceil(filteredOfficeNames.length / itemsPerPage);
-  const currentOfficeNames = filteredOfficeNames.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   return (
     <div className="flex">
@@ -139,132 +153,97 @@ const OfficeNameMaster = () => {
         <div className="container mx-auto p-4">
           {/* Header Section */}
           <div className="flex justify-between items-center mb-6">
-            <div className="text-2xl font-bold">Office Name Master</div>
-            <div className="flex flex-col md:flex-row md:items-center space-y-2 md:space-y-0 md:space-x-2">
-              {showSearch && (
-                <input
-                  type="text"
-                  placeholder="Search Office Name"
-                  value={searchTerm}
-                  onChange={handleSearch}
-                  className="px-3 py-2 border rounded-md focus:outline-none focus:border-blue-500 w-full sm:w-auto"
-                />
-              )}
+            <div className="text-2xl font-bold text-black">Office Name Master</div>
+            <div className="flex items-center">
               <button
+                className="bg-blue-500 text-white px-4 py-2 rounded mr-2 transition-all hover:bg-blue-600"
                 onClick={() => setShowSearch(!showSearch)}
-                className="p-2 bg-blue-500 text-white rounded-md transition-transform transform hover:scale-110"
-                title="Search"
               >
-                <FaSearch />
+                <FaSearch className="inline" /> {showSearch ? "Hide Search" : "Show Search"}
               </button>
               <button
+                className="bg-gray-500 text-white px-4 py-2 rounded flex items-center transition-all hover:bg-gray-600"
                 onClick={() => {
-                  setSearchTerm("");
-                  setShowSearch(false);
+                  resetForm(); // Reset form fields when resetting search
                 }}
-                className="p-2 bg-blue-500 text-white rounded-md transition-transform transform hover:scale-110"
-                title="Reset"
               >
-                <FaSyncAlt />
+                <FaSyncAlt className="mr-1" /> Reset
               </button>
             </div>
           </div>
-
-          {/* Add/Update Office Name Form */}
-          <div className="bg-white rounded-lg shadow-md mb-6">
-            <div className="bg-blue-500 text-white px-6 py-3 rounded-t-lg">
-              <h3 className="text-lg sm:text-xl font-semibold">{isEditing ? "Edit Office Name" : "Add Office Name"}</h3>
+          {/* Search Bar */}
+          {showSearch && (
+            <div className="mb-4">
+              <input
+                type="text"
+                placeholder="Search Office Names..."
+                value={searchTerm}
+                onChange={handleSearch}
+                className="border border-gray-300 rounded p-2 w-full"
+              />
             </div>
-            <div className="p-6">
-              <form onSubmit={handleSubmit}>
-                <div className="grid grid-cols-1 gap-2">
-                  <div className="flex flex-col w-full">
-                    <label className="mb-1 font-medium">Office Name</label>
-                    <input
-                      type="text"
-                      value={formState.officeName}
-                      onChange={(e) => setFormState({ ...formState, officeName: e.target.value })}
-                      className="p-2 border rounded hover:scale-105 transition duration-300 w-full"
-                      required
-                    />
-                  </div>
-                </div>
-                <div className="flex justify-center mt-4">
-                  <button
-                    type="submit"
-                    className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition duration-300"
-                    disabled={loading}
-                  >
-                    {isEditing ? "Update" : "Submit"}
-                  </button>
-                </div>
-              </form>
+          )}
+          {/* Form Section */}
+          <form onSubmit={handleSubmit} className="mb-4">
+            <div className="flex gap-4">
+              <input
+                type="text"
+                placeholder="Office Name"
+                value={formState.officeName}
+                onChange={(e) => setFormState({ ...formState, officeName: e.target.value })}
+                className="border border-gray-300 rounded p-2 flex-grow"
+              />
+              <button type="submit" className="bg-green-500 text-white px-4 py-2 rounded transition-all hover:bg-green-600">
+                {isEditing ? "Update" : "Submit"}
+              </button>
             </div>
-          </div>
-
-          {/* Loader UI */}
-          {loading && <div className="text-center">Loading...</div>}
-
-          {/* Office Name List Table */}
-          <div className="bg-white rounded-lg shadow-md mb-6 overflow-x-auto">
-            <div className="px-6 py-4">
-              <table className="w-full bg-white rounded-lg shadow-md">
-                <thead>
-                  <tr className="bg-blue-500 text-white">
-                    <th className="px-4 py-2">Sr No</th>
-                    <th className="px-4 py-2">Office Name</th>
-                    <th className="px-4 py-2">Status</th>
-                    <th className="px-4 py-2">Actions</th>
+          </form>
+          {/* Office Name Table */}
+          <div className="overflow-x-auto">
+            {loading ? (
+              <div>Loading...</div>
+            ) : (
+              <table className="min-w-full border border-gray-300 rounded-lg overflow-hidden">
+                <thead className="bg-blue-500 text-white">
+                  <tr>
+                    <th className="border border-gray-300 p-2">Sr. No.</th>
+                    <th className="border border-gray-300 p-2">Office Name</th>
+                    <th className="border border-gray-300 p-2">Status</th>
+                    <th className="border border-gray-300 p-2">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {currentOfficeNames.map((officeName, index) => (
+                  {filteredOfficeNames.map((officeName, index) => (
                     <tr key={officeName.id}>
-                      <td className="border px-4 py-2">{(currentPage - 1) * itemsPerPage + index + 1}</td>
-                      <td className="border px-4 py-2">{officeName.officeName}</td>
-                      <td className="border px-4 py-2">
-                        <span className={`text-${officeName.status === "Active" ? "green" : "red"}-500`}>
-                          {officeName.status}
-                        </span>
-                      </td>
-                      <td className="border px-4 py-2 flex items-center space-x-2">
-                        <FaEdit
-                          className="cursor-pointer text-blue-500 hover:text-blue-600"
-                          onClick={() => handleEditOfficeName(officeName.id)}
-                          title="Edit"
-                          aria-label="Edit office name"
-                        />
-                        <FaTrash
-                          className="cursor-pointer text-red-500 hover:text-red-600"
-                          onClick={() => handleDeleteOfficeName(officeName.id)}
-                          title="Delete"
-                          aria-label="Delete office name"
-                        />
+                      <td className="border border-gray-300 p-2">{index + 1}</td>
+                      <td className="border border-gray-300 p-2">{officeName.officeName}</td>
+                      <td className="border border-gray-300 p-2">{officeName.status}</td> {/* Display status correctly */}
+                      <td className="border border-gray-300 p-2 flex gap-2">
                         <button
-                          onClick={() => handleToggleStatus(officeName.id, officeName.status)}
-                          className={`px-2 py-1 rounded ${officeName.status === "Active" ? "bg-red-500 text-white" : "bg-green-500 text-white"}`}
+                          className="text-yellow-500 hover:text-yellow-700 transition-all"
+                          onClick={() => handleEditOfficeName(officeName.id)}
                         >
-                          {officeName.status === "Active" ? <FaTimes /> : <FaCheck />}
+                          <FaEdit />
+                        </button>
+                        <button
+                          className="text-red-500 hover:text-red-700 transition-all"
+                          onClick={() => handleDeleteOfficeName(officeName.id)}
+                        >
+                          <FaTrash />
+                        </button>
+                        <button
+                          className={`text-${officeName.status === "Active" ? "green" : "gray"}-500 hover:text-${officeName.status === "Active" ? "green" : "gray"}-700 transition-all`}
+                          onClick={() => handleToggleStatus(officeName.id)}
+                        >
+                          {officeName.status === "Active" ? <FaCheck /> : <FaTimes />}
                         </button>
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
-            </div>
+            )}
           </div>
-
-          {/* Pagination */}
-          <div className="flex justify-between items-center mb-6">
-            <button onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))} disabled={currentPage === 1}>
-              Previous
-            </button>
-            <div>Page {currentPage} of {totalPages}</div>
-            <button onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages}>
-              Next
-            </button>
-          </div>
-
         </div>
         <AdminFooter />
       </div>

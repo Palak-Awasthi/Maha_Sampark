@@ -1,14 +1,16 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { FaSearch, FaSyncAlt } from "react-icons/fa";
+import { FaSearch, FaEdit, FaTrash, FaCheck, FaTimes, FaRedo } from "react-icons/fa"; // Import new icons
 import { toast } from "react-toastify";
+import Swal from "sweetalert2"; // Import SweetAlert
 import AdminHeader from "../AdminHeader";
 import AdminSidebar from "../AdminSidebar";
 import AdminFooter from "../AdminFooter";
 
 const DistrictMaster = () => {
   const [districts, setDistricts] = useState([]);
-  const [formState, setFormState] = useState({ stateName: "", districtName: "" });
+  const [states, setStates] = useState([]);
+  const [formState, setFormState] = useState({ stateId: "", districtName: "" });
   const [isEditing, setIsEditing] = useState(null);
   const [showSearch, setShowSearch] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -16,7 +18,17 @@ const DistrictMaster = () => {
 
   useEffect(() => {
     fetchDistricts();
+    fetchStates();
   }, []);
+
+  const fetchStates = async () => {
+    try {
+      const response = await axios.get("http://localhost:8080/api/states");
+      setStates(response.data);
+    } catch (error) {
+      handleError(error);
+    }
+  };
 
   const fetchDistricts = async () => {
     setLoading(true);
@@ -31,19 +43,19 @@ const DistrictMaster = () => {
   };
 
   const handleAddOrUpdateDistrict = async () => {
-    const trimmedStateName = formState.stateName.trim();
-    const trimmedDistrictName = formState.districtName.trim();
+    const { stateId, districtName } = formState;
+    const trimmedDistrictName = districtName.trim();
 
-    if (!trimmedStateName || !trimmedDistrictName) {
-      toast.error("Both State Name and District Name fields are required!");
+    if (!stateId || !trimmedDistrictName) {
+      toast.error("Both State and District Name fields are required!");
       return;
     }
 
     setLoading(true);
     try {
       let response;
-      const districtData = { state: trimmedStateName, district: trimmedDistrictName };
-      
+      const districtData = { state: { id: stateId }, districtName: trimmedDistrictName };
+
       if (isEditing) {
         response = await axios.put(`http://localhost:8080/api/districts/${isEditing}`, districtData);
         toast.success("District updated successfully!");
@@ -71,13 +83,23 @@ const DistrictMaster = () => {
   const handleEditDistrict = (id) => {
     const district = districts.find((d) => d.id === id);
     if (district) {
-      setFormState({ stateName: district.state, districtName: district.district });
+      setFormState({ stateId: district.state.id, districtName: district.districtName });
       setIsEditing(id);
     }
   };
 
   const handleDeleteDistrict = async (id) => {
-    if (window.confirm("Are you sure you want to delete this district?")) {
+    const result = await Swal.fire({
+      title: "Are you sure?",
+      text: "You won't be able to revert this!",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#d33",
+      cancelButtonColor: "#3085d6",
+      confirmButtonText: "Yes, delete it!",
+    });
+
+    if (result.isConfirmed) {
       setLoading(true);
       try {
         await axios.delete(`http://localhost:8080/api/districts/${id}`);
@@ -91,13 +113,38 @@ const DistrictMaster = () => {
     }
   };
 
+  const handleToggleStatus = async (id) => {
+    const district = districts.find((d) => d.id === id);
+    if (district) {
+      const newStatus = district.status === "Active" ? "Inactive" : "Active";
+      setLoading(true);
+      try {
+        await axios.put(`http://localhost:8080/api/districts/${id}/status`, { status: newStatus });
+        setDistricts((prevDistricts) =>
+          prevDistricts.map((d) =>
+            d.id === id ? { ...d, status: newStatus } : d
+          )
+        );
+        toast.success(`District status updated to ${newStatus}`);
+      } catch (error) {
+        handleError(error);
+      } finally {
+        setLoading(false);
+      }
+    }
+  };
+
   const handleSearch = (event) => {
     setSearchTerm(event.target.value);
   };
 
   const resetForm = () => {
-    setFormState({ stateName: "", districtName: "" });
+    setFormState({ stateId: "", districtName: "" });
     setIsEditing(null);
+  };
+
+  const resetSearch = () => {
+    setSearchTerm("");
   };
 
   const handleError = (error) => {
@@ -110,7 +157,7 @@ const DistrictMaster = () => {
   };
 
   const filteredDistricts = districts.filter((d) =>
-    d.district && d.district.toLowerCase().includes(searchTerm.toLowerCase())
+    d.districtName && d.districtName.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
@@ -122,112 +169,111 @@ const DistrictMaster = () => {
           {/* Header Section */}
           <div className="flex justify-between items-center mb-6">
             <div className="text-2xl font-bold">District Master</div>
-            <div className="flex flex-col md:flex-row md:items-center space-y-2 md:space-y-0 md:space-x-2">
-              {showSearch && (
-                <input
-                  type="text"
-                  placeholder="Search District"
-                  value={searchTerm}
-                  onChange={handleSearch}
-                  className="px-3 py-2 border rounded-md focus:outline-none focus:border-blue-500 w-full sm:w-auto"
-                />
-              )}
+            <div className="flex items-center">
               <button
+                className="bg-blue-500 text-white px-4 py-2 rounded mr-2 transition-all hover:bg-blue-600"
                 onClick={() => setShowSearch(!showSearch)}
-                className="p-2 bg-blue-500 text-white rounded-md transition-transform transform hover:scale-110"
-                title="Search"
               >
-                <FaSearch />
+                <FaSearch className="inline" /> {showSearch ? "Hide Search" : "Show Search"}
               </button>
               <button
+                className="bg-gray-500 text-white px-4 py-2 rounded flex items-center transition-all hover:bg-gray-600"
                 onClick={() => {
-                  setSearchTerm("");
-                  setShowSearch(false);
+                  resetSearch();
+                  resetForm(); // Reset form fields when resetting search
                 }}
-                className="p-2 bg-blue-500 text-white rounded-md transition-transform transform hover:scale-110"
-                title="Refresh"
               >
-                <FaSyncAlt />
+                <FaRedo className="mr-1" /> Reset
               </button>
             </div>
           </div>
-
-          {/* Form Section */}
-          <form onSubmit={handleSubmit} className="mb-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Search Bar */}
+          {showSearch && (
+            <div className="mb-4">
               <input
                 type="text"
-                placeholder="State Name"
-                value={formState.stateName}
-                onChange={(e) => setFormState({ ...formState, stateName: e.target.value })}
-                className="px-3 py-2 border rounded-md focus:outline-none focus:border-blue-500"
-                required
+                placeholder="Search Districts..."
+                value={searchTerm}
+                onChange={handleSearch}
+                className="border border-gray-300 rounded p-2"
               />
+            </div>
+          )}
+          {/* Form Section */}
+          <form onSubmit={handleSubmit} className="mb-4">
+            <div className="flex gap-4">
+              <select
+                value={formState.stateId}
+                onChange={(e) => setFormState({ ...formState, stateId: e.target.value })}
+                className="border border-gray-300 rounded p-2 flex-grow"
+              >
+                <option value="">Select State</option>
+                {states.map((state) => (
+                  <option key={state.id} value={state.id}>
+                    {state.state}
+                  </option>
+                ))}
+              </select>
               <input
                 type="text"
                 placeholder="District Name"
                 value={formState.districtName}
                 onChange={(e) => setFormState({ ...formState, districtName: e.target.value })}
-                className="px-3 py-2 border rounded-md focus:outline-none focus:border-blue-500"
-                required
+                className="border border-gray-300 rounded p-2 flex-grow"
               />
-              <button
-                type="submit"
-                className={`p-2 bg-green-500 text-white rounded-md ${loading && "opacity-50 cursor-not-allowed"}`}
-                disabled={loading}
-              >
-                {isEditing ? "Update District" : "Add District"}
+              <button type="submit" className="bg-green-500 text-white px-4 py-2 rounded transition-all hover:bg-green-600">
+                {isEditing ? "Update" : "Submit"}
               </button>
-              {isEditing && (
-                <button
-                  type="button"
-                  onClick={resetForm}
-                  className="p-2 bg-red-500 text-white rounded-md"
-                >
-                  Cancel
-                </button>
-              )}
             </div>
           </form>
-
-          {/* District Table Section */}
-          <table className="min-w-full border border-gray-300">
-            <thead>
-              <tr className="bg-gray-100">
-                <th className="border px-4 py-2">State</th>
-                <th className="border px-4 py-2">District</th>
-                <th className="border px-4 py-2">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredDistricts.length > 0 ? (
-                filteredDistricts.map((district) => (
-                  <tr key={district.id}>
-                    <td className="border px-4 py-2">{district.state}</td>
-                    <td className="border px-4 py-2">{district.district}</td>
-                    <td className="border px-4 py-2">
-                      <button
-                        onClick={() => handleEditDistrict(district.id)}
-                        className="text-blue-500 hover:underline"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => handleDeleteDistrict(district.id)}
-                        className="text-red-500 hover:underline ml-2"
-                      >
-                        Delete
-                      </button>
-                    </td>
+          {/* District Table */}
+          <div className="overflow-x-auto">
+            {loading ? (
+              <div>Loading...</div>
+            ) : (
+              <table className="min-w-full border border-gray-300 rounded-lg overflow-hidden">
+                <thead className="bg-blue-500 text-white">
+                  <tr>
+                    <th className="border border-gray-300 p-2">Sr. No.</th> {/* New Sr. No. Column */}
+                    <th className="border border-gray-300 p-2">District Name</th>
+                    <th className="border border-gray-300 p-2">State</th>
+                    <th className="border border-gray-300 p-2">Status</th>
+                    <th className="border border-gray-300 p-2">Actions</th>
                   </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan="3" className="border text-center py-4">No districts found.</td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+                </thead>
+                <tbody>
+                  {filteredDistricts.map((district, index) => (
+                    <tr key={district.id}>
+                      <td className="border border-gray-300 p-2">{index + 1}</td> {/* Serial Number */}
+                      <td className="border border-gray-300 p-2">{district.districtName}</td>
+                      <td className="border border-gray-300 p-2">{district.state.state}</td>
+                      <td className="border border-gray-300 p-2">{district.status}</td>
+                      <td className="border border-gray-300 p-2 flex gap-2">
+                        <button
+                          className="text-yellow-500 hover:text-yellow-700 transition-all"
+                          onClick={() => handleEditDistrict(district.id)}
+                        >
+                          <FaEdit />
+                        </button>
+                        <button
+                          className="text-red-500 hover:text-red-700 transition-all"
+                          onClick={() => handleDeleteDistrict(district.id)}
+                        >
+                          <FaTrash />
+                        </button>
+                        <button
+                          className={`text-${district.status === "Active" ? "green" : "gray"}-500 hover:text-${district.status === "Active" ? "green" : "gray"}-700 transition-all`}
+                          onClick={() => handleToggleStatus(district.id)}
+                        >
+                          {district.status === "Active" ? <FaCheck /> : <FaTimes />}
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
         </div>
         <AdminFooter />
       </div>

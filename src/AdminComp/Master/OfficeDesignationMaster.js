@@ -5,14 +5,17 @@ import {
   FaSearch,
   FaSyncAlt,
   FaCheck,
-  FaTimes,
 } from "react-icons/fa";
 import AdminHeader from "../AdminHeader";
 import AdminSidebar from "../AdminSidebar";
 import AdminFooter from "../AdminFooter";
+import { toast } from "react-toastify"; // Import Toastify for notifications
+import Swal from "sweetalert2"; // Import SweetAlert
 
 const OfficeDesignationMaster = () => {
   const [designations, setDesignations] = useState([]);
+  const [departments, setDepartments] = useState([]); // State for departments
+  const [staffDesignations, setStaffDesignations] = useState([]); // State for staff designations
   const [formState, setFormState] = useState({
     id: null, // To keep track of the id for editing
     mainDepartment: "",
@@ -20,25 +23,57 @@ const OfficeDesignationMaster = () => {
   });
   const [showSearch, setShowSearch] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  // Fetch all designations when the component mounts
+  // Fetch all designations, departments, and staff designations when the component mounts
   useEffect(() => {
     fetchDesignations();
+    fetchDepartments();
+    fetchStaffDesignations(); // Fetch staff designations
   }, []);
 
   const fetchDesignations = async () => {
+    setLoading(true);
     try {
       const response = await fetch("http://localhost:8080/api/designation/all");
       const data = await response.json();
       setDesignations(data);
     } catch (error) {
-      console.error("Error fetching designations:", error);
+      handleError(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchDepartments = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch("http://localhost:8080/api/main-departments");
+      const data = await response.json();
+      setDepartments(data); // Set departments state
+    } catch (error) {
+      handleError(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchStaffDesignations = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch("http://localhost:8080/api/staff");
+      const data = await response.json();
+      setStaffDesignations(data); // Set staff designations state
+    } catch (error) {
+      handleError(error);
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleAddDesignation = async () => {
     if (!formState.mainDepartment || !formState.designation) {
-      alert("Both fields are required!");
+      toast.error("Both fields are required!");
       return;
     }
 
@@ -48,22 +83,23 @@ const OfficeDesignationMaster = () => {
       status: "Inactive", // Default to Inactive
     };
 
+    setLoading(true);
     try {
-      const response = await fetch(
-        "http://localhost:8080/api/designation/save",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(designationData),
-        }
-      );
+      const response = await fetch("http://localhost:8080/api/designation/save", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(designationData),
+      });
       const newDesignation = await response.json();
       setDesignations([...designations, newDesignation]);
-      setFormState({ id: null, mainDepartment: "", designation: "" }); // Reset form
+      resetForm();
+      toast.success("Designation added successfully!");
     } catch (error) {
-      console.error("Error adding designation:", error);
+      handleError(error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -76,21 +112,72 @@ const OfficeDesignationMaster = () => {
     });
   };
 
+  const handleUpdateDesignation = async () => {
+    if (!formState.mainDepartment || !formState.designation) {
+      toast.error("Both fields are required!");
+      return;
+    }
+
+    const designationData = {
+      mainDepartment: formState.mainDepartment,
+      designation: formState.designation,
+      status: "Inactive", // Default to Inactive
+    };
+
+    setLoading(true);
+    try {
+      const response = await fetch(`http://localhost:8080/api/designation/update/${formState.id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(designationData),
+      });
+      const updatedDesignation = await response.json();
+      setDesignations(
+        designations.map((d) =>
+          d.id === formState.id ? updatedDesignation : d
+        )
+      );
+      resetForm();
+      toast.success("Designation updated successfully!");
+    } catch (error) {
+      handleError(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleDeleteDesignation = async (id) => {
-    if (window.confirm("Are you sure you want to delete this designation?")) {
+    const result = await Swal.fire({
+      title: "Are you sure?",
+      text: "You won't be able to revert this!",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#d33",
+      cancelButtonColor: "#3085d6",
+      confirmButtonText: "Yes, delete it!",
+    });
+
+    if (result.isConfirmed) {
+      setLoading(true);
       try {
         await fetch(`http://localhost:8080/api/designation/delete/${id}`, {
           method: "DELETE",
         });
         setDesignations(designations.filter((d) => d.id !== id));
+        toast.success("Designation deleted successfully!");
       } catch (error) {
-        console.error("Error deleting designation:", error);
+        handleError(error);
+      } finally {
+        setLoading(false);
       }
     }
   };
 
   const handleToggleStatus = async (id, currentStatus) => {
     const newStatus = currentStatus === "Active" ? "Inactive" : "Active";
+    setLoading(true);
     try {
       await fetch(`http://localhost:8080/api/designation/toggle-status/${id}`, {
         method: "PUT",
@@ -98,8 +185,11 @@ const OfficeDesignationMaster = () => {
       setDesignations(
         designations.map((d) => (d.id === id ? { ...d, status: newStatus } : d))
       );
+      toast.success(`Designation status updated to ${newStatus}`);
     } catch (error) {
-      console.error("Error toggling status:", error);
+      handleError(error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -107,8 +197,17 @@ const OfficeDesignationMaster = () => {
     setSearchTerm(event.target.value);
   };
 
+  const resetForm = () => {
+    setFormState({ id: null, mainDepartment: "", designation: "" }); // Reset form
+  };
+
+  const handleError = (error) => {
+    console.error("Error:", error);
+    toast.error("An unexpected error occurred. Please try again.");
+  };
+
   const filteredDesignations = designations.filter((d) =>
-    d.designation.toLowerCase().includes(searchTerm.toLowerCase())
+    d.designation && d.designation.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
@@ -119,187 +218,109 @@ const OfficeDesignationMaster = () => {
         <div className="container mx-auto p-4">
           {/* Header Section */}
           <div className="flex justify-between items-center mb-6">
-            <div className="relative overflow-hidden whitespace-nowrap">
-              <marquee className="text-2xl font-bold">
-                Other Office Designation Master
-              </marquee>
-            </div>
-            <div className="flex flex-col md:flex-row md:items-center space-y-2 md:space-y-0 md:space-x-2">
-              {showSearch && (
-                <input
-                  type="text"
-                  placeholder="Search Designation"
-                  value={searchTerm}
-                  onChange={handleSearch}
-                  className="px-3 py-2 border rounded-md focus:outline-none focus:border-blue-500 w-full sm:w-auto"
-                />
-              )}
+            <div className="text-2xl font-bold text-black">Other Office Designation Master</div>
+            <div className="flex items-center">
               <button
+                className="bg-blue-500 text-white px-4 py-2 rounded mr-2 transition-all hover:bg-blue-600"
                 onClick={() => setShowSearch(!showSearch)}
-                className="p-2 bg-blue-500 text-white rounded-md transition-transform transform hover:scale-110"
-                title="Search"
               >
-                <FaSearch />
+                <FaSearch className="inline" /> {showSearch ? "Hide Search" : "Show Search"}
               </button>
               <button
-                onClick={() => {
-                  setSearchTerm("");
-                  setShowSearch(false);
-                }}
-                className="p-2 bg-blue-500 text-white rounded-md transition-transform transform hover:scale-110"
-                title="Reset"
+                className="bg-gray-500 text-white px-4 py-2 rounded flex items-center transition-all hover:bg-gray-600"
+                onClick={() => resetForm()}
               >
-                <FaSyncAlt />
+                <FaSyncAlt className="mr-1" /> Reset
               </button>
             </div>
           </div>
-
-          {/* Designation Form Section */}
-          <div className="bg-white rounded-lg shadow-md mb-6">
-            <div className="bg-blue-500 text-white px-6 py-3 rounded-t-lg">
-              <h3 className="text-xl font-semibold">Add Office Designation</h3>
+          {/* Search Bar */}
+          {showSearch && (
+            <div className="mb-4">
+              <input
+                type="text"
+                placeholder="Search Designations..."
+                value={searchTerm}
+                onChange={handleSearch}
+                className="border border-gray-300 rounded p-2 w-full"
+              />
             </div>
-
-            <div className="p-6 grid grid-cols-2 gap-4">
-              {/* Main Department Dropdown */}
-              <div className="flex flex-col">
-                <label className="mb-1 font-medium">Main Department</label>
-                <select
-                  value={formState.mainDepartment}
-                  onChange={(e) =>
-                    setFormState({
-                      ...formState,
-                      mainDepartment: e.target.value,
-                    })
-                  }
-                  className="w-full p-2 border rounded"
-                >
-                  <option value="">Select Main Department</option>
-                  <option value="Revenue Department">Revenue Department</option>
-                  <option value="Finance Department">Finance Department</option>
-                  <option value="Forest Department">Forest Department</option>
-                  {/* Add more options as needed */}
-                </select>
-              </div>
-
-              {/* Designation Field */}
-              <div className="flex flex-col">
-                <label className="mb-1 font-medium">Designation</label>
-                <input
-                  type="text"
-                  placeholder="Designation Name"
-                  value={formState.designation}
-                  onChange={(e) =>
-                    setFormState({ ...formState, designation: e.target.value })
-                  }
-                  className="w-full p-2 border rounded"
-                />
-              </div>
-
-              {/* Submit Button */}
-              <div className="flex justify-center col-span-2 mt-4">
-                <button
-                  onClick={handleAddDesignation}
-                  className="bg-blue-500 text-white p-2 rounded w-32"
-                >
-                  Submit
-                </button>
-              </div>
+          )}
+          {/* Form Section */}
+          <form onSubmit={(e) => { e.preventDefault(); formState.id ? handleUpdateDesignation() : handleAddDesignation(); }} className="mb-4">
+            <div className="flex gap-4">
+              <select
+                value={formState.mainDepartment}
+                onChange={(e) => setFormState({ ...formState, mainDepartment: e.target.value })}
+                className="border border-gray-300 rounded p-2 flex-grow"
+              >
+                <option value="">Select Main Department</option>
+                {departments.map((department) => (
+                  <option key={department.id} value={department.mainDepartment}>
+                    {department.mainDepartment}
+                  </option>
+                ))}
+              </select>
+              <select
+                value={formState.designation}
+                onChange={(e) => setFormState({ ...formState, designation: e.target.value })}
+                className="border border-gray-300 rounded p-2 flex-grow"
+              >
+                <option value="">Select Designation</option>
+                {staffDesignations.map((staff) => (
+                  <option key={staff.id} value={staff.designation}>
+                    {staff.designation}
+                  </option>
+                ))}
+              </select>
+              <button type="submit" className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
+                {formState.id ? "Update" : "Add"}
+              </button>
             </div>
-          </div>
-
-          {/* Office Designation List Table */}
-          <div className="bg-white rounded-lg shadow-md mb-6 overflow-x-auto">
-            <div className="px-6 py-4">
-              <table className="w-full bg-white rounded-lg shadow-md">
-                <thead>
-                  <tr className="bg-blue-500 text-white">
-                    <th className="px-6 py-3 text-center hover:text-black cursor-pointer">
-                      Sr No
-                    </th>
-                    <th className="px-6 py-3 text-center hover:text-black cursor-pointer">
-                      Main Department
-                    </th>
-                    <th className="px-6 py-3 text-center hover:text-black cursor-pointer">
-                      Designation
-                    </th>
-                    <th className="px-6 py-3 text-center hover:text-black cursor-pointer">
-                      Status
-                    </th>
-                    <th className="px-6 py-3 text-center hover:text-black cursor-pointer">
-                      Actions
-                    </th>
+          </form>
+          {/* Designation List */}
+          <table className="min-w-full border border-gray-300 rounded-lg overflow-hidden">
+                <thead className="bg-blue-500 text-white">
+                  <tr>
+                    <th className="border border-gray-300 p-2">Sr. No.</th>
+                    <th className="border border-gray-300 p-2">Main Department</th>
+                    <th className="border border-gray-300 p-2">Designation</th>
+                    <th className="border border-gray-300 p-2">Status</th>
+                    <th className="border border-gray-300 p-2">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filteredDesignations.map((designation, index) => (
-                    <tr key={designation.id} className="border-b">
-                      <td className="px-6 py-3 text-center">{index + 1}</td>
-                      <td className="px-6 py-3 text-center">
-                        {designation.mainDepartment}
-                      </td>
-                      <td className="px-6 py-3 text-center">
-                        {designation.designation}
-                      </td>
-                      <td className="px-6 py-3 text-center">
-                        <span
-                          className={`font-bold ${
-                            designation.status === "Active"
-                              ? "text-green-500"
-                              : "text-red-500"
-                          }`}
+                    <tr key={designation.id} className={designation.status === "Inactive" ? "" : ""}>
+                      <td className="border border-gray-300 p-2">{index + 1}</td>
+                      <td className="border border-gray-300 p-2">{designation.mainDepartment}</td>
+                      <td className="border border-gray-300 p-2">{designation.designation}</td>
+                      <td className="border border-gray-300 p-2">{designation.status}</td>
+                      <td className="border border-gray-300 p-2 flex gap-2">
+                        <button
+                          className="text-blue-500"
+                          onClick={() => handleEditDesignation(designation.id)}
                         >
-                          {designation.status}
-                        </span>
-                      </td>
-                      <td className="px-6 py-3 text-center">
-                        <div className="flex justify-center space-x-2">
-                          <span
-                            onClick={() =>
-                              handleToggleStatus(
-                                designation.id,
-                                designation.status
-                              )
-                            }
-                            className="cursor-pointer"
-                            title={`Mark as ${
-                              designation.status === "Active"
-                                ? "Inactive"
-                                : "Active"
-                            }`}
-                          >
-                            {designation.status === "Active" ? (
-                              <FaCheck className="text-green-400" />
-                            ) : (
-                              <FaTimes className="text-red-500" />
-                            )}
-                          </span>
-                          <span
-                            onClick={() =>
-                              handleEditDesignation(designation.id)
-                            }
-                            className="cursor-pointer text-blue-500"
-                            title="Edit"
-                          >
-                            <FaEdit />
-                          </span>
-                          <span
-                            onClick={() =>
-                              handleDeleteDesignation(designation.id)
-                            }
-                            className="cursor-pointer text-red-500"
-                            title="Delete"
-                          >
-                            <FaTrashAlt />
-                          </span>
-                        </div>
+                          <FaEdit />
+                        </button>
+                        <button
+                          className="text-red-500"
+                          onClick={() => handleDeleteDesignation(designation.id)}
+                        >
+                          <FaTrashAlt />
+                        </button>
+                        <button
+                          className={`text-${designation.status === "Active" ? "red" : "green"}-500`}
+                          onClick={() => handleToggleStatus(designation.id, designation.status)}
+                        >
+                          <FaCheck />
+                        </button>
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
-            </div>
-          </div>
+
         </div>
         <AdminFooter />
       </div>

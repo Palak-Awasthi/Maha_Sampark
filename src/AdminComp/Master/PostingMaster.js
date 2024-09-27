@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { FaSearch, FaSyncAlt, FaEdit, FaTrash } from "react-icons/fa";
+import { FaSearch, FaSyncAlt, FaEdit, FaTrash, FaCheck, FaTimes } from "react-icons/fa";
 import { toast } from "react-toastify";
 import Swal from 'sweetalert2'; 
 import AdminHeader from "../AdminHeader";
@@ -9,18 +9,21 @@ import AdminFooter from "../AdminFooter";
 
 const PostingMaster = () => {
   const [postings, setPostings] = useState([]);
-  const [formState, setFormState] = useState({ maintype: "", designation: "", post: "", status: "Active" });
+  const [mainTypes, setMainTypes] = useState([]);
+  const [designations, setDesignations] = useState([]);
+  const [formState, setFormState] = useState({ mainType: "", designation: "", post: "", status: "Active" });
   const [isEditing, setIsEditing] = useState(null);
   const [showSearch, setShowSearch] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
-
+  
   useEffect(() => {
     fetchPostings();
+    fetchMainTypes();
+    fetchDesignations();
   }, []);
 
+  // Fetch postings
   const fetchPostings = async () => {
     setLoading(true);
     try {
@@ -33,10 +36,31 @@ const PostingMaster = () => {
     }
   };
 
+  // Fetch Main Types for dropdown
+  const fetchMainTypes = async () => {
+    try {
+      const response = await axios.get("http://localhost:8080/api/nonofficialmaintypes");
+      setMainTypes(response.data);
+    } catch (error) {
+      handleError(error);
+    }
+  };
+
+  // Fetch Designations for dropdown
+  const fetchDesignations = async () => {
+    try {
+      const response = await axios.get("http://localhost:8080/api/staff");
+      setDesignations(response.data);
+    } catch (error) {
+      handleError(error);
+    }
+  };
+
+  // Add or Update Posting
   const handleAddOrUpdatePosting = async () => {
-    const trimmedMaintype = formState.maintype.trim();
-    if (!trimmedMaintype) {
-      toast.error("Maintype is required!");
+    const trimmedMainType = formState.mainType.trim();
+    if (!trimmedMainType) {
+      toast.error("Main Type is required!");
       return;
     }
 
@@ -67,12 +91,14 @@ const PostingMaster = () => {
     handleAddOrUpdatePosting();
   };
 
+  // Edit Posting
   const handleEditPosting = (id) => {
     const posting = postings.find((p) => p.id === id);
-    setFormState({ maintype: posting.maintype, designation: posting.designation, post: posting.post, status: posting.status });
+    setFormState({ mainType: posting.mainType, designation: posting.designation, post: posting.post, status: posting.status });
     setIsEditing(id);
   };
 
+  // Delete Posting
   const handleDeletePosting = async (id) => {
     const result = await Swal.fire({
       title: 'Are you sure?',
@@ -98,53 +124,56 @@ const PostingMaster = () => {
     }
   };
 
-  const handleToggleStatus = async (id) => {
-    setLoading(true);
-    try {
-      // Update the status in the API
-      await axios.put(`http://localhost:8080/api/posting-master/toggle-status/${id}`);
-      
-      // Update the status in local state to reflect the change
-      setPostings((prevPostings) =>
-        prevPostings.map((posting) =>
-          posting.id === id ? { ...posting, status: posting.status === "Active" ? "Inactive" : "Active" } : posting
-        )
-      );
+  // Toggle Status
+// Toggle Status
+const handleToggleStatus = async (id) => {
+  const posting = postings.find((p) => p.id === id);
+  setLoading(true);
+  
+  try {
+    // API call to toggle status
+    await axios.put(`http://localhost:8080/api/posting-master/toggle-status/${id}`);
 
-      toast.success("Posting status updated successfully!");
-    } catch (error) {
-      handleError(error);
-    } finally {
-      setLoading(false);
-    }
-  };
+    // Update the status in the frontend
+    setPostings((prevPostings) =>
+      prevPostings.map((p) =>
+        p.id === id ? { ...p, status: p.status === "Active" ? "Inactive" : "Active" } : p
+      )
+    );
+    toast.success(`Posting status toggled successfully!`);
+  } catch (error) {
+    handleError(error);
+  } finally {
+    setLoading(false);
+  }
+};
 
+
+  // Search Handling
   const handleSearch = (event) => {
     setSearchTerm(event.target.value);
   };
 
+  // Reset Form
   const resetForm = () => {
-    setFormState({ maintype: "", designation: "", post: "", status: "Active" });
+    setFormState({ mainType: "", designation: "", post: "", status: "Active" });
     setIsEditing(null);
   };
 
+  // Error Handling
   const handleError = (error) => {
     console.error("Error:", error);
     if (error.response) {
       toast.error(`Error: ${error.response.status} - ${error.response.data.message || "An error occurred."}`);
-    } else if (error.request) {
-      toast.error("No response received from the server. Please try again.");
     } else {
       toast.error("An unexpected error occurred. Please try again.");
     }
   };
 
+  // Filter postings based on search term
   const filteredPostings = postings.filter((p) =>
-    p.maintype?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false
+    p.mainType && p.mainType.toLowerCase().includes(searchTerm.toLowerCase())
   );
-
-  const totalPages = Math.ceil(filteredPostings.length / itemsPerPage);
-  const currentPostings = filteredPostings.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   return (
     <div className="flex">
@@ -154,202 +183,134 @@ const PostingMaster = () => {
         <div className="container mx-auto p-4">
           {/* Header Section */}
           <div className="flex justify-between items-center mb-6">
-            <div className="text-2xl font-bold">Posting Master</div>
-            <div className="flex flex-col md:flex-row md:items-center space-y-2 md:space-y-0 md:space-x-2">
-              {showSearch && (
-                <input
-                  type="text"
-                  placeholder="Search Maintype"
-                  value={searchTerm}
-                  onChange={handleSearch}
-                  className="px-3 py-2 border rounded-md focus:outline-none focus:border-blue-500 w-full sm:w-auto"
-                />
-              )}
+            <div className="text-2xl font-bold text-black">Posting Master</div>
+            <div className="flex items-center">
               <button
+                className="bg-blue-500 text-white px-4 py-2 rounded mr-2 transition-all hover:bg-blue-600"
                 onClick={() => setShowSearch(!showSearch)}
-                className="p-2 bg-blue-500 text-white rounded-md transition-transform transform hover:scale-110"
-                title="Search"
               >
-                <FaSearch />
+                <FaSearch className="inline" /> {showSearch ? "Hide Search" : "Show Search"}
               </button>
               <button
-                onClick={() => {
-                  setSearchTerm("");
-                  setShowSearch(false);
-                }}
-                className="p-2 bg-blue-500 text-white rounded-md transition-transform transform hover:scale-110"
-                title="Reset"
+                className="bg-gray-500 text-white px-4 py-2 rounded flex items-center transition-all hover:bg-gray-600"
+                onClick={resetForm}
               >
-                <FaSyncAlt />
+                <FaSyncAlt className="mr-1" /> Reset
               </button>
             </div>
           </div>
-
-          {/* Add/Update Posting Form */}
-          <div className="bg-white rounded-lg shadow-md mb-6">
-            <div className="bg-blue-500 text-white px-6 py-3 rounded-t-lg">
-              <h3 className="text-lg sm:text-xl font-semibold">{isEditing ? "Edit Posting" : "Add Posting"}</h3>
+          {/* Search Bar */}
+          {showSearch && (
+            <div className="mb-4">
+              <input
+                type="text"
+                placeholder="Search Postings..."
+                value={searchTerm}
+                onChange={handleSearch}
+                className="border border-gray-300 rounded p-2 w-full"
+              />
             </div>
-            <div className="p-6">
-              <form onSubmit={handleSubmit}>
-                <div className="grid grid-cols-1 gap-2">
-                  <div className="flex flex-row space-x-4">
-                    {/* Type Dropdown */}
-                    <div className="flex flex-col w-full">
-                      <label className="mb-1 font-medium">Type</label>
-                      <select
-                        value={formState.maintype}
-                        onChange={(e) => setFormState({ ...formState, maintype: e.target.value })}
-                        className="p-2 border rounded hover:scale-105 transition-transform"
-                        required
-                      >
-                        <option value="" disabled>Select Type</option>
-                        <option value="Type 1">Type 1</option>
-                        <option value="Type 2">Type 2</option>
-                        <option value="Type 3">Type 3</option>
-                      </select>
-                    </div>
-
-                    {/* Designation Dropdown */}
-                    <div className="flex flex-col w-full">
-                      <label className="mb-1 font-medium">Designation</label>
-                      <select
-                        value={formState.designation}
-                        onChange={(e) => setFormState({ ...formState, designation: e.target.value })}
-                        className="p-2 border rounded hover:scale-105 transition-transform"
-                        required
-                      >
-                        <option value="" disabled>Select Designation</option>
-                        <option value="Designation 1">Designation 1</option>
-                        <option value="Designation 2">Designation 2</option>
-                        <option value="Designation 3">Designation 3</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  {/* Post Input */}
-                  <div className="flex flex-col">
-                    <label className="mb-1 font-medium">Post</label>
-                    <input
-                      type="text"
-                      value={formState.post}
-                      onChange={(e) => setFormState({ ...formState, post: e.target.value })}
-                      className="p-2 border rounded hover:scale-105 transition-transform"
-                      required
-                    />
-                  </div>
-
-                  {/* Submit Button */}
-                  <button
-                    type="submit"
-                    className="p-2 bg-green-500 text-white rounded-md transition-transform transform hover:scale-110"
-                  >
-                    {isEditing ? "Update Posting" : "Add Posting"}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={resetForm}
-                    className="p-2 bg-red-500 text-white rounded-md transition-transform transform hover:scale-110"
-                  >
-                    Reset
-                  </button>
-                </div>
-              </form>
+          )}
+          {/* Form Section */}
+          <form onSubmit={handleSubmit} className="mb-4">
+            <div className="flex gap-4">
+              <select
+                value={formState.mainType}
+                onChange={(e) => setFormState({ ...formState, mainType: e.target.value })}
+                className="border border-gray-300 rounded p-2 flex-grow"
+              >
+                <option value="">Select Main Type</option>
+                {mainTypes.map((type) => (
+                  <option key={type.id} value={type.mainType}>
+                    {type.mainType}
+                  </option>
+                ))}
+              </select>
+              <select
+                value={formState.designation}
+                onChange={(e) => setFormState({ ...formState, designation: e.target.value })}
+                className="border border-gray-300 rounded p-2 flex-grow"
+              >
+                <option value="">Select Designation</option>
+                {designations.map((designation) => (
+                  <option key={designation.id} value={designation.designation}>
+                    {designation.designation}
+                  </option>
+                ))}
+              </select>
+              <input
+                type="text"
+                placeholder="Post"
+                value={formState.post}
+                onChange={(e) => setFormState({ ...formState, post: e.target.value })}
+                className="border border-gray-300 rounded p-2 flex-grow"
+              />
+              <button type="submit" className="bg-green-500 text-white px-4 py-2 rounded transition-all hover:bg-green-600">
+                {isEditing ? "Update" : "Submit"}
+              </button>
             </div>
-          </div>
-
-          {/* Postings Table */}
-          <div className="bg-white rounded-lg shadow-md">
-            <div className="bg-blue-500 text-white px-6 py-3 rounded-t-lg">
-              <h3 className="text-lg sm:text-xl font-semibold">Postings List</h3>
-            </div>
-            <div className="p-6">
-              {loading ? (
-                <div>Loading...</div>
-              ) : (
-                <table className="min-w-full border-collapse border border-gray-200">
-                  <thead>
-                    <tr>
-                      <th className="border border-gray-300 p-2">Maintype</th>
-                      <th className="border border-gray-300 p-2">Designation</th>
-                      <th className="border border-gray-300 p-2">Post</th>
-                      <th className="border border-gray-300 p-2">Status</th>
-                      <th className="border border-gray-300 p-2">Actions</th>
+          </form>
+          {/* Posting Table */}
+          <div className="overflow-x-auto">
+            {loading ? (
+              <div>Loading...</div>
+            ) : (
+              <table className="min-w-full border border-gray-300 rounded-lg overflow-hidden">
+                <thead className="bg-blue-500 text-white">
+                  <tr>
+                    <th className="border border-gray-300 p-2">Sr.No</th>
+                    <th className="border border-gray-300 p-2">Main Type</th>
+                    <th className="border border-gray-300 p-2">Designation</th>
+                    <th className="border border-gray-300 p-2">Post</th>
+                    <th className="border border-gray-300 p-2">Status</th>
+                    <th className="border border-gray-300 p-2">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredPostings.map((posting, index) => (
+                    <tr key={posting.id} className="text-center">
+                      <td className="border border-gray-300 p-2">{index + 1}</td>
+                      <td className="border border-gray-300 p-2">{posting.mainType}</td>
+                      <td className="border border-gray-300 p-2">{posting.designation}</td>
+                      <td className="border border-gray-300 p-2">{posting.post}</td>
+                      <td className="border border-gray-300 p-2">
+                      <span className="p-1">
+    {posting.status}
+  </span>
+                      </td>
+                      <td className="border border-gray-300 p-2">
+                        <button
+                          onClick={() => handleEditPosting(posting.id)}
+                          className="text-blue-500 hover:text-blue-700 mr-2"
+                        >
+                          <FaEdit />
+                        </button>
+                        <button
+                          onClick={() => handleDeletePosting(posting.id)}
+                          className="text-red-500 hover:text-red-700 mr-2"
+                        >
+                          <FaTrash />
+                        </button>
+                        <button
+                          onClick={() => handleToggleStatus(posting.id)}
+                          className={`text-${
+                            posting.status === "Active" ? "green-500 hover:text-green-700" : "yellow-500 hover:text-yellow-700"
+                          }`}
+                        >
+                          {posting.status === "Active" ? <FaTimes /> : <FaCheck />}
+                        </button>
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody>
-                    {currentPostings.length > 0 ? (
-                      currentPostings.map((posting) => (
-                        <tr key={posting.id}>
-                          <td className="border border-gray-300 p-2">{posting.maintype}</td>
-                          <td className="border border-gray-300 p-2">{posting.designation}</td>
-                          <td className="border border-gray-300 p-2">{posting.post}</td>
-                          <td className="border border-gray-300 p-2">
-                            <span
-                              onClick={() => handleToggleStatus(posting.id)}
-                              className={`cursor-pointer ${
-                                posting.status === "Active" ? "text-green-500" : "text-red-500"
-                              }`}
-                            >
-                              {posting.status}
-                            </span>
-                          </td>
-                          <td className="border border-gray-300 p-2 flex space-x-2">
-                            <button
-                              onClick={() => handleEditPosting(posting.id)}
-                              className="text-yellow-500 hover:text-yellow-600"
-                              title="Edit"
-                            >
-                              <FaEdit />
-                            </button>
-                            <button
-                              onClick={() => handleDeletePosting(posting.id)}
-                              className="text-red-500 hover:text-red-600"
-                              title="Delete"
-                            >
-                              <FaTrash />
-                            </button>
-                          </td>
-                        </tr>
-                      ))
-                    ) : (
-                      <tr>
-                        <td colSpan="5" className="border border-gray-300 p-2 text-center">
-                          No postings found.
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              )}
-              {/* Pagination */}
-              <div className="mt-4 flex justify-between">
-                <button
-                  onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-                  disabled={currentPage === 1}
-                  className="p-2 bg-gray-300 rounded-md disabled:opacity-50"
-                >
-                  Previous
-                </button>
-                <span>
-                  Page {currentPage} of {totalPages}
-                </span>
-                <button
-                                    onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))} 
-                                    disabled={currentPage === totalPages}
-                                    className="p-2 bg-gray-300 rounded-md disabled:opacity-50"
-                                  >
-                                    Next
-                                  </button>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                          <AdminFooter />
-                        </div>
-                      </div>
-                    );
-                  };
-                  
-                  export default PostingMaster;
-                  
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </div>
+        <AdminFooter />
+      </div>
+    </div>
+  );
+};
+
+export default PostingMaster;

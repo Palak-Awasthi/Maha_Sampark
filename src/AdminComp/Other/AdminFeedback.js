@@ -3,48 +3,27 @@ import DataTable from "react-data-table-component";
 import AdminHeader from "../AdminHeader";  // Import AdminHeader
 import AdminFooter from "../AdminFooter";  // Import AdminFooter
 import AdminSidebar from "../AdminSidebar";  // Import AdminSidebar
+import axios from "axios"; // Import axios for API calls
 
 const AdminFeedback = () => {
   const [data, setData] = useState([]);
   const [filteredData, setFilteredData] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
+  const [dateFilter, setDateFilter] = useState("");
   const [sortField, setSortField] = useState(null);
   const [sortDirection, setSortDirection] = useState("asc");
 
-  // Dummy Data
-  const dummyData = [
-    {
-      id: 1,
-      feedback: "Great service!",
-      name: "John Doe",
-      email: "john@example.com",
-      approved: "Approved",
-      addedDate: "2024-09-20",
-    },
-    {
-      id: 2,
-      feedback: "Could be better.",
-      name: "Jane Smith",
-      email: "jane@example.com",
-      approved: "Pending",
-      addedDate: "2024-09-21",
-    },
-    {
-      id: 3,
-      feedback: "Very satisfied!",
-      name: "Bob Johnson",
-      email: "bob@example.com",
-      approved: "Rejected",
-      addedDate: "2024-09-22",
-    },
-    // More dummy data here
-  ];
-
-  // Fetch data from API (Using dummy data for now)
+  // Fetch data from API
   const fetchData = async () => {
-    setData(dummyData); // Using dummy data
-    setFilteredData(dummyData); // Setting filtered data initially
+    try {
+      const response = await axios.get("http://localhost:8080/api/feedback"); // Correct API endpoint for fetching feedback data
+      console.log("API Response:", response.data); // Debugging: check the data being returned
+      setData(response.data); // Assuming the response contains an array of feedback objects
+      setFilteredData(response.data); // Set filtered data initially
+    } catch (error) {
+      console.error("Error fetching feedback data:", error);
+    }
   };
 
   useEffect(() => {
@@ -55,25 +34,33 @@ const AdminFeedback = () => {
   const handleSearchChange = (e) => {
     const { value } = e.target;
     setSearchTerm(value);
-    filterData(value, statusFilter);
+    filterData(value, statusFilter, dateFilter);
   };
 
   // Handle status filter change
   const handleStatusChange = (e) => {
     const { value } = e.target;
     setStatusFilter(value);
-    filterData(searchTerm, value);
+    filterData(searchTerm, value, dateFilter);
   };
 
-  // Reset search and status filter
+  // Handle date filter change
+  const handleDateChange = (e) => {
+    const { value } = e.target;
+    setDateFilter(value);
+    filterData(searchTerm, statusFilter, value);
+  };
+
+  // Reset search and filters
   const handleReset = () => {
     setSearchTerm("");
     setStatusFilter("All");
-    setFilteredData(data);
+    setDateFilter("");
+    setFilteredData(data); // Reset filtered data to the original dataset
   };
 
-  // Filter data based on the search term and selected status
-  const filterData = (searchValue, statusValue) => {
+  // Filter data based on search term, status, and date
+  const filterData = (searchValue, statusValue, dateValue) => {
     let filtered = data;
 
     if (searchValue) {
@@ -86,7 +73,11 @@ const AdminFeedback = () => {
       filtered = filtered.filter((item) => item.approved === statusValue);
     }
 
-    setFilteredData(filtered);
+    if (dateValue) {
+      filtered = filtered.filter((item) => item.addedDate === dateValue);
+    }
+
+    setFilteredData(filtered); // Update filtered data
   };
 
   // Sort the data based on the selected field and direction
@@ -106,13 +97,18 @@ const AdminFeedback = () => {
   };
 
   // Handle Approved Status Change
-  const handleApprovedChange = (id, newStatus) => {
-    setData((prevData) =>
-      prevData.map((item) =>
-        item.id === id ? { ...item, approved: newStatus } : item
-      )
-    );
-    filterData(searchTerm, statusFilter);
+  const handleApprovedChange = async (id, newStatus) => {
+    try {
+      await axios.put(`/api/feedback/${id}`, { approved: newStatus }); // Correct API endpoint for updating feedback status
+      setData((prevData) =>
+        prevData.map((item) =>
+          item.id === id ? { ...item, approved: newStatus } : item
+        )
+      );
+      filterData(searchTerm, statusFilter, dateFilter); // Re-filter data after updating status
+    } catch (error) {
+      console.error("Error updating feedback status:", error);
+    }
   };
 
   // Columns for DataTable
@@ -167,6 +163,12 @@ const AdminFeedback = () => {
                 <option value="Pending">Pending</option>
                 <option value="Rejected">Rejected</option>
               </select>
+              <input
+                type="date"
+                value={dateFilter}
+                onChange={handleDateChange}
+                className="border p-2 rounded-md"
+              />
               <button
                 onClick={handleReset}
                 className="p-2 bg-gray-500 text-white rounded-md"
@@ -186,6 +188,7 @@ const AdminFeedback = () => {
                 dense
                 sortServer
                 onSort={handleSort}
+                noDataComponent="There are no records to display." // Custom message
                 customStyles={{
                   headRow: {
                     style: {
