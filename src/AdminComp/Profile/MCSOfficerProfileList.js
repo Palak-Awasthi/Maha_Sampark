@@ -18,7 +18,7 @@
       postingDistrictLocation: ["District 1", "District 2", "District 3"], // Replace with actual options
       postingTaluka: ["Taluka 1", "Taluka 2", "Taluka 3"], // Replace with actual options
       homeDistrict: ["Home District 1", "Home District 2", "Home District 3"], // Replace with actual options
-      homeTaluka: ["Home Taluka 1", "Home Taluka 2", "Home Taluka 3"], // Replace with actual options
+      homeTaluka: ["Home Taluka 1", "Home Taluka 2", "Home Taluka 3"], 
       yearOfJoiningPresentCadre: ["2020", "2021", "2022"], 
       dateOfJoiningRevenueDepartment: ["2019", "2020", "2021"], 
     });
