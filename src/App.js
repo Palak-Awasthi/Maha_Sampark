@@ -31,14 +31,16 @@ import GovtOfficeContact from './AdminComp/AdminGovtOfficeContact';
 import MaharashtraGovtOfficers from './AdminComp/Profile/MaharashtraGovtOfficers';
 import AdminHeader from './AdminComp/AdminHeader';
 import AdminFooter from './AdminComp/AdminFooter';
-
-
+import AdminQuickAlert from './AdminComp/Other/AdminQuickAlert';
+import AdminFeedback  from './AdminComp/Other/AdminFeedback';
+import AdminNotification from './AdminComp/Other/AdminNotification'
+import DepartmentInfo from './AdminComp/DepartmentInfo'
 
 
 function App() {
   return (
     <Router>
-      <div className="App">
+      <div className="App ">
         <Routes>
         <Route path="/" element={<OtpLogin />} />
           {/* Define routes for different components */}
@@ -72,8 +74,11 @@ function App() {
           <Route path="/mahagovofficer" element={<MaharashtraGovtOfficers />} />
           <Route path="/AdminHeader" element={<AdminHeader />} />
           <Route path="/AdminFooter" element={<AdminFooter />} />
-          
-          
+          <Route path="/quick-alert" element={<AdminQuickAlert />} />
+          <Route path="/feedback" element={<AdminFeedback />} />
+          <Route path="/notification" element={<AdminNotification />} />
+          <Route path="/department-info" element={<DepartmentInfo />} />
+
           {/* Default Route */}
           
         </Routes>

@@ -1,6 +1,6 @@
   import React, { useState, useEffect } from "react";
   import axios from "axios";
-  import { FaSyncAlt, FaCheck, FaTimes } from "react-icons/fa";
+  import { FaSyncAlt, FaCheck, FaTimes ,FaTrash } from "react-icons/fa";
   import Swal from "sweetalert2"; 
   import { ToastContainer, toast } from "react-toastify"; 
   import 'react-toastify/dist/ReactToastify.css'; 
@@ -190,26 +190,82 @@
 
             {/* Simple HTML Table */}
             <div className="overflow-x-auto max-w-full">
-              <table className="min-w-full bg-white border rounded-lg shadow-lg">
-                <thead>
-                  <tr className="bg-blue-500 text-white">
-                    {/* Table headings */}
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredProfiles.length > 0 ? (
-                    filteredProfiles.map((profile) => (
-                      <tr key={profile.id}>
-                        {/* Profile data */}
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan="18" className="text-center py-4">No profiles found.</td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
+            <thead className="bg-gray-200">
+        <tr>
+          <th className="border border-gray-300 p-2">Sr No</th>
+          <th className="border border-gray-300 p-2">Name</th>
+          <th className="border border-gray-300 p-2">Mobile Number 1</th>
+          <th className="border border-gray-300 p-2">Mobile Number 2</th>
+          <th className="border border-gray-300 p-2">Designation</th>
+          <th className="border border-gray-300 p-2">Present Posting</th>
+          <th className="border border-gray-300 p-2">Present District</th>
+          <th className="border border-gray-300 p-2">Present Taluka</th>
+          <th className="border border-gray-300 p-2">Home District</th>
+          <th className="border border-gray-300 p-2">Home Taluka</th>
+          <th className="border border-gray-300 p-2">Educational Qualification</th>
+          <th className="border border-gray-300 p-2">Mail ID</th>
+          <th className="border border-gray-300 p-2">Date of Birth</th>
+          <th className="border border-gray-300 p-2">Date of Joining Revenue Department</th>
+          <th className="border border-gray-300 p-2">Year of Joining Present Cadre</th>
+          <th className="border border-gray-300 p-2">Date of Joining Present Post</th>
+          <th className="border border-gray-300 p-2">Data Updated On</th>
+          <th className="border border-gray-300 p-2">Past Posting</th>
+          <th className="border border-gray-300 p-2">Other Information</th>
+          <th className="border border-gray-300 p-2">Status</th>
+          <th className="border border-gray-300 p-2">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {filteredProfiles.map((profile, index) => (
+          <tr key={profile.id} className="bg-white hover:bg-gray-100">
+            <td className="border border-gray-300 p-2">{index + 1}</td>
+            <td className="border border-gray-300 p-2">{profile.name}</td>
+            <td className="border border-gray-300 p-2">{profile.mobileNumber1}</td>
+            <td className="border border-gray-300 p-2">{profile.mobileNumber2}</td>
+            <td className="border border-gray-300 p-2">{profile.designation}</td>
+            <td className="border border-gray-300 p-2">{profile.presentPosting}</td>
+            <td className="border border-gray-300 p-2">{profile.presentDistrict}</td>
+            <td className="border border-gray-300 p-2">{profile.presentTaluka}</td>
+            <td className="border border-gray-300 p-2">{profile.homeDistrict}</td>
+            <td className="border border-gray-300 p-2">{profile.homeTaluka}</td>
+            <td className="border border-gray-300 p-2">{profile.educationalQualification}</td>
+            <td className="border border-gray-300 p-2">{profile.mailId}</td>
+            <td className="border border-gray-300 p-2">{profile.dateOfBirth}</td>
+            <td className="border border-gray-300 p-2">{profile.dateOfJoiningRevenueDepartment}</td>
+            <td className="border border-gray-300 p-2">{profile.yearOfJoiningPresentCadre}</td>
+            <td className="border border-gray-300 p-2">{profile.dateOfJoiningPresentPost}</td>
+            <td className="border border-gray-300 p-2">{profile.dataUpdatedOn}</td>
+            <td className="border border-gray-300 p-2">{profile.pastPosting}</td>
+            <td className="border border-gray-300 p-2">{profile.otherInformation}</td>
+            <td className="border border-gray-300 p-2">
+              <span
+                className={`font-bold ${
+                  profile.status === "Approved" ? "text-green-500" : "text-red-500"
+                }`}
+              >
+                {profile.status === "Approved" ? "Active" : "Inactive"}
+              </span>
+            </td>
+            <td className="border border-gray-300 p-2 flex space-x-2">
+              <button
+                onClick={() => handleToggleStatus(profile.id, profile.status)}
+                className={`p-1 rounded-md text-white ${
+                  profile.status === "Approved" ? "bg-red-500 hover:bg-red-600" : "bg-green-500 hover:bg-green-600"
+                }`}
+              >
+                {profile.status === "Approved" ? <FaTimes /> : <FaCheck />}
+              </button>
+              <button
+                onClick={() => handleDeleteProfile(profile.id)}
+                className="p-1 rounded-md bg-red-500 hover:bg-red-600 text-white"
+              >
+                <FaTrash /> {/* You may need to import this icon */}
+              </button>
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    
             </div>
             <AdminFooter />
             <ToastContainer />

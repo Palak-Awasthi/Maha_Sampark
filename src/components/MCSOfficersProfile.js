@@ -1,22 +1,62 @@
-import React, { useState } from 'react';
-import { FaShare, FaEnvelope, FaPhone, FaCommentDots } from 'react-icons/fa';
+import React, { useState, useEffect } from 'react';
+import { FaShare, FaEnvelope, FaPhone, FaCommentDots, FaWhatsapp } from 'react-icons/fa';
 
 function MCAOfficersProfile() {
   const [searchTerm, setSearchTerm] = useState('');
+  const [officers, setOfficers] = useState([]);
 
-  const officers = [
-    // Example officer data
-    { name: 'John Doe', designation: 'Officer', contact: '123-456-7890', profilePic: 'https://via.placeholder.com/150' },
-    { name: 'Jane Smith', designation: 'Senior Officer', contact: '987-654-3210', profilePic: 'https://via.placeholder.com/150' },
-    // Add more officers as needed
-  ];
+  // Fetch officer data from backend API
+  useEffect(() => {
+    fetchOfficersData();
+  }, []);
+
+  const fetchOfficersData = async () => {
+    try {
+      const response = await fetch('http://localhost:8080/api/mcs'); // Adjust the endpoint to match your API
+      const data = await response.json();
+      setOfficers(data);
+    } catch (error) {
+      console.error('Error fetching officers data:', error);
+    }
+  };
 
   const filteredOfficers = officers.filter(officer =>
     officer.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const handleShare = (officer) => {
+    const shareText = `Check out this officer: ${officer.name}, ${officer.designation}. Contact: ${officer.contact}`;
+    if (navigator.share) {
+      navigator.share({
+        title: 'Officer Profile',
+        text: shareText,
+        url: window.location.href
+      })
+      .then(() => console.log('Profile shared successfully'))
+      .catch(console.error);
+    } else {
+      alert("Sharing is not supported on your browser");
+    }
+  };
+
+  const handleEmail = (officer) => {
+    window.location.href = `mailto:${officer.emailID}`;
+  };
+
+  const handlePhoneCall = (officer) => {
+    window.location.href = `tel:${officer.mobileNumber1}`;
+  };
+
+  // Function to open WhatsApp with a message
+  const handleWhatsAppClick = (contactName) => {
+    const message = `Hello ${contactName}, I would like to get in touch with you.`;
+    const encodedMessage = encodeURIComponent(message);
+    window.open(`https://wa.me/?text=${encodedMessage}`, '_blank');
+  };
+
   return (
     <div className="p-6 bg-blue-100 min-h-screen">
+    <h2 className="text-3xl font-bold mb-6 text-blue-600">MCS Officers Profiles</h2>
       {/* Search Bar */}
       <div className="mb-8">
         <input
@@ -37,7 +77,7 @@ function MCAOfficersProfile() {
           >
             {/* Officer Image */}
             <img
-              src={officer.profilePic}
+              src={officer.profilePic} // Image URL from the backend
               alt={officer.name}
               className="w-24 h-24 rounded-full object-cover mb-4 mx-auto animate-fadeIn"
             />
@@ -46,21 +86,33 @@ function MCAOfficersProfile() {
               {officer.name}
             </h3>
             <p className="mb-2 text-center">{officer.designation}</p>
-            <p className="mb-4 text-center">{officer.contact}</p>
+            <p className="mb-4 text-center">{officer.mobileNumber1}</p>
             
             {/* Action Buttons */}
             <div className="flex justify-around">
-              <button className="hover:text-gray-200 hover:scale-110 transform transition duration-200">
+              <button
+                onClick={() => handleShare(officer)}
+                className="hover:text-gray-200 hover:scale-110 transform transition duration-200"
+              >
                 <FaShare size={20} />
               </button>
-              <button className="hover:text-gray-200 hover:scale-110 transform transition duration-200">
+              <button
+                onClick={() => handleEmail(officer)}
+                className="hover:text-gray-200 hover:scale-110 transform transition duration-200"
+              >
                 <FaEnvelope size={20} />
               </button>
-              <button className="hover:text-gray-200 hover:scale-110 transform transition duration-200">
+              <button
+                onClick={() => handlePhoneCall(officer)}
+                className="hover:text-gray-200 hover:scale-110 transform transition duration-200"
+              >
                 <FaPhone size={20} />
               </button>
-              <button className="hover:text-gray-200 hover:scale-110 transform transition duration-200">
-                <FaCommentDots size={20} />
+              <button
+                onClick={() => handleWhatsAppClick(officer.name)} // Call the function with the officer's name
+                className="hover:text-gray-200 hover:scale-110 transform transition duration-200"
+              >
+                <FaWhatsapp size={20} />
               </button>
             </div>
           </div>

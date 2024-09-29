@@ -5,6 +5,9 @@ import AdminHeader from "./AdminHeader";
 import AdminFooter from "./AdminFooter";
 import AddContactModal from "./AddContactModal"; // For adding new contact
 import EditContactModal from "./EditContactModal"; // For editing a contact
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"; // Import FontAwesomeIcon
+import { faEdit, faTrash } from "@fortawesome/free-solid-svg-icons"; // Import specific icons
+import Swal from "sweetalert2"; // Import SweetAlert
 
 const AdminGovtOfficeContact = () => {
   const [contacts, setContacts] = useState([]);
@@ -110,14 +113,25 @@ const AdminGovtOfficeContact = () => {
   };
 
   const handleDeleteContact = async (id) => {
-    if (window.confirm("Are you sure you want to delete this contact?")) {
-      try {
-        await axios.delete(`http://localhost:8080/api/contacts/${id}`);
-        fetchContacts();
-      } catch (err) {
-        setError("Error deleting contact.");
+    Swal.fire({
+      title: "Are you sure?",
+      text: "You won't be able to revert this!",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#3085d6",
+      cancelButtonColor: "#d33",
+      confirmButtonText: "Yes, delete it!",
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        try {
+          await axios.delete(`http://localhost:8080/api/contacts/${id}`);
+          fetchContacts();
+          Swal.fire("Deleted!", "The contact has been deleted.", "success");
+        } catch (err) {
+          setError("Error deleting contact.");
+        }
       }
-    }
+    });
   };
 
   const handleAddContactSuccess = async (newContact) => {
@@ -215,8 +229,8 @@ const AdminGovtOfficeContact = () => {
           {loading && <p>Loading contacts...</p>}
           {error && <p className="text-red-500">{error}</p>}
 
-          <table className="w-full table-auto border-collapse">
-            <thead>
+          <table className="min-w-full border border-gray-300 rounded-lg overflow-hidden">
+          <thead className="bg-blue-500 text-white">
               <tr>
                 <th className="border px-4 py-2">Sr.No.</th>
                 <th className="border px-4 py-2">District</th>
@@ -236,54 +250,50 @@ const AdminGovtOfficeContact = () => {
                   <tr key={contact.id}>
                     <td className="border px-4 py-2">{index + 1}</td>
                     <td className="border px-4 py-2">{contact.district}</td>
-                    <td className="border px-4 py-2">{contact.taluka || "--"}</td>
-                    <td className="border px-4 py-2">{contact.departmentName || "--"}</td>
-                    <td className="border px-4 py-2">{contact.officeName || "--"}</td>
-                    <td className="border px-4 py-2">{contact.stdCode || "--"}</td>
-                    <td className="border px-4 py-2">{contact.landlineNumber || "--"}</td>
-                    <td className="border px-4 py-2">{contact.alternatePhoneNumber || "--"}</td>
+                    <td className="border px-4 py-2">{contact.taluka}</td>
+                    <td className="border px-4 py-2">{contact.departmentName}</td>
+                    <td className="border px-4 py-2">{contact.officeName}</td>
+                    <td className="border px-4 py-2">{contact.stdCode}</td>
+                    <td className="border px-4 py-2">{contact.landlineNumber}</td>
+                    <td className="border px-4 py-2">{contact.alternatePhoneNumber}</td>
                     <td className="border px-4 py-2">{contact.status}</td>
                     <td className="border px-4 py-2">
-                      <button
+                      <FontAwesomeIcon
+                        icon={faEdit}
+                        className="cursor-pointer text-blue-500"
                         onClick={() => handleEditContact(contact)}
-                        className="bg-yellow-500 text-white px-2 py-1 rounded mr-2"
-                      >
-                        Edit
-                      </button>
-                      <button
+                      />
+                      <FontAwesomeIcon
+                        icon={faTrash}
+                        className="cursor-pointer text-red-500 ml-2"
                         onClick={() => handleDeleteContact(contact.id)}
-                        className="bg-red-500 text-white px-2 py-1 rounded"
-                      >
-                        Delete
-                      </button>
+                      />
                     </td>
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan="10" className="border px-4 py-2 text-center">
-                    No contacts found.
+                  <td colSpan="10" className="text-center border px-4 py-2">
+                    No contacts found
                   </td>
                 </tr>
               )}
             </tbody>
           </table>
-
-          <AddContactModal
-            isOpen={isAddModalOpen}
-            onClose={() => setIsAddModalOpen(false)}
-            onSuccess={handleAddContactSuccess}
-          />
-
-          <EditContactModal
-            isOpen={isEditModalOpen}
-            onClose={() => setIsEditModalOpen(false)}
-            onSuccess={handleEditContactSuccess}
-            contact={selectedContact}
-          />
         </div>
         <AdminFooter />
       </div>
+      <AddContactModal
+        isOpen={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
+        onAddContactSuccess={handleAddContactSuccess}
+      />
+      <EditContactModal
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        contact={selectedContact}
+        onEditContactSuccess={handleEditContactSuccess}
+      />
     </div>
   );
 };

@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import News from './News'; // Import the News component
 import { FaUserTie, FaBuilding, FaFolderOpen, FaBirthdayCake, FaRegSmile } from 'react-icons/fa';
 import axios from 'axios'; // Import Axios
 import DashboardCard from './DashboardCard'; // Import the reusable card component
+import News from './News'; // Import the News component
 
 function DashboardContent({ onSelectSection }) {
   const [officerProfiles, setOfficerProfiles] = useState([]);
@@ -58,7 +58,7 @@ function DashboardContent({ onSelectSection }) {
         )}
 
         {/* Dashboard Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 mt-6">
           <DashboardCard
             title="MCS Officer Profile"
             icon={<FaUserTie size={30} />}
@@ -87,7 +87,7 @@ function DashboardContent({ onSelectSection }) {
             icon={<FaBirthdayCake size={50} />}
             gradientFrom="bg-gradient-to-r from-pink-500 to-purple-500"
             onClick={() => onSelectSection('todays-birthday')}
-            padding="p-50" // Increased padding
+            padding="p-6" // Adjust padding for better appearance
           />
 
           {/* Today's Joining */}
@@ -96,16 +96,16 @@ function DashboardContent({ onSelectSection }) {
             icon={<FaRegSmile size={50} />}
             gradientFrom="bg-gradient-to-r from-green-400 to-teal-600"
             onClick={() => onSelectSection('todays-joining')}
-            padding="p-50" // Increased padding
+            padding="p-6" // Adjust padding for better appearance
           />
         </div>
-      </div>
 
-      {/* News Section */}
-      <div className="lg:col-span-1 p-8 bg-white rounded-2xl shadow-lg flex flex-col">
-        <h3 className="text-xl font-semibold mb-6 text-gray-800">News</h3>
-        <div className="flex-1 overflow-auto">
-          <News /> {/* Embed the News component */}
+        {/* News Section */}
+        <div className="mt-6">
+          <h3 className="text-lg font-semibold text-gray-800">Latest News</h3>
+          <div className="bg-white rounded-lg p-4 shadow-md">
+            <News /> {/* Embed the News component */}
+          </div>
         </div>
       </div>
     </div>
