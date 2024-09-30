@@ -1,34 +1,57 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FaShareAlt, FaPhone } from 'react-icons/fa';
-
-const mockData = [
-  {
-    departmentName: 'Revenue Department',
-    officeName: 'Office A',
-    district: 'District 1',
-    taluka: 'Taluka A',
-    contactNo: '123-456-7890',
-  },
-  {
-    departmentName: 'Health Department',
-    officeName: 'Office B',
-    district: 'District 2',
-    taluka: 'Taluka B',
-    contactNo: '987-654-3210',
-  },
-  // Add more mock data as needed
-];
+import axios from 'axios';
 
 function GovtOfficeContacts() {
   const [searchTerm, setSearchTerm] = useState('');
+  const [contacts, setContacts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  const filteredData = mockData.filter((office) =>
+  useEffect(() => {
+    const fetchContacts = async () => {
+      try {
+        const response = await axios.get('http://localhost:8080/api/contacts'); // Adjust the URL as needed
+        setContacts(response.data);
+      } catch (err) {
+        setError('Error fetching contacts');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchContacts();
+  }, []);
+
+  const filteredData = contacts.filter((office) =>
     office.officeName.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+
+  if (error) {
+    return <div>{error}</div>;
+  }
+
+  
+  const handleShare = (office) => {
+    const contactDetails = `
+      Department: ${office.departmentName}
+      Office: ${office.officeName}
+      District: ${office.district}
+      Taluka: ${office.taluka}
+      Contact No: ${office.contactNo}
+    `;
+    navigator.clipboard.writeText(contactDetails)
+      .then(() => alert('Contact details copied to clipboard!'))
+      .catch(err => console.error('Failed to copy: ', err));
+  };
+
   return (
     <div className="p-6 bg-blue-100 min-h-screen rounded-lg shadow-lg">
-      <h2 className="text-3xl font-bold mb-6 text-gray-800">Government Office Contacts</h2>
+      <h2 className="text-3xl font-bold mb-6 text-blue-600">Government Office Contacts</h2>
       <input
         type="text"
         placeholder="Search Offices..."
@@ -50,12 +73,18 @@ function GovtOfficeContacts() {
               <p><strong>Contact No:</strong> {office.contactNo}</p>
             </div>
             <div className="flex flex-col items-center space-y-2">
-              <button className="p-2 rounded-full bg-blue-500 text-white hover:bg-blue-600 transition transform hover:scale-110">
-                <FaShareAlt size={20} />
-              </button>
-              <button className="p-2 rounded-full bg-green-500 text-white hover:bg-green-600 transition transform hover:scale-110">
-                <FaPhone size={20} />
-              </button>
+            <button 
+            className="p-2 rounded-full bg-blue-500 text-white hover:bg-blue-600 transition transform hover:scale-110"
+            onClick={() => handleShare(office)}
+          >
+            <FaShareAlt size={20} />
+          </button>
+          <a 
+            href={`tel:${office.contactNo}`} 
+            className="p-2 rounded-full bg-green-500 text-white hover:bg-green-600 transition transform hover:scale-110"
+          >
+            <FaPhone size={20} />
+          </a>
             </div>
           </div>
         ))}

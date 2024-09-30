@@ -1,36 +1,58 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FaPlus, FaSearch } from 'react-icons/fa';
-
-const mockNews = [
-  {
-    title: 'News Story 1',
-    content: 'This is the content for news story 1.',
-    imageUrl: 'https://via.placeholder.com/300x200',
-  },
-  {
-    title: 'News Story 2',
-    content: 'This is the content for news story 2.',
-    imageUrl: 'https://via.placeholder.com/300x200',
-  },
-  // Add more mock news stories as needed
-];
+import axios from 'axios';
 
 function News() {
-  const [news, setNews] = useState(mockNews);
+  const [news, setNews] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [newStory, setNewStory] = useState({ title: '', content: '', imageUrl: '' });
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Fetch all news when component loads
+  useEffect(() => {
+    fetchNews();
+  }, []);
+
+  const fetchNews = async () => {
+    try {
+      const response = await axios.get('http://localhost:8080/api/admin-news');
+      // Filter news to display only those with 'Accepted' status
+      const acceptedNews = response.data.filter(news => news.status === 'Accepted');
+      setNews(acceptedNews);
+    } catch (error) {
+      console.error('Error fetching news:', error);
+    }
+  };
 
   const handleFormChange = (e) => {
     const { name, value } = e.target;
     setNewStory({ ...newStory, [name]: value });
   };
 
-  const handleAddNews = (e) => {
+  const handleAddNews = async (e) => {
     e.preventDefault();
-    setNews([...news, newStory]);
-    setNewStory({ title: '', content: '', imageUrl: '' });
-    setShowForm(false);
+
+    const formData = new FormData();
+    formData.append('title', newStory.title);
+    formData.append('content', newStory.content);
+    formData.append('addedby', 'Admin'); // Example value, change as needed
+    formData.append('dateandtime', new Date().toISOString()); // Automatically set date and time
+    formData.append('status', 'Pending'); // Default status is Pending
+    formData.append('photo', null); // If adding image, handle file input
+
+    try {
+      // Send request to add news
+      await axios.post('http://localhost:8080/api/admin-news', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      // Optionally, you can show a message to indicate that the news is pending approval
+      alert('News added successfully! Pending admin approval.');
+      setShowForm(false);
+    } catch (error) {
+      console.error('Error adding news:', error);
+    }
   };
 
   const handleSearchChange = (e) => {
@@ -43,7 +65,7 @@ function News() {
   );
 
   return (
-    <div className="p-6 bg-gradient-to-br from-gray-100 to-blue-100 rounded-lg shadow-md">
+    <div className="p-6 bg-blue-100 min-h-screen rounded-lg shadow-lg">
       <h2 className="text-3xl font-bold mb-4 text-blue-600">News</h2>
 
       {/* Add News Button */}
