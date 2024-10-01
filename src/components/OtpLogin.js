@@ -1,31 +1,59 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom'; 
 import Header from './Header'; 
 import Footer from './Footer'; 
 import { Player } from '@lottiefiles/react-lottie-player';
+import axios from 'axios';
 
 function OtpLogin() {
   const [mobileNumber, setMobileNumber] = useState('');
   const [otp, setOtp] = useState(Array(6).fill(''));
   const [otpSent, setOtpSent] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false); // Track if user is admin
+  const [isAdmin, setIsAdmin] = useState(false);
   const navigate = useNavigate();
+  const adminMobileNumber = '1234567890'; 
+  const [registeredUsers, setRegisteredUsers] = useState([]);
+  const [actualOtp, setActualOtp] = useState(''); // Store the actual OTP sent
 
-  // Sample list of admin mobile numbers
-  const adminMobileNumbers = ['1234567890', '0987654321']; // Replace with actual admin numbers
+  useEffect(() => {
+    const fetchRegisteredUsers = async () => {
+      try {
+        const response = await axios.get('http://localhost:8080/api/registrations/all'); 
+        setRegisteredUsers(response.data);
+      } catch (error) {
+        console.error('Error fetching registered users:', error);
+      }
+    };
 
-  const sendOtp = (e) => {
+    fetchRegisteredUsers();
+  }, []);
+
+  const sendOtp = async (e) => {
     e.preventDefault();
-    
-    // Check if the entered mobile number is an admin
-    if (adminMobileNumbers.includes(mobileNumber)) {
+
+    if (mobileNumber === adminMobileNumber) {
       setIsAdmin(true);
+      setOtpSent(true);
+      setActualOtp('123456'); // Mock the OTP for admin
     } else {
-      setIsAdmin(false);
+      const user = registeredUsers.find(user => user.phoneNumber === mobileNumber);
+      if (user) {
+        if (user.approveStatus === 'Approved') {
+          setIsAdmin(false);
+          setOtpSent(true);
+          setActualOtp('654321'); // Mock the OTP for regular user
+        } else {
+          alert('Your registration is not approved yet. Please contact support.');
+          return;
+        }
+      } else {
+        alert('Mobile number not registered. Please register first.'); 
+        return;
+      }
     }
-    
+
+    // Here you would send the OTP through your backend API
     console.log('OTP sent to:', mobileNumber);
-    setOtpSent(true);
   };
 
   const handleOtpChange = (element, index) => {
@@ -44,8 +72,8 @@ function OtpLogin() {
     const otpCode = otp.join('');
     console.log('OTP entered:', otpCode);
 
-    // OTP verification logic (replace with actual verification)
-    if (otpCode === '123456') { // Simulating successful OTP verification
+    // Verify OTP against the actual OTP sent
+    if (otpCode === actualOtp) { 
       console.log('OTP verified successfully!');
 
       // Redirect based on user role
@@ -60,17 +88,14 @@ function OtpLogin() {
   };
 
   const handleRegister = () => {
-    navigate('/register'); // Navigate to the registration page
+    navigate('/register'); 
   };
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
-      {/* Header */}
       <Header />
 
-      {/* Main Content */}
       <main className="flex flex-1 flex-col lg:flex-row justify-center items-center p-6">
-        {/* Left Section - Lottie Animation */}
         <div className="flex-1 hidden lg:flex justify-center items-center p-6">
           <Player
             autoplay
@@ -80,7 +105,6 @@ function OtpLogin() {
           />
         </div>
 
-        {/* Right Section - Login Form */}
         <div className="flex-1 bg-blue-50 p-8 rounded-lg shadow-xl max-w-md w-full">
           <h2 className="text-3xl font-bold mb-6 text-center text-gray-800">
             Login
@@ -134,7 +158,6 @@ function OtpLogin() {
               </button>
             </form>
           )}
-          {/* Registration Button */}
           <div className="mt-6 text-center">
             <button
               onClick={handleRegister}
@@ -146,7 +169,6 @@ function OtpLogin() {
         </div>
       </main>
 
-      {/* Footer */}
       <Footer />
     </div>
   );

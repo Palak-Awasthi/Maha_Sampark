@@ -80,7 +80,7 @@ const GovernmentOfficeDepartmentMaster = () => {
       showCancelButton: true,
       confirmButtonColor: '#d33',
       cancelButtonColor: '#3085d6',
-      confirmButtonText: 'Yes, delete it!'
+      confirmButtonText: 'Yes, delete it!',
     });
 
     if (result.isConfirmed) {
@@ -97,21 +97,34 @@ const GovernmentOfficeDepartmentMaster = () => {
     }
   };
 
-  const handleToggleStatus = async (id, currentStatus) => {
-    const newStatus = currentStatus === "Active" ? "Inactive" : "Active";
+  const handleToggleStatus = async (id) => {
+    const department = departments.find((dep) => dep.id === id);
+    const newStatus = department.status === "Active" ? "Inactive" : "Active";
     setLoading(true);
+  
     try {
-      await axios.put(`http://localhost:8080/api/departments/${id}/status`, { status: newStatus });
+      // API call to toggle status
+      const response = await axios.put(`http://localhost:8080/api/departments/${id}/status`, { status: newStatus });
+  
+      // Assuming response.data contains the updated status string
+      const updatedStatus = response.data; // should be a string like "Active" or "Inactive"
+  
+      // Update the status in the frontend
       setDepartments((prevDepartments) =>
-        prevDepartments.map((dep) => (dep.id === id ? { ...dep, status: newStatus } : dep))
+        prevDepartments.map((dep) =>
+          dep.id === id ? { ...dep, status: updatedStatus } : dep
+        )
       );
-      toast.success(`Department status updated to ${newStatus}`);
+      toast.success(`Department status updated to ${updatedStatus}`);
     } catch (error) {
       handleError(error);
     } finally {
       setLoading(false);
     }
   };
+  
+  
+  
 
   const handleSearch = (event) => {
     setSearchTerm(event.target.value);
@@ -143,10 +156,7 @@ const GovernmentOfficeDepartmentMaster = () => {
         <div className="container mx-auto p-4">
           {/* Header Section */}
           <div className="flex justify-between items-center mb-6">
-            <div className="text-2xl font-bold text-black">Government Office Department Master
-
-
-</div>
+            <div className="text-2xl font-bold text-black">Government Office Department Master</div>
             <div className="flex items-center">
               <button
                 className="bg-blue-500 text-white px-4 py-2 rounded mr-2 transition-all hover:bg-blue-600"
@@ -208,7 +218,15 @@ const GovernmentOfficeDepartmentMaster = () => {
                     <tr key={department.id}>
                       <td className="border border-gray-300 p-2">{index + 1}</td>
                       <td className="border border-gray-300 p-2">{department.departmentName}</td>
-                      <td className="border border-gray-300 p-2">{department.status}</td>
+                      <td className="border border-gray-300 p-2">
+                        <span
+                          className={`inline-flex items-center px-2 py-1 text-sm font-bold rounded-full ${
+                            department.status === "Active" ? "bg-green-200 text-green-800" : "bg-red-200 text-red-800"
+                          }`}
+                        >
+                          {department.status} {department.status === "Active" ? <FaCheck className="ml-1" /> : <FaTimes className="ml-1" />}
+                        </span>
+                      </td>
                       <td className="border border-gray-300 p-2 flex gap-2">
                         <button
                           className="text-yellow-500 hover:text-yellow-700 transition-all"
@@ -223,10 +241,10 @@ const GovernmentOfficeDepartmentMaster = () => {
                           <FaTrash />
                         </button>
                         <button
-                          className={`text-${department.status === "Active" ? "green" : "gray"}-500 hover:text-${department.status === "Active" ? "green" : "gray"}-700 transition-all`}
                           onClick={() => handleToggleStatus(department.id, department.status)}
+                          className={`text-${department.status === "Active" ? "red" : "green"}-500 hover:text-${department.status === "Active" ? "red" : "green"}-700 transition-all`}
                         >
-                          {department.status === "Active" ? <FaCheck /> : <FaTimes />}
+                          {department.status === "Active" ? <FaTimes /> : <FaCheck />}
                         </button>
                       </td>
                     </tr>

@@ -42,7 +42,7 @@ function GovtOfficeContacts() {
       Office: ${office.officeName}
       District: ${office.district}
       Taluka: ${office.taluka}
-      Contact No: ${office.contactNo}
+      Contact No: ${office.landlineNumber}
     `;
     navigator.clipboard.writeText(contactDetails)
       .then(() => alert('Contact details copied to clipboard!'))
@@ -50,7 +50,7 @@ function GovtOfficeContacts() {
   };
 
   return (
-    <div className="p-6 bg-blue-100 min-h-screen rounded-lg shadow-lg">
+    <div className="p-6 bg-gradient-to-br from-blue-100 to-blue-400 min-h-screen rounded-lg shadow-lg">
       <h2 className="text-3xl font-bold mb-6 text-blue-600">Government Office Contacts</h2>
       <input
         type="text"
@@ -70,7 +70,7 @@ function GovtOfficeContacts() {
               <p className="mb-1"><strong>Department:</strong> {office.departmentName}</p>
               <p className="mb-1"><strong>District:</strong> {office.district}</p>
               <p className="mb-1"><strong>Taluka:</strong> {office.taluka}</p>
-              <p><strong>Contact No:</strong> {office.contactNo}</p>
+              <p><strong>Landline No:</strong> {office.landlineNumber}</p>
             </div>
             <div className="flex flex-col items-center space-y-2">
             <button 
@@ -80,7 +80,7 @@ function GovtOfficeContacts() {
             <FaShareAlt size={20} />
           </button>
           <a 
-            href={`tel:${office.contactNo}`} 
+            href={`tel:${office.landlineNumber}`} 
             className="p-2 rounded-full bg-green-500 text-white hover:bg-green-600 transition transform hover:scale-110"
           >
             <FaPhone size={20} />

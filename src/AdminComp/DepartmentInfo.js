@@ -3,6 +3,7 @@ import AdminSidebar from './AdminSidebar';
 import AdminHeader from './AdminHeader';
 import AdminFooter from './AdminFooter';
 import axios from 'axios'; // For API requests
+import Swal from 'sweetalert2'; // Import SweetAlert
 
 const DepartmentInfo = () => {
   const [documents, setDocuments] = useState([]);
@@ -27,12 +28,18 @@ const DepartmentInfo = () => {
 
   // Add a new document
   const handleAddDocument = async () => {
+    if (!newDocument.type || !newDocument.url) {
+      Swal.fire('Error', 'Both fields are required before adding a document.', 'error');
+      return; // Exit the function if fields are empty
+    }
     try {
       await axios.post('http://localhost:8080/api/department-info', newDocument);
+      Swal.fire('Success', 'Document added successfully!', 'success');
       fetchDocuments(); // Refresh the data after adding
       setNewDocument({ type: '', url: '' }); // Reset the form
     } catch (error) {
       console.error('Error adding document:', error);
+      Swal.fire('Error', 'There was a problem adding the document.', 'error');
     }
   };
 
@@ -40,10 +47,12 @@ const DepartmentInfo = () => {
   const handleEditDocument = async (id) => {
     try {
       await axios.put(`http://localhost:8080/api/department-info/${id}`, editingDocument);
+      Swal.fire('Success', 'Document edited successfully!', 'success');
       fetchDocuments(); // Refresh the data after editing
       setIsEditing(null); // Exit editing mode
     } catch (error) {
       console.error('Error editing document:', error);
+      Swal.fire('Error', 'There was a problem editing the document.', 'error');
     }
   };
 
@@ -51,9 +60,11 @@ const DepartmentInfo = () => {
   const handleDeleteDocument = async (id) => {
     try {
       await axios.delete(`http://localhost:8080/api/department-info/${id}`);
+      Swal.fire('Success', 'Document deleted successfully!', 'success');
       fetchDocuments(); // Refresh the data after deleting
     } catch (error) {
       console.error('Error deleting document:', error);
+      Swal.fire('Error', 'There was a problem deleting the document.', 'error');
     }
   };
 
@@ -119,71 +130,72 @@ const DepartmentInfo = () => {
           </div>
 
           {/* Documents Table */}
-          <table className="min-w-full table-auto border-collapse">
-            <thead>
-              <tr>
-                <th className="border px-4 py-2">Sr. No.</th>
-                <th className="border px-4 py-2">Type</th>
-                <th className="border px-4 py-2">Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {documents.map((doc, index) => (
-                <tr key={doc.id}>
-                  <td className="border px-4 py-2">{index + 1}</td>
-                  <td className="border px-4 py-2">
-                    {isEditing === doc.id ? (
-                      <input
-                        type="text"
-                        value={editingDocument.type}
-                        onChange={(e) => setEditingDocument({ ...editingDocument, type: e.target.value })}
-                        className="border p-2"
-                      />
-                    ) : (
-                      doc.type
-                    )}
-                  </td>
-                  <td className="border px-4 py-2">
-                    {isEditing === doc.id ? (
-                      <>
-                        <button
-                          onClick={() => handleEditDocument(doc.id)}
-                          className="bg-blue-500 text-white px-2 py-1 mr-2"
-                        >
-                          Save
-                        </button>
-                        <button onClick={() => setIsEditing(null)} className="bg-red-500 text-white px-2 py-1">
-                          Cancel
-                        </button>
-                      </>
-                    ) : (
-                      <>
-                        <a
-                          href={doc.url}
-                          download
-                          className="text-blue-500 hover:underline mr-2"
-                        >
-                          Download
-                        </a>
-                        <button
-                          onClick={() => setIsEditing(doc.id)}
-                          className="bg-yellow-500 text-white px-2 py-1 mr-2"
-                        >
-                          Edit
-                        </button>
-                        <button
-                          onClick={() => handleDeleteDocument(doc.id)}
-                          className="bg-red-500 text-white px-2 py-1"
-                        >
-                          Delete
-                        </button>
-                      </>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <table className="min-w-full border border-gray-300 rounded-lg overflow-hidden">
+  <thead className="bg-blue-500 text-white">
+    <tr>
+      <th className="border px-4 py-2 text-center">Sr. No.</th>
+      <th className="border px-4 py-2 text-center">Type</th>
+      <th className="border px-4 py-2 text-center">Action</th>
+    </tr>
+  </thead>
+  <tbody>
+    {documents.map((doc, index) => (
+      <tr key={doc.id}>
+        <td className="border px-4 py-2 text-center">{index + 1}</td>
+        <td className="border px-4 py-2 text-center">
+          {isEditing === doc.id ? (
+            <input
+              type="text"
+              value={editingDocument.type}
+              onChange={(e) => setEditingDocument({ ...editingDocument, type: e.target.value })}
+              className="border p-2"
+            />
+          ) : (
+            doc.type
+          )}
+        </td>
+        <td className="border px-4 py-2 text-center">
+          {isEditing === doc.id ? (
+            <>
+              <button
+                onClick={() => handleEditDocument(doc.id)}
+                className="bg-blue-500 text-white px-2 py-1 mr-2"
+              >
+                Save
+              </button>
+              <button onClick={() => setIsEditing(null)} className="bg-red-500 text-white px-2 py-1">
+                Cancel
+              </button>
+            </>
+          ) : (
+            <>
+              <a
+                href={doc.url}
+                download
+                className="text-blue-500 hover:underline mr-2"
+              >
+                Download
+              </a>
+              <button
+                onClick={() => setIsEditing(doc.id)}
+                className="bg-yellow-500 text-white px-2 py-1 mr-2"
+              >
+                Edit
+              </button>
+              <button
+                onClick={() => handleDeleteDocument(doc.id)}
+                className="bg-red-500 text-white px-2 py-1"
+              >
+                Delete
+              </button>
+            </>
+          )}
+        </td>
+      </tr>
+    ))}
+  </tbody>
+</table>
+
         </div>
         <AdminFooter />
       </div>

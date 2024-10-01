@@ -197,27 +197,36 @@ const NonOfficialMainTypeMaster = () => {
                     <tr key={type.id}>
                       <td className="border border-gray-300 p-2">{index + 1}</td>
                       <td className="border border-gray-300 p-2">{type.mainType}</td>
-                      <td className="border border-gray-300 p-2">{type.status}</td>
-                      <td className="border border-gray-300 p-2 flex gap-2">
-                        <button
-                          className="text-yellow-500 hover:text-yellow-700 transition-all"
-                          onClick={() => handleEdit(type.id)}
-                        >
-                          <FaEdit />
-                        </button>
-                        <button
-                          className="text-red-500 hover:text-red-700 transition-all"
-                          onClick={() => handleDelete(type.id)}
-                        >
-                          <FaTrash />
-                        </button>
-                        <button
-                          className={`text-${type.status === "Active" ? "green" : "gray"}-500 hover:text-${type.status === "Active" ? "green" : "gray"}-700 transition-all`}
-                          onClick={() => toggleStatus(type.id)}
-                        >
-                          {type.status === "Active" ? <FaCheck /> : <FaTimes />}
-                        </button>
-                      </td>
+                      <td className="border border-gray-300 p-2">
+  <span
+    className={`inline-flex items-center px-2 py-1 text-sm font-bold rounded-full ${
+      type.status === "Active" ? "bg-green-200 text-green-800" : "bg-red-200 text-red-800"
+    }`}
+  >
+    {type.status} {type.status === "Active" ? <FaCheck className="ml-1" /> : <FaTimes className="ml-1" />}
+  </span>
+</td>
+<td className="border border-gray-300 p-2 flex gap-2">
+  <button
+    className="text-yellow-500 hover:text-yellow-700 transition-all"
+    onClick={() => handleEdit(type.id)}
+  >
+    <FaEdit />
+  </button>
+  <button
+    className="text-red-500 hover:text-red-700 transition-all"
+    onClick={() => handleDelete(type.id)}
+  >
+    <FaTrash />
+  </button>
+  <button
+    onClick={() => toggleStatus(type.id)}
+    className={`text-${type.status === "Active" ? "red" : "green"}-600 hover:underline mx-2`}
+  >
+    {type.status === "Active" ? <FaTimes /> : <FaCheck />}
+  </button>
+</td>
+
                     </tr>
                   ))}
                 </tbody>

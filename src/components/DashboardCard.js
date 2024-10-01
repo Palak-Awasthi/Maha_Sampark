@@ -5,24 +5,43 @@ function DashboardCard({
   icon,
   gradientFrom,
   onClick,
-  padding,
+  padding = 'p-5',
   customClass = '',
   iconSize = 30,
-  status, // Optional status prop
+  description = '', // New description prop
+  status = '', // Optional status prop
 }) {
   return (
-    <div 
-      className={`cursor-pointer ${gradientFrom} text-white rounded-lg shadow-lg p-6 flex items-center ${padding} ${customClass} transition duration-200 hover:scale-105 hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2`}
+    <div
+      className={`cursor-pointer relative ${gradientFrom} text-white rounded-lg shadow-lg border border-gray-300 overflow-hidden ${customClass} transition-all duration-300 transform hover:scale-105 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2`}
       onClick={onClick}
       role="button"
       tabIndex={0} // Allows keyboard navigation
       onKeyDown={(e) => e.key === 'Enter' && onClick()} // Activate on Enter key
     >
-      <div className="mr-4" style={{ fontSize: `${iconSize}px` }}>
-        {icon}
+      <div className={`flex flex-col items-start ${padding}`}>
+        {/* Icon and Title */}
+        <div className="flex items-center mb-4">
+          <div className="mr-4 flex-shrink-0" style={{ fontSize: `${iconSize}px` }}>
+            {icon}
+          </div>
+          <h4 className="text-2xl font-bold">{title}</h4>
+        </div>
+
+        {/* Description */}
+        {description && (
+          <p className="text-sm text-gray-100">
+            {description}
+          </p>
+        )}
+
+        {/* Optional Status Badge */}
+        {status && (
+          <span className="absolute top-2 right-2 bg-green-500 text-white text-xs font-bold px-3 py-1 rounded-full">
+            {status}
+          </span>
+        )}
       </div>
-      <h4 className="text-lg font-semibold">{title}</h4>
-      {status && <span className={`ml-2 bg-green-500 text-white text-xs font-bold px-2 py-1 rounded-full`}>{status}</span>} {/* Optional Status Badge */}
     </div>
   );
 }

@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { FaSyncAlt } from "react-icons/fa";
+import { FaSyncAlt, FaTrash } from "react-icons/fa";
 import { ToastContainer, toast } from "react-toastify";
+import Swal from "sweetalert2"; // Import SweetAlert
 import 'react-toastify/dist/ReactToastify.css';
 import AdminHeader from "../AdminHeader";
 import AdminFooter from "../AdminFooter";
@@ -13,23 +14,24 @@ const MaharashtraGovtOfficers = () => {
   const [searchQuery, setSearchQuery] = useState({
     name: "",
     officeName: "",
-    districtName: "",
-    talukaName: "",
+    postingDistrictLocation: "",
+    postingTaluka: "",
     stdCode: "",
     landline: "",
   });
 
   const [debounceTimeout, setDebounceTimeout] = useState(null);
 
-  // Sample dropdown data
-  const officeNames = ["Office A", "Office B", "Office C"];
-  const districtNames = ["District 1", "District 2", "District 3"];
-  const talukaNames = ["Taluka 1", "Taluka 2", "Taluka 3"];
-  const stdCodes = ["021", "022", "023"];
-  const landlines = ["123456", "234567", "345678"];
+  // Dropdown data state
+  const [officeNames, setOfficeNames] = useState([]);
+  const [postingDistrictLocation, setpostingDistrictLocation] = useState([]);
+  const [talukaNames, setTalukaNames] = useState([]);
+  const [stdCodes, setStdCodes] = useState([]);
+  const [landlines, setLandlines] = useState([]);
 
   useEffect(() => {
     fetchProfiles();
+    fetchDropdownData(); // Fetch dropdown data on component mount
   }, []);
 
   const fetchProfiles = async () => {
@@ -40,6 +42,24 @@ const MaharashtraGovtOfficers = () => {
     } catch (error) {
       console.error("Error fetching profiles:", error);
       toast.error("Failed to fetch profiles.");
+    }
+  };
+
+  const fetchDropdownData = async () => {
+    try {
+      const response = await axios.get("http://localhost:8080/api/gom");
+      // Assuming response.data contains the required dropdown data
+      const dropdownData = response.data;
+
+      // Populate dropdowns
+      setOfficeNames([...new Set(dropdownData.map(item => item.officeName))]);
+      setpostingDistrictLocation([...new Set(dropdownData.map(item => item.postingDistrictLocation))]);
+      setTalukaNames([...new Set(dropdownData.map(item => item.postingTaluka))]);
+      setStdCodes([...new Set(dropdownData.map(item => item.stdcode))]);
+      setLandlines([...new Set(dropdownData.map(item => item.landline))]);
+    } catch (error) {
+      console.error("Error fetching dropdown data:", error);
+      toast.error("Failed to fetch dropdown data.");
     }
   };
 
@@ -83,12 +103,35 @@ const MaharashtraGovtOfficers = () => {
     setFilteredProfiles(profiles);
   };
 
+  const handleDelete = async (id) => {
+    const confirmDelete = await Swal.fire({
+      title: "Are you sure?",
+      text: "You won't be able to revert this!",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Yes, delete it!",
+      cancelButtonText: "No, cancel!",
+    });
+
+    if (confirmDelete.isConfirmed) {
+      try {
+        await axios.delete(`http://localhost:8080/api/gom/${id}`);
+        setProfiles(profiles.filter(profile => profile.id !== id));
+        setFilteredProfiles(filteredProfiles.filter(profile => profile.id !== id));
+        toast.success("Profile deleted successfully!");
+      } catch (error) {
+        console.error("Error deleting profile:", error);
+        toast.error("Failed to delete profile.");
+      }
+    }
+  };
+
   return (
-    <div className="flex">
+    <div className="flex min-h-screen">
       <AdminSidebar />
-      <div className="flex-1">
+      <div className="flex-1 flex flex-col">
         <AdminHeader />
-        <div className="container mx-auto p-4">
+        <div className="container mx-auto p-4 flex-grow">
           <div className="flex flex-col md:flex-row md:justify-between items-start md:items-center mb-6">
             <div className="text-2xl sm:text-3xl font-bold">Maharashtra Govt Officers Profile List</div>
             <button
@@ -146,7 +189,7 @@ const MaharashtraGovtOfficers = () => {
                   className="border p-2 rounded-md w-full"
                 >
                   <option value="">Select District</option>
-                  {districtNames.map((district) => (
+                  {postingDistrictLocation.map((district) => (
                     <option key={district} value={district}>
                       {district}
                     </option>
@@ -211,59 +254,56 @@ const MaharashtraGovtOfficers = () => {
             </div>
           </div>
 
-          {/* HTML Table */}
           <div className="overflow-x-auto max-h-96">
             <table className="min-w-full bg-white">
               <thead>
                 <tr className="bg-blue-500 text-white">
-                  <th className="w-1/12 py-2">ID</th>
-                  <th className="w-2/12 py-2">Name</th>
-                  <th className="w-2/12 py-2">Designation</th>
-                  <th className="w-2/12 py-2">Mobile Number 1</th>
-                  <th className="w-2/12 py-2">Mobile Number 2</th>
-                  <th className="w-2/12 py-2">Posting District Location</th>
-                  <th className="w-2/12 py-2">Posting Taluka</th>
-                  <th className="w-2/12 py-2">Office Name</th>
-                  <th className="w-2/12 py-2">STD Code</th>
-                  <th className="w-2/12 py-2">Landline</th>
-                  <th className="w-2/12 py-2">Date of Birth</th>
-                  <th className="w-2/12 py-2">Other Information</th>
-                  <th className="w-2/12 py-2">Department</th>
+                  <th className="py-2 px-4">ID</th>
+                  <th className="py-2 px-4">Name</th>
+                  <th className="py-2 px-4">Designation</th>
+                  <th className="py-2 px-4">Mobile No 1</th>
+                  <th className="py-2 px-4">Mobile No 2</th>
+                  <th className="py-2 px-4">Posting District Location</th>
+                  <th className="py-2 px-4">Posting Taluka</th>
+                  <th className="py-2 px-4">Office Name</th>
+                  <th className="py-2 px-4">STD Code</th>
+                  <th className="py-2 px-4">Landline</th>
+                  
+                  <th className="py-2 px-4">Action</th> {/* New Action Column */}
                 </tr>
               </thead>
               <tbody>
-                {filteredProfiles.length > 0 ? (
-                  filteredProfiles.map((profile) => (
-                    <tr key={profile.id} className="border-b">
-                      <td className="text-center py-2">{profile.id}</td>
-                      <td className="text-center py-2">{profile.name}</td>
-                      <td className="text-center py-2">{profile.designation}</td>
-                      <td className="text-center py-2">{profile.mobileNumber1}</td>
-                      <td className="text-center py-2">{profile.mobileNumber2}</td>
-                      <td className="text-center py-2">{profile.postingDistrictLocation}</td>
-                      <td className="text-center py-2">{profile.postingTaluka}</td>
-                      <td className="text-center py-2">{profile.officeName}</td>
-                      <td className="text-center py-2">{profile.stdCode}</td>
-                      <td className="text-center py-2">{profile.landline}</td>
-                      <td className="text-center py-2">{profile.dateOfBirth}</td>
-                      <td className="text-center py-2">{profile.otherInformation}</td>
-                      <td className="text-center py-2">{profile.department}</td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan="12" className="text-center py-2">
-                      No records found.
+                {filteredProfiles.map((profile) => (
+                  <tr key={profile.id} className="hover:bg-gray-100">
+                    <td className="border-t py-2 px-4">{profile.id}</td>
+                    <td className="border-t py-2 px-4">{profile.name}</td>
+                    <td className="border-t py-2 px-4">{profile.designation}</td>
+                    <td className="border-t py-2 px-4">{profile.mobileNumber1}</td>
+                    <td className="border-t py-2 px-4">{profile.mobileNumber2}</td>
+                    <td className="border-t py-2 px-4">{profile.postingDistrictLocation}</td>
+                    <td className="border-t py-2 px-4">{profile.postingTaluka}</td>
+                    <td className="border-t py-2 px-4">{profile.officeName}</td>
+                    <td className="border-t py-2 px-4">{profile.stdcode}</td>
+                    <td className="border-t py-2 px-4">{profile.landline}</td>
+                   
+                    <td className="border-t py-2 px-4">
+                      <button
+                        onClick={() => handleDelete(profile.id)}
+                        className="text-red-500 hover:text-red-700"
+                        title="Delete"
+                      >
+                        <FaTrash />
+                      </button>
                     </td>
                   </tr>
-                )}
+                ))}
               </tbody>
             </table>
           </div>
-          <ToastContainer />
         </div>
         <AdminFooter />
       </div>
+      <ToastContainer />
     </div>
   );
 };

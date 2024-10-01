@@ -264,9 +264,11 @@ const TalukaMaster = () => {
           <thead className="bg-blue-500 text-white">
                 <tr className="bg-blue-500 text-white">
                   <th className="py-2 px-4">SR No.</th>
-                  <th className="py-2 px-4">Taluka Name</th>
-                  <th className="py-2 px-4">District Name</th>
+                  
+                  
                   <th className="py-2 px-4">State Name</th>
+                  <th className="py-2 px-4">District Name</th>
+                  <th className="py-2 px-4">Taluka Name</th>
                   <th className="py-2 px-4">Status</th>
                   <th className="py-2 px-4">Actions</th>
                 </tr>
@@ -280,23 +282,35 @@ const TalukaMaster = () => {
                   filteredTalukas.map((taluka, index) => (
                     <tr key={taluka.id} className="border-b">
                       <td className="py-2 px-4">{index + 1}</td>
-                      <td className="py-2 px-4">{taluka.talukaName}</td>
-                      <td className="py-2 px-4">{taluka.districtName}</td>
+                      
+                      
                       <td className="py-2 px-4">{taluka.state}</td>
-                      <td className={`py-2 px-4 ${taluka.status === 'Active' ? 'text-green-600' : 'text-red-600'}`}>
-                        {taluka.status}
-                      </td>
-                      <td className="py-2 px-4 flex space-x-2">
-                        <button onClick={() => handleEditTaluka(taluka.id)} className="text-blue-600 hover:underline">
-                          <FaEdit />
-                        </button>
-                        <button onClick={() => toggleStatus(taluka.id)} className="text-yellow-600 hover:underline">
-                          {taluka.status === 'Active' ? <FaTimes /> : <FaCheck />}
-                        </button>
-                        <button onClick={() => handleDeleteTaluka(taluka.id)} className="text-red-600 hover:underline">
-                          <FaTrash />
-                        </button>
-                      </td>
+                      <td className="py-2 px-4">{taluka.districtName}</td>
+                      <td className="py-2 px-4">{taluka.talukaName}</td>
+                     <td className="border border-gray-300 p-2">
+  <span
+    className={`inline-flex items-center px-2 py-1 text-sm font-bold rounded-full ${
+      taluka.status === "Active" ? "bg-green-200 text-green-800" : "bg-red-200 text-red-800"
+    }`}
+  >
+    {taluka.status} {taluka.status === "Active" ? <FaCheck className="ml-1" /> : <FaTimes className="ml-1" />}
+  </span>
+</td>
+<td className="border border-gray-300 px-4 py-2 flex space-x-2">
+  <button onClick={() => handleEditTaluka(taluka.id)} className="text-blue-600 hover:underline">
+    <FaEdit />
+  </button>
+  <button
+    onClick={() => toggleStatus(taluka.id)}
+    className={`text-${taluka.status === "Active" ? "red" : "green"}-600 hover:underline`}
+  >
+    {taluka.status === "Active" ? <FaTimes /> : <FaCheck />}
+  </button>
+  <button onClick={() => handleDeleteTaluka(taluka.id)} className="text-red-600 hover:underline">
+    <FaTrash />
+  </button>
+</td>
+
                     </tr>
                   ))
                 ) : (
