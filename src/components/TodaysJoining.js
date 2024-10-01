@@ -14,7 +14,7 @@ function TodaysJoining() {
       }
       const data = await response.json(); // Parse JSON response
       console.log('API Response:', data); // Log the response for debugging
-      setJoinings(data); // Update state with the fetched data
+      setJoinings(data); 
     } catch (error) {
       setError(error.message); // Set error state if there's an issue
     } finally {
