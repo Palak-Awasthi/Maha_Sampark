@@ -1,7 +1,19 @@
+// Sidebar.js
 import React from 'react';
 import { FaUserTie, FaBuilding, FaNewspaper, FaBirthdayCake, FaUser, FaSignOutAlt, FaBars, FaFileAlt } from 'react-icons/fa';
+import { useNavigate } from 'react-router-dom'; // Import useNavigate
 
 function Sidebar({ isOpen, toggleSidebar, onSelectSection }) {
+  const navigate = useNavigate(); // Initialize navigate
+
+  const handleLogout = () => {
+    if (window.confirm("Are you sure you want to log out?")) {
+      // Clear user authentication data
+      localStorage.removeItem('authToken');
+      navigate('/'); // Redirect to the login page
+    }
+  };
+
   return (
     <aside
       className={`fixed top-0 left-0 h-full bg-blue-800 p-6 text-white transition-transform duration-300 transform ${
@@ -30,8 +42,8 @@ function Sidebar({ isOpen, toggleSidebar, onSelectSection }) {
         <SidebarLink label="News" icon={<FaNewspaper />} onClick={() => onSelectSection('news')} />
         <SidebarLink label="Today's Birthday" icon={<FaBirthdayCake />} onClick={() => onSelectSection('todays-birthday')} />
         <SidebarLink label="Today's Joining" icon={<FaBirthdayCake />} onClick={() => onSelectSection('todays-joining')} />
-        <SidebarLink label="Feedback" icon={<FaBirthdayCake />} onClick={() => onSelectSection('feedback')} />
-        <SidebarLink label="Sign Out" icon={<FaSignOutAlt />} onClick={() => onSelectSection('signout')} />
+        <SidebarLink label="Feedback" icon={<FaFileAlt />} onClick={() => onSelectSection('feedback')} />
+        <SidebarLink label="Sign Out" icon={<FaSignOutAlt />} onClick={handleLogout} />
       </ul>
     </aside>
   );

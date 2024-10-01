@@ -82,6 +82,7 @@ function AdminSidebar() {
                     <li className="p-2 hover:bg-blue-700 transition">
                       <Link to="/staffmaster">Staff Designation</Link>
                     </li>
+                    
                   </ul>
                 )}
               </li>
@@ -190,6 +191,18 @@ function AdminSidebar() {
             Department Info
           </Link>
         </li>
+        <li>
+          <Link
+            to="/"
+            className={`flex items-center p-3 rounded-md hover:bg-blue-700 transition ${isActive(
+              '/'
+            )}`}
+          >
+            <FaInfoCircle className="mr-3" />
+            LogOut
+          </Link>
+        </li>
+
         
        
 

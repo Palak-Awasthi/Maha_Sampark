@@ -8,6 +8,7 @@ const Feedback = () => {
     });
     const [error, setError] = useState(null);
     const [success, setSuccess] = useState(null);
+    const [loading, setLoading] = useState(false);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -21,6 +22,7 @@ const Feedback = () => {
         e.preventDefault();
         setError(null);
         setSuccess(null);
+        setLoading(true);
 
         try {
             const response = await axios.post('http://localhost:8080/api/feedback', feedbackData);
@@ -36,13 +38,15 @@ const Feedback = () => {
             } else {
                 setError(`Error: ${err.message}`);
             }
+        } finally {
+            setLoading(false);
         }
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-blue-100 rounded-xl shadow-lg p-6">
-            <div className="bg-white rounded-lg shadow-lg p-8 max-w-md w-full">
-                <h2 className="text-2xl font-bold text-center text-blue-600 mb-4">Feedback Form</h2>
+        <div className=" flex items-center justify-center bg-gradient-to-br from-blue-100 to-blue-400 p-6">
+            <div className="bg-white rounded-lg shadow-lg p-8 max-w-md w-full transition-transform transform hover:scale-105 duration-300">
+                <h2 className="text-3xl font-bold text-center text-blue-600 mb-4">Feedback Form</h2>
                 <form onSubmit={handleSubmit}>
                     <div className="mb-4">
                         <label htmlFor="title" className="block text-gray-700 font-semibold mb-2">Title:</label>
@@ -70,9 +74,10 @@ const Feedback = () => {
                     </div>
                     <button
                         type="submit"
-                        className="w-full bg-blue-600 text-white font-semibold py-3 rounded-md hover:bg-blue-700 transition duration-200"
+                        disabled={loading}
+                        className={`w-full bg-blue-600 text-white font-semibold py-3 rounded-md ${loading ? 'opacity-50 cursor-not-allowed' : 'hover:bg-blue-700'} transition duration-200`}
                     >
-                        Submit Feedback
+                        {loading ? 'Submitting...' : 'Submit Feedback'}
                     </button>
                 </form>
 

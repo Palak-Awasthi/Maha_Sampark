@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
+import Swal from "sweetalert2"; // Import SweetAlert2
 import AdminSidebar from "./AdminSidebar";
 import AdminHeader from "./AdminHeader";
 import AdminFooter from "./AdminFooter";
@@ -52,17 +53,17 @@ const RegisteredUsersList = () => {
   // Update role type and approval status for a user
   const handleUpdateUser = async (id) => {
     const updatedUser = {
-      roletype: selectedroletype[id] || "", // Use existing if not changed
-      approveStatus: selectedApprovalStatus[id] || "", // Use existing if not changed
+      roletype: selectedroletype[id] || "",
+      approveStatus: selectedApprovalStatus[id] || "",
     };
 
     try {
-      const response = await axios.put(`http://localhost:8080/api/registrations/update/${id}`, updatedUser);
-      alert('User updated successfully!'); // Optional success message
+      await axios.put(`http://localhost:8080/api/registrations/update/${id}`, updatedUser);
+      Swal.fire("Success", "User updated successfully!", "success"); // Success alert
       fetchUsersData(); // Refresh the data after update
     } catch (err) {
       console.error("Error updating user:", err);
-      setError("Error updating user.");
+      Swal.fire("Error", "Error updating user.", "error"); // Error alert
     }
   };
 
@@ -78,6 +79,30 @@ const RegisteredUsersList = () => {
       ...selectedApprovalStatus,
       [id]: approveStatus,
     });
+  };
+
+  // Delete user function
+  const handleDeleteUser = async (id) => {
+    const result = await Swal.fire({
+      title: 'Are you sure?',
+      text: "You won't be able to revert this!",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Yes, delete it!',
+    });
+
+    if (result.isConfirmed) {
+      try {
+        await axios.delete(`http://localhost:8080/api/registrations/delete/${id}`);
+        Swal.fire("Deleted!", "User deleted successfully.", "success"); // Success alert
+        fetchUsersData(); // Refresh the data after deletion
+      } catch (err) {
+        console.error("Error deleting user:", err);
+        Swal.fire("Error", "Error deleting user.", "error"); // Error alert
+      }
+    }
   };
 
   return (
@@ -99,7 +124,7 @@ const RegisteredUsersList = () => {
               <option value="">Select Role Type</option>
               <option value="MCS Officers">MCS Officers</option>
               <option value="AIS Officers">AIS Officers</option>
-              <option value="Special Role">Special Role</option>
+              <option value="GOM Officers">GOM Officers</option>
             </select>
 
             <select
@@ -169,7 +194,7 @@ const RegisteredUsersList = () => {
                         <option value="">Select Role</option>
                         <option value="MCS Officers">MCS Officers</option>
                         <option value="AIS Officers">AIS Officers</option>
-                        <option value="Special Role">Special Role</option>
+                        <option value="GOM Officers">GOM Officers</option>
                       </select>
                     </td>
                     <td className="border px-4 py-2">
@@ -185,15 +210,20 @@ const RegisteredUsersList = () => {
                       </select>
                     </td>
                     <td className="border px-4 py-2">
-                      <button
-                        onClick={() => handleUpdateUser(user.id)}
-                        className="bg-yellow-500 text-white px-2 py-1 rounded mr-2"
-                      >
-                        Update
-                      </button>
-                      <button className="bg-red-500 text-white px-2 py-1 rounded">
-                        Delete
-                      </button>
+                      <div className="flex space-x-2"> {/* Added flexbox for side-by-side alignment */}
+                        <button
+                          onClick={() => handleUpdateUser(user.id)}
+                          className="bg-yellow-500 text-white px-2 py-1 rounded"
+                        >
+                          Update
+                        </button>
+                        <button
+                          onClick={() => handleDeleteUser(user.id)} // Ensure to define handleDeleteUser function
+                          className="bg-red-500 text-white px-2 py-1 rounded"
+                        >
+                          Delete
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}

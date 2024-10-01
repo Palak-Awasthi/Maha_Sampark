@@ -274,28 +274,30 @@ const handleToggleStatus = async (id) => {
                       <td className="border border-gray-300 p-2">{posting.designation}</td>
                       <td className="border border-gray-300 p-2">{posting.post}</td>
                       <td className="border border-gray-300 p-2">
-                      <span className="p-1">
-    {posting.status}
-  </span>
+                        <span
+                          className={`inline-flex items-center px-2 py-1 text-sm font-bold rounded-full ${
+                            posting.status === "Active" ? "bg-green-200 text-green-800" : "bg-red-200 text-red-800"
+                          }`}
+                        >
+                          {posting.status} {posting.status === "Active" ? <FaCheck className="ml-1" /> : <FaTimes className="ml-1" />}
+                        </span>
                       </td>
-                      <td className="border border-gray-300 p-2">
+                      <td className="border border-gray-300 px-4 py-2">
                         <button
                           onClick={() => handleEditPosting(posting.id)}
-                          className="text-blue-500 hover:text-blue-700 mr-2"
+                          className="text-blue-600 hover:underline mx-2"
                         >
                           <FaEdit />
                         </button>
                         <button
                           onClick={() => handleDeletePosting(posting.id)}
-                          className="text-red-500 hover:text-red-700 mr-2"
+                          className="text-red-600 hover:underline mx-2"
                         >
                           <FaTrash />
                         </button>
                         <button
                           onClick={() => handleToggleStatus(posting.id)}
-                          className={`text-${
-                            posting.status === "Active" ? "green-500 hover:text-green-700" : "yellow-500 hover:text-yellow-700"
-                          }`}
+                          className={`text-${posting.status === "Active" ? "red" : "green"}-600 hover:underline mx-2`}
                         >
                           {posting.status === "Active" ? <FaTimes /> : <FaCheck />}
                         </button>

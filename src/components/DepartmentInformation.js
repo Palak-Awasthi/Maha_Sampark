@@ -29,7 +29,7 @@ const DepartmentInformationUser = () => {
   );
 
   return (
-    <div className="p-6 bg-blue-100 min-h-screen rounded-lg shadow-lg">
+    <div className="p-6 bg-gradient-to-br from-blue-100 to-blue-400 min-h-screen rounded-lg shadow-lg">
     <h2 className="text-3xl font-bold mb-6 text-blue-600">Departments Information</h2>
 
       {/* Search Bar */}

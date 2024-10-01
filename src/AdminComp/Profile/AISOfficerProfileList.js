@@ -1,26 +1,61 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { FaSyncAlt, FaEye, FaEdit, FaTrash } from "react-icons/fa";
+import { FaSyncAlt, FaTrash } from "react-icons/fa";
 import AdminHeader from "../AdminHeader";
 import AdminFooter from "../AdminFooter";
 import AdminSidebar from "../AdminSidebar";
 import { ToastContainer, toast } from "react-toastify";
 import 'react-toastify/dist/ReactToastify.css';
+import Swal from "sweetalert2"; // Import SweetAlert
+
+const inputConfig = {
+  name: { type: "text", placeholder: "Enter Name" },
+  designation: {
+    type: "select",
+    options: [],
+    placeholder: "Select Designation"
+  },
+  cadreState: {
+    type: "select",
+    options: [],
+    placeholder: "Select Cadre"
+  },
+  postingState: {
+    type: "select",
+    options: [],
+    placeholder: "Select Posting State"
+  },
+  postingDistrictLocation: {
+    type: "select",
+    options: [],
+    placeholder: "Select Posting District Location"
+  },
+  batchYearOfAppointment: {
+    type: "select",
+    options: [],
+    placeholder: "Select Batch Year of Appointment"
+  },
+  homeState: {
+    type: "select",
+    options: [],
+    placeholder: "Select Home State"
+  },
+  payMatrixLevel: {
+    type: "select",
+    options: [],
+    placeholder: "Select Pay Matrix Level"
+  },
+  sourceOfRecruitment: {
+    type: "select",
+    options: [],
+    placeholder: "Select Source of Recruitment"
+  }
+};
 
 const AISOfficerProfileList = () => {
   const [profiles, setProfiles] = useState([]);
   const [filteredProfiles, setFilteredProfiles] = useState([]);
-  const [formState, setFormState] = useState({
-    name: "",
-    designation: "",
-    cadre: "",
-    postingState: "",
-    postingDistrictLocation: "",
-    batchYearOfAppointment: "",
-    homeState: "",
-    payMatrixLevel: "",
-    sourceOfRecruitment: "",
-  });
+  const [formState, setFormState] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -70,17 +105,7 @@ const AISOfficerProfileList = () => {
   };
 
   const resetForm = () => {
-    setFormState({
-      name: "",
-      designation: "",
-      cadre: "",
-      postingState: "",
-      postingDistrictLocation: "",
-      batchYearOfAppointment: "",
-      homeState: "",
-      payMatrixLevel: "",
-      sourceOfRecruitment: "",
-    });
+    setFormState({});
     fetchProfiles();
   };
 
@@ -92,24 +117,25 @@ const AISOfficerProfileList = () => {
     toast.error(message);
   };
 
-  const handleView = (id) => {
-    console.log(`View profile with ID: ${id}`);
-  };
-
-  const handleEdit = (id) => {
-    console.log(`Edit profile with ID: ${id}`);
-  };
-
   const handleDelete = async (id) => {
-    const confirmDelete = window.confirm("Are you sure you want to delete this profile?");
-    if (!confirmDelete) return;
+    const confirmDelete = await Swal.fire({
+      title: 'Are you sure?',
+      text: "You won't be able to revert this!",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#3085d6',
+      cancelButtonColor: '#d33',
+      confirmButtonText: 'Yes, delete it!'
+    });
 
-    try {
-      await axios.delete(`http://localhost:8080/api/ais/${id}`);
-      toast.success("Profile deleted successfully.");
-      fetchProfiles();
-    } catch (error) {
-      handleError(error);
+    if (confirmDelete.isConfirmed) {
+      try {
+        await axios.delete(`http://localhost:8080/api/ais/${id}`);
+        toast.success("Profile deleted successfully.");
+        fetchProfiles();
+      } catch (error) {
+        handleError(error);
+      }
     }
   };
 
@@ -120,7 +146,7 @@ const AISOfficerProfileList = () => {
         <AdminSidebar />
         <div className="flex-1 flex flex-col max-w-7xl mx-auto">
           <AdminHeader />
-          <div className="container mx-auto p-4 max-w-7xl">
+          <div className="container mx-auto p-4 max-w-7xl flex-grow">
             <div className="flex flex-col md:flex-row md:justify-between items-start md:items-center mb-6">
               <div className="text-2xl sm:text-3xl font-bold">AIS Officers Profile List</div>
               <button
@@ -131,102 +157,53 @@ const AISOfficerProfileList = () => {
                 <FaSyncAlt />
               </button>
             </div>
-          
+
             {/* Main Content */}
             <div className="flex-1 flex flex-col p-6 overflow-hidden">
-              
               {/* Search Profile Section */}
               <div className="bg-white rounded-lg shadow-md mb-4 p-4">
                 <div className="bg-blue-500 text-white p-2 rounded-md">
                   <h3 className="text-lg font-semibold">Search Profiles</h3>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2">
-                  {Object.keys(formState).map((key) => (
-                    <div className="flex flex-col" key={key}>
-                      <label className="font-bold">{key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}</label>
-                      {key === "name" ? (
-                        <input
-                          type="text"
-                          name={key}
-                          value={formState[key]}
-                          onChange={handleInputChange}
-                          className="p-2 border rounded-md"
-                          placeholder={`Enter ${key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}`}
-                        />
-                      ) : (
-                        <select
-                          name={key}
-                          value={formState[key]}
-                          onChange={handleInputChange}
-                          className="p-2 border rounded-md"
-                        >
-                          <option value="">Select {key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}</option>
-                          {/* Add options here for each field */}
-                          {key === "designation" && (
-                            <>
-                              <option value="Officer">Officer</option>
-                              <option value="Assistant">Assistant</option>
-                              <option value="Director">Director</option>
-                            </>
-                          )}
-                          {key === "cadre" && (
-                            <>
-                              <option value="Cadre 1">Cadre 1</option>
-                              <option value="Cadre 2">Cadre 2</option>
-                            </>
-                          )}
-                          {key === "postingState" && (
-                            <>
-                              <option value="State 1">State 1</option>
-                              <option value="State 2">State 2</option>
-                            </>
-                          )}
-                          {key === "postingDistrictLocation" && (
-                            <>
-                              <option value="District 1">District 1</option>
-                              <option value="District 2">District 2</option>
-                            </>
-                          )}
-                          {key === "batchYearOfAppointment" && (
-                            <>
-                              <option value="2020">2020</option>
-                              <option value="2021">2021</option>
-                              <option value="2022">2022</option>
-                              <option value="2023">2023</option>
-                            </>
-                          )}
-                          {key === "homeState" && (
-                            <>
-                              <option value="Home State 1">Home State 1</option>
-                              <option value="Home State 2">Home State 2</option>
-                            </>
-                          )}
-                          {key === "payMatrixLevel" && (
-                            <>
-                              <option value="Level 1">Level 1</option>
-                              <option value="Level 2">Level 2</option>
-                              <option value="Level 3">Level 3</option>
-                              <option value="Level 4">Level 4</option>
-                            </>
-                          )}
-                          {key === "sourceOfRecruitment" && (
-                            <>
-                              <option value="Source 1">Source 1</option>
-                              <option value="Source 2">Source 2</option>
-                            </>
-                          )}
-                        </select>
-                      )}
-                    </div>
-                  ))}
+                  {Object.keys(inputConfig).map((key) => {
+                    const { type, placeholder, options } = inputConfig[key];
+                    return (
+                      <div className="flex flex-col" key={key}>
+                        <label className="font-bold">{key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1')}</label>
+                        {type === "text" ? (
+                          <input
+                            type="text"
+                            name={key}
+                            value={formState[key] || ""}
+                            onChange={handleInputChange}
+                            className="p-2 border rounded-md"
+                            placeholder={placeholder}
+                          />
+                        ) : (
+                          <select
+                            name={key}
+                            value={formState[key] || ""}
+                            onChange={handleInputChange}
+                            className="p-2 border rounded-md"
+                          >
+                            <option value="">{placeholder}</option>
+                            {options && options.map((option) => (
+                              <option key={option} value={option}>{option}</option>
+                            ))}
+                          </select>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
 
               {/* Table Section */}
               <div className="flex-grow overflow-auto">
-                <table className="min-w-full bg-white border border-gray-200 overflow-y-auto">
-                  <thead>
-                    <tr className="bg-blue-500 text-white">
+                <table className="min-w-full border border-gray-300 rounded-lg overflow-hidden">
+                  <thead className="bg-blue-500 text-white">
+                    <tr>
                       {["ID", "Name", "Designation", "ID Number", "Present Posting", "Mobile Number 1", "Mobile Number 2", "Batch Year of Appointment", "Cadre State", "Posting State", "Posting District Location", "Date of Birth", "Date of Appointment", "Date of Present Posting", "Home State", "Source of Recruitment", "Pay Matrix Level", "Email ID", "Educational Qualification", "Information Updated Date", "Past Posting", "Other Information", "Actions"].map((header) => (
                         <th className="py-2 px-4 border" key={header}>{header}</th>
                       ))}
@@ -257,17 +234,19 @@ const AISOfficerProfileList = () => {
                         <td className="py-2 px-4 border-b">{profile.informationUpdatedDate}</td>
                         <td className="py-2 px-4 border-b">{profile.pastPosting}</td>
                         <td className="py-2 px-4 border-b">{profile.otherInformation}</td>
-                        <td className="py-2 px-4 border-b flex space-x-2">
-                          <button onClick={() => handleView(profile.id)} className="text-blue-500"><FaEye /></button>
-                          <button onClick={() => handleEdit(profile.id)} className="text-yellow-500"><FaEdit /></button>
-                          <button onClick={() => handleDelete(profile.id)} className="text-red-500"><FaTrash /></button>
+                        <td className="py-2 px-4 border-b">
+                          <button
+                            onClick={() => handleDelete(profile.id)}
+                            className="text-red-500 hover:text-red-700"
+                            title="Delete"
+                          >
+                            <FaTrash />
+                          </button>
                         </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
-                {loading && <p className="text-center">Loading profiles...</p>}
-                {error && <p className="text-red-500 text-center">{error}</p>}
               </div>
             </div>
           </div>

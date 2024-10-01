@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { FaSearch, FaSyncAlt, FaEdit, FaTrash, FaCheck, FaTimes } from "react-icons/fa";
+import { FaSearch, FaSyncAlt, FaEdit, FaTrashAlt, FaCheck,FaTrash, FaTimes } from "react-icons/fa";
 import { toast } from "react-toastify";
-import Swal from "sweetalert2"; // Import SweetAlert2
+import Swal from "sweetalert2";
 import "react-toastify/dist/ReactToastify.css";
-import AdminSidebar from "../AdminSidebar"; // Adjust path as necessary
-import AdminHeader from "../AdminHeader"; // Adjust path as necessary
-import AdminFooter from "../AdminFooter"; // Adjust path as necessary
+import AdminSidebar from "../AdminSidebar"; 
+import AdminHeader from "../AdminHeader"; 
+import AdminFooter from "../AdminFooter"; 
 
 const MainDepartmentMaster = () => {
   const [mainDepartments, setMainDepartments] = useState([]);
@@ -41,7 +41,6 @@ const MainDepartmentMaster = () => {
     setLoading(true);
     try {
       let response;
-
       if (isEditing) {
         const departmentId = isEditing;
         const updatedDepartment = { ...formState };
@@ -113,11 +112,8 @@ const MainDepartmentMaster = () => {
       const newStatus = department.status === "Active" ? "Inactive" : "Active";
       setLoading(true);
       try {
-        // New API format for status change
         await axios.put(`http://localhost:8080/api/main-departments/${id}/status`, newStatus, {
-          headers: {
-            'Content-Type': 'text/plain', // Sending the status as plain text
-          },
+          headers: { 'Content-Type': 'text/plain' }, 
         });
 
         setMainDepartments((prevDepartments) =>
@@ -160,7 +156,6 @@ const MainDepartmentMaster = () => {
       <div className="flex-grow">
         <AdminHeader />
         <div className="container mx-auto p-4">
-          {/* Header Section */}
           <div className="flex justify-between items-center mb-6">
             <div className="text-2xl font-bold text-black">Main Department Master</div>
             <div className="flex items-center">
@@ -178,7 +173,6 @@ const MainDepartmentMaster = () => {
               </button>
             </div>
           </div>
-          {/* Search Bar */}
           {showSearch && (
             <div className="mb-4">
               <input
@@ -190,7 +184,6 @@ const MainDepartmentMaster = () => {
               />
             </div>
           )}
-          {/* Form Section */}
           <form onSubmit={handleSubmit} className="mb-4">
             <div className="flex gap-4">
               <input
@@ -205,7 +198,6 @@ const MainDepartmentMaster = () => {
               </button>
             </div>
           </form>
-          {/* Main Department Table */}
           <div className="overflow-x-auto">
             {loading ? (
               <div>Loading...</div>
@@ -222,29 +214,34 @@ const MainDepartmentMaster = () => {
                 <tbody>
                   {filteredDepartments.map((department, index) => (
                     <tr key={department.id}>
-                      <td className="border border-gray-300 p-2">{index + 1}</td>
-                      <td className="border border-gray-300 p-2">{department.mainDepartment}</td>
-                      <td className="border border-gray-300 p-2">{department.status}</td>
-                      <td className="border border-gray-300 p-2 flex gap-2">
-                        <button
-                          className="text-yellow-500 hover:text-yellow-700 transition-all"
-                          onClick={() => handleEditMainDepartment(department.id)}
-                        >
-                          <FaEdit />
-                        </button>
-                        <button
-                          className="text-red-500 hover:text-red-700 transition-all"
-                          onClick={() => handleDeleteMainDepartment(department.id)}
-                        >
-                          <FaTrash />
-                        </button>
-                        <button
-                          className={`text-${department.status === "Active" ? "green" : "gray"}-500 hover:text-${department.status === "Active" ? "green" : "gray"}-700 transition-all`}
-                          onClick={() => handleToggleStatus(department.id)}
-                        >
-                          {department.status === "Active" ? <FaCheck /> : <FaTimes />}
-                        </button>
+                      <td className="border border-gray-300 px-4 py-2">{index + 1}</td>
+                      <td className="border border-gray-300 px-4 py-2">{department.mainDepartment}</td>
+                      <td className="border border-gray-300 px-4 py-2">
+                        <span className={`inline-flex items-center px-2 py-1 text-sm font-bold rounded-full ${department.status === "Active" ? "bg-green-200 text-green-800" : "bg-red-200 text-red-800"}`}>
+                          {department.status} {department.status === "Active" ? <FaCheck className="ml-1" /> : <FaTimes className="ml-1" />}
+                        </span>
                       </td>
+                      <td className="border border-gray-300 p-2 flex gap-2">
+  <button
+    className="text-yellow-500 hover:text-yellow-700 transition-all"
+    onClick={() => handleEditMainDepartment(department.id)}
+  >
+    <FaEdit />
+  </button>
+  <button
+    className="text-red-500 hover:text-red-700 transition-all"
+    onClick={() => handleDeleteMainDepartment(department.id)}
+  >
+    <FaTrash />
+  </button>
+  <button
+    onClick={() => handleToggleStatus(department.id)}
+    className={`text-${department.status === "Active" ? "red" : "green"}-600 hover:underline mx-2`}
+  >
+    {department.status === "Active" ? <FaTimes /> : <FaCheck />}
+  </button>
+</td>
+
                     </tr>
                   ))}
                 </tbody>

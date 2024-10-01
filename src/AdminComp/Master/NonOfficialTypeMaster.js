@@ -229,23 +229,36 @@ const NonOfficialTypeMaster = () => {
                       <td className="border border-gray-300 p-2">{index + 1}</td>
                       <td className="border border-gray-300 p-2">{type.mainType}</td>
                       <td className="border border-gray-300 p-2">{type.subType}</td>
-                      <td className="border border-gray-300 p-2">{type.status}</td>
                       <td className="border border-gray-300 p-2">
-                        <button onClick={() => handleEdit(type.id)} className="text-blue-500 hover:underline mr-2">
-                          <FaEdit />
-                        </button>
-                        <button onClick={() => handleDelete(type.id)} className="text-red-500 hover:underline mr-2">
-                          <FaTrash />
-                        </button>
-                        <button
-                          onClick={() => handleToggleStatus(type.id, type.status)}
-                          className={`${
-                            type.status === "Active" ? "text-green-500" : "text-red-500"
-                          } hover:underline mr-2`}
-                        >
-                          {type.status === "Active" ? <FaCheck /> : <FaTimes />}
-                        </button>
-                      </td>
+  <span
+    className={`inline-flex items-center px-2 py-1 text-sm font-bold rounded-full ${
+      type.status === "Active" ? "bg-green-200 text-green-800" : "bg-red-200 text-red-800"
+    }`}
+  >
+    {type.status} {type.status === "Active" ? <FaCheck className="ml-1" /> : <FaTimes className="ml-1" />}
+  </span>
+</td>
+<td className="border border-gray-300 px-4 py-2">
+  <button
+    onClick={() => handleEdit(type.id)}
+    className="text-blue-500 hover:underline mr-2"
+  >
+    <FaEdit />
+  </button>
+  <button
+    onClick={() => handleDelete(type.id)}
+    className="text-red-500 hover:underline mr-2"
+  >
+    <FaTrash />
+  </button>
+  <button
+    onClick={() => handleToggleStatus(type.id)}
+    className={`text-${type.status === "Active" ? "red" : "green"}-600 hover:underline mx-2`}
+  >
+    {type.status === "Active" ? <FaTimes /> : <FaCheck />}
+  </button>
+</td>
+
                     </tr>
                   ))}
                 </tbody>

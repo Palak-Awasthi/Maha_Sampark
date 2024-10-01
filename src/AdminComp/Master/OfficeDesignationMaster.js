@@ -5,6 +5,7 @@ import {
   FaSearch,
   FaSyncAlt,
   FaCheck,
+  FaTimes,
 } from "react-icons/fa";
 import AdminHeader from "../AdminHeader";
 import AdminSidebar from "../AdminSidebar";
@@ -273,54 +274,59 @@ const OfficeDesignationMaster = () => {
                   </option>
                 ))}
               </select>
-              <button type="submit" className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
+              <button
+                type="submit"
+                className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 transition-all"
+              >
                 {formState.id ? "Update" : "Add"}
               </button>
             </div>
           </form>
           {/* Designation List */}
+          <div className="overflow-x-auto">
           <table className="min-w-full border border-gray-300 rounded-lg overflow-hidden">
-                <thead className="bg-blue-500 text-white">
+          <thead className="bg-blue-500 text-white">
+                <tr>
+                  <th className="border border-gray-300 px-4 py-2">ID</th>
+                  <th className="border border-gray-300 px-4 py-2">Main Department</th>
+                  <th className="border border-gray-300 px-4 py-2">Designation</th>
+                  <th className="border border-gray-300 px-4 py-2">Status</th>
+                  <th className="border border-gray-300 px-4 py-2">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {loading ? (
                   <tr>
-                    <th className="border border-gray-300 p-2">Sr. No.</th>
-                    <th className="border border-gray-300 p-2">Main Department</th>
-                    <th className="border border-gray-300 p-2">Designation</th>
-                    <th className="border border-gray-300 p-2">Status</th>
-                    <th className="border border-gray-300 p-2">Actions</th>
+                    <td colSpan="5" className="text-center py-4">Loading...</td>
                   </tr>
-                </thead>
-                <tbody>
-                  {filteredDesignations.map((designation, index) => (
-                    <tr key={designation.id} className={designation.status === "Inactive" ? "" : ""}>
-                      <td className="border border-gray-300 p-2">{index + 1}</td>
-                      <td className="border border-gray-300 p-2">{designation.mainDepartment}</td>
-                      <td className="border border-gray-300 p-2">{designation.designation}</td>
-                      <td className="border border-gray-300 p-2">{designation.status}</td>
-                      <td className="border border-gray-300 p-2 flex gap-2">
-                        <button
-                          className="text-blue-500"
-                          onClick={() => handleEditDesignation(designation.id)}
-                        >
+                ) : (
+                  filteredDesignations.map((designation) => (
+                    <tr key={designation.id} className="text-center">
+                      <td className="border border-gray-300 px-4 py-2">{designation.id}</td>
+                      <td className="border border-gray-300 px-4 py-2">{designation.mainDepartment}</td>
+                      <td className="border border-gray-300 px-4 py-2">{designation.designation}</td>
+                      <td className="border border-gray-300 px-4 py-2">
+                        <span className={`inline-flex items-center px-2 py-1 text-sm font-bold rounded-full ${designation.status === "Active" ? "bg-green-200 text-green-800" : "bg-red-200 text-red-800"}`}>
+                          {designation.status} {designation.status === "Active" ? <FaCheck className="ml-1" /> : <FaTimes className="ml-1" />}
+                        </span>
+                      </td>
+                      <td className="border border-gray-300 px-4 py-2">
+                        <button onClick={() => handleEditDesignation(designation.id)} className="text-blue-600 hover:underline mx-2">
                           <FaEdit />
                         </button>
-                        <button
-                          className="text-red-500"
-                          onClick={() => handleDeleteDesignation(designation.id)}
-                        >
+                        <button onClick={() => handleDeleteDesignation(designation.id)} className="text-red-600 hover:underline mx-2">
                           <FaTrashAlt />
                         </button>
-                        <button
-                          className={`text-${designation.status === "Active" ? "red" : "green"}-500`}
-                          onClick={() => handleToggleStatus(designation.id, designation.status)}
-                        >
-                          <FaCheck />
+                        <button onClick={() => handleToggleStatus(designation.id, designation.status)} className={`text-${designation.status === "Active" ? "red" : "green"}-600 hover:underline mx-2`}>
+                          {designation.status === "Active" ? <FaTimes /> : <FaCheck />}
                         </button>
                       </td>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
         <AdminFooter />
       </div>

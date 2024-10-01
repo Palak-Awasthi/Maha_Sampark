@@ -235,8 +235,9 @@ const DistrictMaster = () => {
                 <thead className="bg-blue-500 text-white">
                   <tr>
                     <th className="border border-gray-300 p-2">Sr. No.</th> {/* New Sr. No. Column */}
-                    <th className="border border-gray-300 p-2">District Name</th>
+                    
                     <th className="border border-gray-300 p-2">State</th>
+                    <th className="border border-gray-300 p-2">District Name</th>
                     <th className="border border-gray-300 p-2">Status</th>
                     <th className="border border-gray-300 p-2">Actions</th>
                   </tr>
@@ -245,29 +246,39 @@ const DistrictMaster = () => {
                   {filteredDistricts.map((district, index) => (
                     <tr key={district.id}>
                       <td className="border border-gray-300 p-2">{index + 1}</td> {/* Serial Number */}
-                      <td className="border border-gray-300 p-2">{district.districtName}</td>
+                      
                       <td className="border border-gray-300 p-2">{district.state.state}</td>
-                      <td className="border border-gray-300 p-2">{district.status}</td>
-                      <td className="border border-gray-300 p-2 flex gap-2">
-                        <button
-                          className="text-yellow-500 hover:text-yellow-700 transition-all"
-                          onClick={() => handleEditDistrict(district.id)}
-                        >
-                          <FaEdit />
-                        </button>
-                        <button
-                          className="text-red-500 hover:text-red-700 transition-all"
-                          onClick={() => handleDeleteDistrict(district.id)}
-                        >
-                          <FaTrash />
-                        </button>
-                        <button
-                          className={`text-${district.status === "Active" ? "green" : "gray"}-500 hover:text-${district.status === "Active" ? "green" : "gray"}-700 transition-all`}
-                          onClick={() => handleToggleStatus(district.id)}
-                        >
-                          {district.status === "Active" ? <FaCheck /> : <FaTimes />}
-                        </button>
-                      </td>
+                      <td className="border border-gray-300 p-2">{district.districtName}</td>
+                      <td className="border border-gray-300 p-2">
+  <span
+    className={`inline-flex items-center px-2 py-1 text-sm font-bold rounded-full ${
+      district.status === "Active" ? "bg-green-200 text-green-800" : "bg-red-200 text-red-800"
+    }`}
+  >
+    {district.status} {district.status === "Active" ? <FaCheck className="ml-1" /> : <FaTimes className="ml-1" />}
+  </span>
+</td>
+<td className="border border-gray-300 p-2 flex gap-2">
+  <button
+    className="text-yellow-500 hover:text-yellow-700 transition-all"
+    onClick={() => handleEditDistrict(district.id)}
+  >
+    <FaEdit />
+  </button>
+  <button
+    className="text-red-500 hover:text-red-700 transition-all"
+    onClick={() => handleDeleteDistrict(district.id)}
+  >
+    <FaTrash />
+  </button>
+  <button
+    onClick={() => handleToggleStatus(district.id)}
+    className={`text-${district.status === "Active" ? "red" : "green"}-600 hover:underline mx-2`}
+  >
+    {district.status === "Active" ? <FaTimes /> : <FaCheck />}
+  </button>
+</td>
+
                     </tr>
                   ))}
                 </tbody>

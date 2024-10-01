@@ -8,7 +8,6 @@ function News() {
   const [newStory, setNewStory] = useState({ title: '', content: '', imageUrl: '' });
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Fetch all news when component loads
   useEffect(() => {
     fetchNews();
   }, []);
@@ -16,7 +15,6 @@ function News() {
   const fetchNews = async () => {
     try {
       const response = await axios.get('http://localhost:8080/api/admin-news');
-      // Filter news to display only those with 'Accepted' status
       const acceptedNews = response.data.filter(news => news.status === 'Accepted');
       setNews(acceptedNews);
     } catch (error) {
@@ -35,19 +33,17 @@ function News() {
     const formData = new FormData();
     formData.append('title', newStory.title);
     formData.append('content', newStory.content);
-    formData.append('addedby', 'Admin'); // Example value, change as needed
-    formData.append('dateandtime', new Date().toISOString()); // Automatically set date and time
-    formData.append('status', 'Pending'); // Default status is Pending
-    formData.append('photo', null); // If adding image, handle file input
+    formData.append('addedby', 'Admin');
+    formData.append('dateandtime', new Date().toISOString());
+    formData.append('status', 'Pending');
+    formData.append('photo', null);
 
     try {
-      // Send request to add news
       await axios.post('http://localhost:8080/api/admin-news', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
       });
-      // Optionally, you can show a message to indicate that the news is pending approval
       alert('News added successfully! Pending admin approval.');
       setShowForm(false);
     } catch (error) {
@@ -65,8 +61,8 @@ function News() {
   );
 
   return (
-    <div className="p-6 bg-blue-100 min-h-screen rounded-lg shadow-lg">
-      <h2 className="text-3xl font-bold mb-4 text-blue-600">News</h2>
+    <div className="p-4 bg-gradient-to-br from-blue-100 to-blue-400 rounded-lg shadow-lg max-h-[500px] overflow-y-auto">
+      <h2 className="text-2xl font-bold mb-4 text-blue-600">News</h2>
 
       {/* Add News Button */}
       <button
@@ -78,7 +74,7 @@ function News() {
       </button>
 
       {/* Search Bar */}
-      <div className="mb-6 flex items-center border border-gray-300 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-300">
+      <div className="mb-4 flex items-center border border-gray-300 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-300">
         <FaSearch className="text-gray-400 ml-3" />
         <input
           type="text"
@@ -91,14 +87,14 @@ function News() {
 
       {/* News Form */}
       {showForm && (
-        <form onSubmit={handleAddNews} className="mb-6 p-4 bg-white rounded-lg shadow-md">
+        <form onSubmit={handleAddNews} className="mb-4 p-4 bg-white rounded-lg shadow-md">
           <input
             type="text"
             name="title"
             placeholder="Title"
             value={newStory.title}
             onChange={handleFormChange}
-            className="w-full p-3 mb-3 border rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+            className="w-full p-2 mb-3 border rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
             required
           />
           <textarea
@@ -106,7 +102,7 @@ function News() {
             placeholder="Content"
             value={newStory.content}
             onChange={handleFormChange}
-            className="w-full p-3 mb-3 border rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+            className="w-full p-2 mb-3 border rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
             required
           />
           <input
@@ -115,7 +111,7 @@ function News() {
             placeholder="Image URL"
             value={newStory.imageUrl}
             onChange={handleFormChange}
-            className="w-full p-3 mb-3 border rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+            className="w-full p-2 mb-3 border rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
           />
           <button
             type="submit"
@@ -127,23 +123,23 @@ function News() {
       )}
 
       {/* News Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
         {filteredNews.map((item, index) => (
           <div
             key={index}
-            className="bg-white p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300 transform hover:scale-105"
+            className="bg-white p-4 rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300 transform hover:scale-105 h-[250px] overflow-hidden"
           >
             {item.imageUrl && (
-              <div className="relative overflow-hidden">
+              <div className="relative overflow-hidden mb-2">
                 <img
                   src={item.imageUrl}
                   alt={item.title}
-                  className="w-full h-40 object-cover mb-4 rounded-lg transition-transform duration-300 hover:scale-110"
+                  className="w-full h-24 object-cover rounded-lg transition-transform duration-300 hover:scale-110"
                 />
               </div>
             )}
-            <h3 className="text-xl font-semibold text-gray-800 mb-2">{item.title}</h3>
-            <p className="text-gray-600">{item.content}</p>
+            <h3 className="text-lg font-semibold text-gray-800 mb-1">{item.title}</h3>
+            <p className="text-gray-600 text-sm overflow-hidden">{item.content}</p>
           </div>
         ))}
       </div>

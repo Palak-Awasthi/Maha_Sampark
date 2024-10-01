@@ -101,6 +101,7 @@ const StaffDesignationMaster = () => {
     const newStatus = currentStatus === "Active" ? "Inactive" : "Active";
     setLoading(true);
     try {
+      // Using the specified API for status updates
       await axios.put(`http://localhost:8080/api/staff/${id}/status`, { status: newStatus });
       fetchDesignations();
       toast.success(`Designation status updated to ${newStatus} successfully!`);
@@ -203,7 +204,15 @@ const StaffDesignationMaster = () => {
                     <tr key={designation.id}>
                       <td className="border border-gray-300 p-2">{index + 1}</td>
                       <td className="border border-gray-300 p-2">{designation.designation}</td>
-                      <td className="border border-gray-300 p-2">{designation.status}</td>
+                      <td className="border border-gray-300 p-2">
+                        <span
+                          className={`inline-flex items-center px-2 py-1 text-sm font-bold rounded-full ${
+                            designation.status === "Active" ? "bg-green-200 text-green-800" : "bg-red-200 text-red-800"
+                          }`}
+                        >
+                          {designation.status} {designation.status === "Active" ? <FaCheck className="ml-1" /> : <FaTimes className="ml-1" />}
+                        </span>
+                      </td>
                       <td className="border border-gray-300 p-2 flex gap-2">
                         <button
                           className="text-yellow-500 hover:text-yellow-700 transition-all"
@@ -218,10 +227,10 @@ const StaffDesignationMaster = () => {
                           <FaTrash />
                         </button>
                         <button
-                          className={`text-${designation.status === "Active" ? "green" : "gray"}-500 hover:text-${designation.status === "Active" ? "green" : "gray"}-700 transition-all`}
                           onClick={() => handleToggleStatus(designation.id, designation.status)}
+                          className={`text-${designation.status === "Active" ? "red" : "green"}-600 hover:underline mx-2`}
                         >
-                          {designation.status === "Active" ? <FaCheck /> : <FaTimes />}
+                          {designation.status === "Active" ? <FaTimes /> : <FaCheck />}
                         </button>
                       </td>
                     </tr>
