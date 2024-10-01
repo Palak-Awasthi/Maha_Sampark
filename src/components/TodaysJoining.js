@@ -16,7 +16,7 @@ function TodaysJoining() {
       console.log('API Response:', data); // Log the response for debugging
       setJoinings(data); 
     } catch (error) {
-      setError(error.message); // Set error state if there's an issue
+      setError(error.message); 
     } finally {
       setLoading(false); // Set loading to false after fetch
     }
