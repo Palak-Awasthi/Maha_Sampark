@@ -14,8 +14,6 @@ function Header({ onToggleSidebar }) {
 
       {/* Tagline Section */}
       <div className="hidden md:flex items-center space-x-2 text-white text-base md:text-sm italic">
-        <FaGlobe />
-        <span>Connecting Communities</span>
       </div>
 
       {/* Sidebar Toggle Button for Mobile */}

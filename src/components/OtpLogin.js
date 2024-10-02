@@ -92,20 +92,20 @@ function OtpLogin() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50">
+    <div className="flex flex-col min-h-screen bg-gradient-to-br from-blue-400 to-blue-100">
       <Header />
 
       <main className="flex flex-1 flex-col lg:flex-row justify-center items-center p-6">
-        <div className="flex-1 hidden lg:flex justify-center items-center p-6">
+        <div className="flex-1 hidden lg:flex justify-center items-center  pr-6">
           <Player
             autoplay
             loop
             src="https://lottie.host/c4726432-40cc-4db6-ba9c-5fd055159615/wvQteuXNvE.json"
-            style={{ height: '300px', width: '300px' }}
+            style={{ height: '400px', width: '400px' }}
           />
         </div>
 
-        <div className="flex-1 bg-blue-50 p-8 rounded-lg shadow-xl max-w-md w-full">
+        <div className="flex-1 bg-blue-50 p-8 rounded-lg shadow-xl max-w-md w-full pr-6"> {/* Added pr-6 for right padding */}
           <h2 className="text-3xl font-bold mb-6 text-center text-gray-800">
             Login
           </h2>

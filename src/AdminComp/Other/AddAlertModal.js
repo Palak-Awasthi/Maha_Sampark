@@ -216,9 +216,14 @@ const AddAlertModal = ({ onClose, alertId }) => {
             />
           </div>
 
-          {/* Submit Button */}
-          <div className="flex justify-end space-x-2">
-            
+            {/* Submit Button */}
+            <div className="flex justify-end space-x-2">
+            <button
+              type="submit"
+              className="bg-indigo-600 text-white p-2 rounded-md hover:bg-indigo-700 transition"
+            >
+              {isEditing ? 'Update' : 'Submit'}
+            </button>
             {isEditing && (
               <button
                 type="button"
