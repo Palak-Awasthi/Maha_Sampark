@@ -9,7 +9,7 @@ const BirthdayList = () => {
         const fetchBirthdays = async () => {
             try {
                 const response = await axios.get("http://localhost:8080/api/mcs/birthdays");
-                setBirthdays(response.data); // Now this contains objects with name, email, and mobile number
+                setBirthdays(response.data); 
             } catch (error) {
                 console.error('Error fetching birthdays:', error);
             }
