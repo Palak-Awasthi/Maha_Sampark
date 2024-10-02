@@ -1,41 +1,55 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FaUserTie, FaBuilding, FaFolderOpen, FaBirthdayCake, FaRegSmile } from 'react-icons/fa';
-import axios from 'axios'; // Import Axios
 import DashboardCard from './DashboardCard'; // Import the reusable card component
 import News from './News'; // Import the News component
 import Skeleton from 'react-loading-skeleton'; // Loading skeleton for better UX
+import axios from 'axios'; // Using axios for API calls
+import toast, { Toaster } from 'react-hot-toast'; // For consistent toast notifications
 
 function DashboardContent({ onSelectSection }) {
-  const [officerProfiles, setOfficerProfiles] = useState([]);
+  const [officerProfiles] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [userName, setUserName] = useState(''); // State to store the fetched user name
+  
 
-  // Axios function to fetch officer profiles from Spring Boot backend
-  const fetchOfficerProfiles = async () => {
-    setLoading(true); // Start loading
-    setError(null); // Clear any previous errors
+  /// Fetch user profile data when the component mounts
+  useEffect(() => {
+    fetchProfileData();
+  }, []);
 
+  const fetchProfileData = async () => {
+    setLoading(true); // Start loading indicator
     try {
-      const response = await axios.get('http://localhost:8080/api/officers'); // Change the URL to your Spring Boot endpoint
-      setOfficerProfiles(response.data); // Assuming the backend returns an array of officer profiles
+      const response = await axios.get('http://localhost:8080/api/registrations/all');
+      if (response.status !== 200) {
+        throw new Error('Network response was not ok');
+      }
+      const data = response.data;
+      if (data.length > 0) {
+        const profileData = data[0]; // Assuming the API returns an array
+        setUserName(profileData.name || 'User'); // Set user name or default to 'User'
+      }
     } catch (error) {
-      setError('Error fetching officer profiles. Please try again later.');
+      setError('Failed to fetch user profile.');
+      toast.error(error.message); // Display error using toast
     } finally {
-      setLoading(false); // Stop loading
+      setLoading(false); // Stop loading indicator
     }
   };
-
-  // Fetch officer profiles when the component mounts
-  useEffect(() => {
-    fetchOfficerProfiles();
-  }, []);
 
   return (
     <div className="lg:grid lg:grid-cols-4 lg:gap-6 space-y-6 lg:space-y-0 p-10 bg-gradient-to-br from-blue-50 to-gray-100 rounded-lg shadow-lg">
       {/* Left Section */}
       <div className="lg:col-span-4">
         <div className="bg-gradient-to-br from-blue-400 to-blue-100 rounded-lg p-10 mb-6 shadow-md text-white transition-transform transform hover:scale-105 duration-300">
-          <h2 className="text-3xl font-bold">Welcome to the Dashboard</h2>
+          {loading ? (
+            <Skeleton width={300} height={40} /> // Loading skeleton while fetching data
+          ) : (
+            <h2 className="text-3xl font-bold">
+              {`Welcome ${userName || 'Guest'}, to the Dashboard`}
+            </h2>
+          )}
           <p className="mt-2">Here is a quick overview of today's highlights and updates</p>
         </div>
 
@@ -70,7 +84,7 @@ function DashboardContent({ onSelectSection }) {
             icon={<FaUserTie size={50} />}
             gradientFrom="bg-gradient-to-r from-blue-500 to-purple-600"
             onClick={() => onSelectSection('officers-profile')}
-            description={`${officerProfiles.length} Profiles`}
+            description="Explore Profiles"
           />
           <DashboardCard
             title="Govt Office Contacts"
@@ -81,7 +95,7 @@ function DashboardContent({ onSelectSection }) {
           />
           <DashboardCard
             title="Department Information"
-            icon={<FaFolderOpen size={0} />}
+            icon={<FaFolderOpen size={50} />}
             gradientFrom="bg-gradient-to-r from-yellow-400 to-red-500"
             onClick={() => onSelectSection('department-information')}
             description="Details and Statistics"
